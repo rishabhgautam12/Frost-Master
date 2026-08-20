@@ -313,7 +313,8 @@ export default function EmployeeManagement({ user }) {
     if (!selectedEmployee || !salary) return;
     if (attendanceLocked) return alert("This month is locked. Unlock it before changing attendance.");
     try {
-      const res = await employeeAPI.saveAttendance(selectedEmployee._id, { month, days: salary.days });
+      const changedDays = salary.days.filter((day) => day.status || day.isSaved);
+      const res = await employeeAPI.saveAttendance(selectedEmployee._id, { month, days: changedDays });
       setDetail((prev) => ({ ...prev, salary: res.data }));
       showToast("Attendance saved");
     } catch (err) { alert(err.message); }
@@ -815,9 +816,28 @@ export default function EmployeeManagement({ user }) {
                   {status.label}
                 </button>
               ))}
+              {attendancePicker.status && (
+                <button
+                  type="button"
+                  onClick={() => setAttendanceStatus(attendancePicker.date, "")}
+                  style={{
+                    border: "2px solid #64748b",
+                    background: "#f8fafc",
+                    color: "#334155",
+                    borderRadius: 8,
+                    padding: "18px 14px",
+                    fontWeight: 900,
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", border: "1px solid #64748b", background: "#fff", marginRight: 8, verticalAlign: -2 }} />
+                  Remove Attendance
+                </button>
+              )}
             </div>
             <div style={{ color: "#64748b", fontSize: 12, marginTop: 14 }}>
-              Select one status. Then click Save Attendance on the page to persist it.
+              Select a status or remove the current attendance. Then click Save Attendance on the page to persist it.
             </div>
           </div>
         )}

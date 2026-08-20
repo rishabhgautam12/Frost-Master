@@ -367,8 +367,13 @@ exports.saveAttendance = async (req, res) => {
     const validStatuses = new Set(["Present", "Absent", "Half Day", "Paid Leave"]);
 
     for (const day of days) {
-      if (!day.date || !validStatuses.has(day.status)) continue;
+      if (!day.date) continue;
       const date = parseDateKey(day.date);
+      if (!day.status) {
+        await Attendance.deleteOne({ employee: employee._id, date });
+        continue;
+      }
+      if (!validStatuses.has(day.status)) continue;
       await Attendance.findOneAndUpdate(
         { employee: employee._id, date },
         {
