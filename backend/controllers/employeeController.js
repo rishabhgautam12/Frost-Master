@@ -78,13 +78,11 @@ async function earnedForMonth(employee, month) {
   const attendanceByDate = new Map(
     attendanceRows.map((row) => [dateKey(row.date), row])
   );
-  const joining = employee.joiningDate ? new Date(employee.joiningDate) : null;
-  if (joining) joining.setHours(0, 0, 0, 0);
-
   const days = dates.map((row) => {
-    const beforeJoining = joining && row.date < joining;
     const saved = attendanceByDate.get(row.key);
-    const status = beforeJoining ? "" : (saved?.status || "");
+    // Historical attendance may be entered after an employee is created/imported.
+    // Always return a saved row, even when it predates the profile's joiningDate.
+    const status = saved?.status || "";
     return {
       date: row.key,
       status,
@@ -357,7 +355,13 @@ exports.saveAttendance = async (req, res) => {
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ success: false, message: "Employee not found" });
     const { month, days = [] } = req.body;
-    const parsed = parseMonth(month).key;
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month || "")) {
+      return res.status(400).json({ success: false, message: "Valid attendance month is required." });
+    }
+    if (!Array.isArray(days)) {
+      return res.status(400).json({ success: false, message: "Attendance days must be a list." });
+    }
+    const parsed = month;
     if (await isSalaryMonthLocked(employee._id, parsed)) {
       return res.status(400).json({
         success: false,
@@ -366,28 +370,36 @@ exports.saveAttendance = async (req, res) => {
     }
     const validStatuses = new Set(["Present", "Absent", "Half Day", "Paid Leave"]);
 
+    const operations = [];
     for (const day of days) {
-      if (!day.date) continue;
-      const date = parseDateKey(day.date);
+      const dayKey = String(day?.date || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || !dayKey.startsWith(`${parsed}-`)) continue;
+      const date = parseDateKey(dayKey);
+      if (Number.isNaN(date.getTime()) || dateKey(date) !== dayKey) continue;
+
       if (!day.status) {
-        await Attendance.deleteOne({ employee: employee._id, date });
-        continue;
+        operations.push({ deleteOne: { filter: { employee: employee._id, date } } });
+      } else if (validStatuses.has(day.status)) {
+        operations.push({
+          updateOne: {
+            filter: { employee: employee._id, date },
+            update: {
+              $set: {
+                employee: employee._id,
+                warehouse: employee.warehouse,
+                date,
+                month: parsed,
+                status: day.status,
+                notes: day.notes || "",
+                markedBy: req.user?._id,
+              },
+            },
+            upsert: true,
+          },
+        });
       }
-      if (!validStatuses.has(day.status)) continue;
-      await Attendance.findOneAndUpdate(
-        { employee: employee._id, date },
-        {
-          employee: employee._id,
-          warehouse: employee.warehouse,
-          date,
-          month: parsed,
-          status: day.status,
-          notes: day.notes || "",
-          markedBy: req.user?._id,
-        },
-        { upsert: true, new: true, runValidators: true }
-      );
     }
+    if (operations.length) await Attendance.bulkWrite(operations, { ordered: true });
 
     const salary = await getSalarySummary(employee, parsed);
     await logActivity(req, {

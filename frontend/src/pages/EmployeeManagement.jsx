@@ -680,9 +680,26 @@ export default function EmployeeManagement({ user }) {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "24px 0 12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "24px 0 12px", gap: 10 }}>
                   <button onClick={() => setMonth(shiftMonth(month, -1))} style={navBtn}>‹</button>
-                  <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 500 }}>Attendance&nbsp; {monthLabel(month)}</div>
+                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: "center", gap: isMobile ? 5 : 10 }}>
+                    <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 500 }}>Attendance&nbsp; {monthLabel(month)}</div>
+                    <input
+                      type="month"
+                      value={month}
+                      onChange={(e) => e.target.value && setMonth(e.target.value)}
+                      aria-label="Select attendance month"
+                      style={{
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 7,
+                        padding: "6px 8px",
+                        background: "#fff",
+                        color: "#334155",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    />
+                  </div>
                   <button onClick={() => setMonth(shiftMonth(month, 1))} style={navBtn}>›</button>
                 </div>
 
