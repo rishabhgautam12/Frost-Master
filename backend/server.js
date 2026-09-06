@@ -14,6 +14,7 @@ const customerRoutes  = require("./routes/customerRoutes");
 const salesRoutes     = require("./routes/salesRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const employeeRoutes  = require("./routes/employeeRoutes");
+const complaintRoutes = require("./routes/complaintRoutes");
 
 connectDB();
 
@@ -37,6 +38,7 @@ app.use("/api/customers", protect, customerRoutes);
 app.use("/api/sales",     protect, salesRoutes);
 app.use("/api/dashboard", protect, dashboardRoutes);
 app.use("/api/employees", protect, employeeRoutes);
+app.use("/api/complaints", protect, complaintRoutes);
 
 app.use("*", (req, res) =>
   res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` })

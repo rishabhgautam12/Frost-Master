@@ -11,6 +11,7 @@ const ALL_PERMISSIONS = [
   "purchases_view", "purchases_create",
   "reports_gst", "reports_sales", "reports_graphs",
   "employees_view", "employees_create", "employees_edit", "employees_salary",
+  "complaints_view", "complaints_manage",
 ];
 
 const permissionsDefault = ALL_PERMISSIONS.reduce((acc, k) => {

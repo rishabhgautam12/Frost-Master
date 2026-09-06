@@ -43,6 +43,13 @@ const navConfig = [
     ],
   },
   {
+    label: "Complaints", key: "complaints",
+    items: [
+      { label: "Active Complaints", page: "complaints-active", perm: "complaints_view" },
+      { label: "Solved Complaints", page: "complaints-solved", perm: "complaints_view" },
+    ],
+  },
+  {
     label: "Purchase", key: "purchase",
     items: [
       { label: "🛒 Create Purchase",       page: "purchase-create", perm: "purchases_create" },

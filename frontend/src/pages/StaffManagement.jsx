@@ -56,6 +56,13 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
+    group: "Complaints",
+    perms: [
+      { key: "complaints_view", label: "View Complaints" },
+      { key: "complaints_manage", label: "Add / Solve Complaints" },
+    ],
+  },
+  {
     group: "Reports",
     perms: [
       { key: "reports_gst",    label: "GST Report"    },

@@ -96,6 +96,13 @@ export const dashboardAPI = {
   getStats: () => request("/dashboard/stats"),
 };
 
+export const complaintAPI = {
+  getAll:        (params = {}) => request(`/complaints?${new URLSearchParams(params)}`),
+  lookupInvoice: (params)      => request(`/complaints/invoice?${new URLSearchParams(params)}`),
+  create:        (body)        => request("/complaints", { method: "POST", body: JSON.stringify(body) }),
+  solve:         (id, body)    => request(`/complaints/${id}/solve`, { method: "PATCH", body: JSON.stringify(body) }),
+};
+
 // Employees, attendance and salary
 export const employeeAPI = {
   getWarehouses:  ()         => request("/employees/warehouses"),
