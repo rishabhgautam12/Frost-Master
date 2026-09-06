@@ -16,6 +16,7 @@ const {
   updateSaleDetails,
   getOrders,
   createOrder,
+  updateOrder,
   convertOrderToSale,
 } = require("../controllers/salesController");
 
@@ -28,6 +29,7 @@ router.patch("/purchases/:id/payment", updatePurchasePayment);
 // Sales
 router.get("/orders/all", getOrders);
 router.post("/orders", createOrder);
+router.put("/orders/:id", updateOrder);
 router.post("/orders/:id/convert", convertOrderToSale);
 router.get("/", getSales);
 router.get("/gst-report", getGSTReport);

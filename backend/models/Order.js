@@ -38,6 +38,7 @@ const orderSchema = new mongoose.Schema({
   amountPaid: { type: Number, default: 0 },
   isInterState: { type: Boolean, default: false },
   notes: String,
+  invoiceDetails: { type: mongoose.Schema.Types.Mixed, default: {} },
   status: { type: String, enum: ["Open", "Converted", "Cancelled"], default: "Open" },
   convertedSale: { type: mongoose.Schema.Types.ObjectId, ref: "Sale" },
   convertedAt: Date,

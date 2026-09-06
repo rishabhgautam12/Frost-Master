@@ -78,6 +78,8 @@ export const salesAPI = {
   create:                  (body)        => request("/sales",            { method: "POST",   body: JSON.stringify(body) }),
   getOrders:               (params = {}) => request(`/sales/orders/all?${new URLSearchParams(params)}`),
   createOrder:             (body)        => request("/sales/orders", { method: "POST", body: JSON.stringify(body) }),
+  updateOrder:             (id, body)    => request(`/sales/orders/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  updateOrder:             (id, body)    => request(`/sales/orders/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   convertOrder:            (id, body)    => request(`/sales/orders/${id}/convert`, { method: "POST", body: JSON.stringify(body) }),
   updatePayment:           (id, body)    => request(`/sales/${id}/payment`,{ method: "PATCH", body: JSON.stringify(body) }),
   payForSale:              (id, body)    => request(`/sales/${id}/pay`,   { method: "PATCH", body: JSON.stringify(body) }),

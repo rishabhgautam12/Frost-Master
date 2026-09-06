@@ -6,6 +6,8 @@ import {
 } from "../components/Shared";
 import { salesAPI, customerAPI, productAPI } from "../services/api";
 import { downloadCSV } from "../services/csvExport";
+import InvoiceDetailsFields from "../components/InvoiceDetailsFields";
+import TransactionDetailsModal from "../components/TransactionDetailsModal";
 
 const stColor = { Paid: "green", Partial: "yellow", Pending: "red", Cancelled: "gray" };
 const discountAmountFor = item => {
@@ -18,8 +20,8 @@ const discountPercentFor = item => {
   return +item.rate > 0 ? (+item.discount / +item.rate) * 100 : 0;
 };
 const formatPercent = value => Number(value.toFixed(2));
-const SALE_EDIT_GRID = "minmax(250px, 2fr) 100px 150px 70px 92px 84px 82px 105px 38px";
-const SALE_EDIT_MIN_WIDTH = 980;
+const SALE_EDIT_GRID = "minmax(230px, 2fr) 95px 140px 65px 85px 75px 70px 95px 75px 105px 38px";
+const SALE_EDIT_MIN_WIDTH = 1160;
 
 const saleDateValue = value => {
   if (!value) return new Date().toISOString().slice(0, 10);
@@ -247,6 +249,7 @@ function FullEditModal({ sale, onClose, onDone }) {
     amountPaid: sale?.amountPaid ?? 0,
     status: sale?.status || "Pending",
     notes: sale?.notes || "",
+    invoiceDetails: sale?.invoiceDetails || { billTo:{}, shipTo:{} },
   });
   const [items, setItems] = useState(() => (sale?.items || []).map(it => ({
     product: it.product?._id || it.product || "",
@@ -255,6 +258,8 @@ function FullEditModal({ sale, onClose, onDone }) {
     rate: it.rate ?? "",
     discount: discountPercentFor(it),
     gstRate: it.gstRate ?? 18,
+    transportAmount: it.transportAmount ?? 0,
+    transportGstRate: it.transportGstRate ?? 0,
     warehouse: it.warehouse || "",
   })));
   const [saving, setSaving] = useState(false);
@@ -294,7 +299,7 @@ function FullEditModal({ sale, onClose, onDone }) {
     }
     return next;
   }));
-  const addItem = () => setItems(prev => [...prev, { product: "", qty: 1, rate: "", discount: 0, gstRate: 18, warehouse: "" }]);
+  const addItem = () => setItems(prev => [...prev, { product: "", qty: 1, rate: "", discount: 0, gstRate: 18, transportAmount: 0, transportGstRate: 0, warehouse: "" }]);
   const removeItem = i => setItems(prev => prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev);
   const calcItem = it => {
     const gross = (+it.rate || 0) * (+it.qty || 0);
@@ -302,17 +307,20 @@ function FullEditModal({ sale, onClose, onDone }) {
     const discountAmount = (gross * discountPercent) / 100;
     const taxable = gross - discountAmount;
     const gst = (taxable * (+it.gstRate || 0)) / 100;
-    return { gross, discountAmount, taxable, gst, total: taxable + gst };
+    const transport = +it.transportAmount || 0;
+    const transportGst = (transport * (+it.transportGstRate || 0)) / 100;
+    return { gross, discountAmount, taxable, gst, transport, transportGst, total: taxable + gst + transport + transportGst };
   };
   const totals = items.reduce((sum, it) => {
     const c = calcItem(it);
     return {
       subtotal: sum.subtotal + c.gross,
       discount: sum.discount + c.discountAmount,
-      gst: sum.gst + c.gst,
+      transport: sum.transport + c.transport,
+      gst: sum.gst + c.gst + c.transportGst,
       total: sum.total + c.total,
     };
-  }, { subtotal: 0, discount: 0, gst: 0, total: 0 });
+  }, { subtotal: 0, discount: 0, transport: 0, gst: 0, total: 0 });
   const due = Math.max(0, totals.total - (+form.amountPaid || 0));
 
   const handleSave = async () => {
@@ -334,6 +342,8 @@ function FullEditModal({ sale, onClose, onDone }) {
           rate: +it.rate,
           discount: +it.discount || 0,
           gstRate: +it.gstRate || 0,
+          transportAmount: +it.transportAmount || 0,
+          transportGstRate: +it.transportGstRate || 0,
           warehouse: it.warehouse || undefined,
         })),
       });
@@ -378,9 +388,11 @@ function FullEditModal({ sale, onClose, onDone }) {
         Inter-state sale
       </label>
 
+      <InvoiceDetailsFields value={form.invoiceDetails} onChange={invoiceDetails => setForm(p => ({ ...p, invoiceDetails }))} />
+
       <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflowX: "auto", marginBottom: 16 }}>
         <div style={{ display: "grid", gridTemplateColumns: SALE_EDIT_GRID, minWidth: SALE_EDIT_MIN_WIDTH, background: "#f8fafc", padding: "8px 10px", fontSize: 11, fontWeight: 800, color: "#1e293b" }}>
-          {["Product","Model No.","Warehouse","Qty","Rate","Disc. %","GST %","Total",""].map(h => <div key={h} style={{ padding: "0 4px" }}>{h}</div>)}
+          {["Product","Model No.","Warehouse","Qty","Rate","Disc. %","GST %","Transport","Trans. GST %","Total",""].map(h => <div key={h} style={{ padding: "0 4px" }}>{h}</div>)}
         </div>
         {items.map((it, i) => {
           const prod = productById(it.product);
@@ -418,6 +430,12 @@ function FullEditModal({ sale, onClose, onDone }) {
                   {["0","5","9","12","18","28"].map(r => <option key={r} value={r}>{r}%</option>)}
                 </select>
               </div>
+              <div style={{ padding: "0 4px" }}><input type="number" min="0" value={it.transportAmount} onChange={e => setItem(i, "transportAmount", e.target.value)} style={{ width: "100%", padding: "7px 6px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></div>
+              <div style={{ padding: "0 4px" }}>
+                <select value={it.transportGstRate} onChange={e => setItem(i, "transportGstRate", e.target.value)} style={{ width: "100%", padding: "7px 4px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, background: "#f9fafb" }}>
+                  {[0, 5, 12, 18, 28].map(r => <option key={r} value={r}>{r}%</option>)}
+                </select>
+              </div>
               <div style={{ padding: "7px 4px 0", fontWeight: 800, color: "#16a34a", fontSize: 12 }}>Rs {c.total.toFixed(2)}</div>
               <div style={{ padding: "0 4px" }}>
                 <button type="button" onClick={() => removeItem(i)} style={{ width: "100%", padding: "6px 0", border: "none", borderRadius: 5, background: "#fee2e2", color: "#991b1b", cursor: "pointer", fontWeight: 800 }}>x</button>
@@ -453,6 +471,7 @@ function FullEditModal({ sale, onClose, onDone }) {
             <strong>Rs {form.paymentMode === "Cash" ? (+form.amountPaid || 0).toFixed(2) : totals.discount.toFixed(2)}</strong>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}><span>GST</span><strong>Rs {totals.gst.toFixed(2)}</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}><span>Transport</span><strong>Rs {totals.transport.toFixed(2)}</strong></div>
           <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e2e8f0", paddingTop: 9, fontSize: 16 }}><span>Grand Total</span><strong>Rs {totals.total.toFixed(2)}</strong></div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, color: due > 0 ? "#ef4444" : "#16a34a" }}><span>Due</span><strong>Rs {due.toFixed(2)}</strong></div>
         </div>
@@ -551,6 +570,7 @@ export default function SalesList({ navigate }) {
   const [expanded, setExpanded] = useState(null);
   const [payModal, setPayModal] = useState(null);
   const [paymentDrawer, setPaymentDrawer] = useState(null);
+  const [detailModal, setDetailModal] = useState(null);
   const [editModal,setEditModal]= useState(null);
 
   // Derive date range from month + year pickers
@@ -727,6 +747,7 @@ export default function SalesList({ navigate }) {
                     <Td><Badge color={stColor[s.status] || "gray"}>{s.status}</Badge></Td>
                     <Td>
                       <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                        <Btn sm color="blue" onClick={() => setDetailModal(s)}>View Details</Btn>
                         <Btn sm color="teal" onClick={() => setPaymentDrawer(s)}>Payments ({s.payments?.length || 0})</Btn>
                         {s.status !== "Paid" && s.status !== "Cancelled" && (
                           <Btn sm color="green" onClick={() => setPayModal(s)}>💰 Pay</Btn>
@@ -770,6 +791,7 @@ export default function SalesList({ navigate }) {
       )}
 
       {payModal  && <PaymentModal sale={payModal}  onClose={() => setPayModal(null)}  onDone={afterPay}  />}
+      {detailModal && <TransactionDetailsModal record={detailModal} type="sale" onClose={() => setDetailModal(null)} />}
       {paymentDrawer && <PaymentHistoryDrawer
         sale={paymentDrawer}
         onClose={() => setPaymentDrawer(null)}

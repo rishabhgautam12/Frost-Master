@@ -368,6 +368,37 @@ exports.createOrder = async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
 
+exports.updateOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    const before = order.toObject();
+    const { items, customer, customerName, saleType, paymentMode, date, isInterState, notes, invoiceDetails } = req.body;
+    if (Array.isArray(items)) {
+      if (!items.length) return res.status(400).json({ success: false, message: "Add at least one order item." });
+      order.items = await buildSaleItems(items);
+    }
+    if (customer !== undefined) order.customer = customer || undefined;
+    if (customerName !== undefined) order.customerName = customerName;
+    if (saleType) order.saleType = saleType;
+    if (paymentMode) order.paymentMode = paymentMode;
+    if (date) order.date = new Date(date);
+    if (isInterState !== undefined) order.isInterState = !!isInterState;
+    if (notes !== undefined) order.notes = notes;
+    if (invoiceDetails !== undefined) order.invoiceDetails = invoiceDetails;
+
+    await order.save();
+    await order.populate("customer", "name phone");
+    await order.populate("items.product", "name modelNumber gstRate");
+    await logActivity(req, {
+      action: "updated", entityType: "Order", entityId: order._id, entityLabel: order.orderNo,
+      summary: `Updated order ${order.orderNo}`,
+      changes: toChanges(before, order, ["customer", "customerName", "saleType", "paymentMode", "date", "items", "grandTotal", "isInterState", "notes", "invoiceDetails"]),
+    });
+    res.json({ success: true, data: order, message: "Order updated successfully" });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+};
+
 exports.convertOrderToSale = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -391,7 +422,7 @@ exports.convertOrderToSale = async (req, res) => {
         recordedByName: convertedByName,
       }] : [],
       isInterState: order.isInterState,
-      notes: order.notes, sourceOrder: order._id,
+      notes: order.notes, invoiceDetails: order.invoiceDetails || {}, sourceOrder: order._id,
       soldBy: req.user?._id, soldByName: convertedByName,
     });
     await sale.save();
@@ -1014,6 +1045,7 @@ exports.updateSaleDetails = async (req, res) => {
       amountPaid,
       notes,
       status,
+      invoiceDetails,
     } = req.body;
 
     if (customer !== undefined) sale.customer = customer || undefined;
@@ -1024,6 +1056,7 @@ exports.updateSaleDetails = async (req, res) => {
     if (isInterState !== undefined) sale.isInterState = !!isInterState;
     if (amountPaid !== undefined) sale.amountPaid = Math.max(0, +amountPaid || 0);
     if (notes !== undefined) sale.notes = notes;
+    if (invoiceDetails !== undefined) sale.invoiceDetails = invoiceDetails;
     if (status === "Cancelled") sale.status = "Cancelled";
     else if (status) sale.status = "Pending";
 

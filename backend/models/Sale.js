@@ -61,6 +61,7 @@ const saleSchema = new mongoose.Schema(
     igst: { type: Number, default: 0 },
     isInterState: { type: Boolean, default: false },
     notes: { type: String },
+    invoiceDetails: { type: mongoose.Schema.Types.Mixed, default: {} },
     status: {
       type: String,
       enum: ["Paid", "Partial", "Pending", "Cancelled"],

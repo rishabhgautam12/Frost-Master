@@ -4,6 +4,7 @@ import {
   SuccessToast, Modal,
 } from "../components/Shared";
 import { salesAPI, customerAPI, productAPI, employeeAPI } from "../services/api";
+import InvoiceDetailsFields from "../components/InvoiceDetailsFields";
 import QuickAddProduct from "../components/QuickAddProduct";
 
 const normalizePhone = value => value.replace(/\D/g, "").slice(0, 10);
@@ -93,6 +94,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
     amountPaid:"", notes:""
   });
   const [payments, setPayments] = useState([{ paymentMode:"Credit", amount:"", date:new Date().toISOString().split("T")[0], notes:"" }]);
+  const [invoiceDetails, setInvoiceDetails] = useState({ billTo:{}, shipTo:{} });
   const [items, setItems] = useState([
     { product:"", description:"", qty:1, rate:"", billingRate:"", discount:0, gstRate:18, warehouse:"Main Warehouse", transportAmount:"", transportGstRate:0 }
   ]);
@@ -193,6 +195,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
     try {
       await (isOrder ? salesAPI.createOrder : salesAPI.create)({
         ...form,
+        invoiceDetails,
         customer:    form.customer || undefined,
         isInterState:!!form.isInterState,
         amountPaid:  isOrder ? 0 : totalPaid,
@@ -293,6 +296,8 @@ export default function CreateSale({ navigate, mode = "sale" }) {
             Inter-state sale (IGST instead of CGST + SGST)
           </label>
         </div>
+
+        <InvoiceDetailsFields value={invoiceDetails} onChange={setInvoiceDetails} />
 
         {!isOrder && (
           <div style={{ marginBottom:20 }}>
