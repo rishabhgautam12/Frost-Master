@@ -16,6 +16,8 @@ const customerSchema = new mongoose.Schema(
       default: "Retail",
     },
     city: { type: String, trim: true },
+    stateName: { type: String, trim: true },
+    stateCode: { type: String, trim: true },
     address: { type: String, trim: true },
     gstin: { type: String, trim: true },
     creditLimit: { type: Number, default: 0 },

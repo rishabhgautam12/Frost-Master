@@ -1,5 +1,14 @@
 const mongoose = require("mongoose");
 
+const orderPaymentSchema = new mongoose.Schema({
+  amount: { type: Number, required: true, min: 0 },
+  paymentMode: { type: String, enum: ["Cash", "UPI", "Card", "Bank Transfer", "Cheque"], default: "Cash" },
+  date: { type: Date, default: Date.now },
+  notes: { type: String, trim: true },
+  recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  recordedByName: { type: String, trim: true },
+}, { _id: true });
+
 const orderItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
   productName: String,
@@ -17,6 +26,7 @@ const orderItemSchema = new mongoose.Schema({
   transportAmount: { type: Number, default: 0 },
   transportGstRate: { type: Number, default: 0 },
   transportGstAmount: { type: Number, default: 0 },
+  productType: { type: String, enum: ["Manufacturing", "Imported"], default: "Manufacturing" },
 });
 
 const orderSchema = new mongoose.Schema({
@@ -38,6 +48,7 @@ const orderSchema = new mongoose.Schema({
   totalGST: { type: Number, default: 0 },
   grandTotal: { type: Number, default: 0 },
   amountPaid: { type: Number, default: 0 },
+  payments: { type: [orderPaymentSchema], default: [] },
   isInterState: { type: Boolean, default: false },
   notes: String,
   invoiceDetails: { type: mongoose.Schema.Types.Mixed, default: {} },

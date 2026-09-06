@@ -4,7 +4,7 @@ import {
   SuccessToast, Modal,
 } from "../components/Shared";
 import { salesAPI, customerAPI, productAPI, employeeAPI } from "../services/api";
-import InvoiceDetailsFields from "../components/InvoiceDetailsFields";
+import InvoiceDetailsFields, { partyDetailsFromCustomer } from "../components/InvoiceDetailsFields";
 import QuickAddProduct from "../components/QuickAddProduct";
 
 const normalizePhone = value => value.replace(/\D/g, "").slice(0, 10);
@@ -122,6 +122,8 @@ export default function CreateSale({ navigate, mode = "sale" }) {
   const handleCustomerSaved = newCustomer => {
     setCustomers(prev => [newCustomer, ...prev]);
     setForm(p => ({ ...p, customer: newCustomer._id, customerName:"" }));
+    const party = partyDetailsFromCustomer(newCustomer);
+    setInvoiceDetails(prev => ({ ...prev, billTo:party, shipTo:{ ...party } }));
     setShowAddCust(false);
     setToast(`Customer "${newCustomer.name}" added and selected.`);
   };
@@ -199,9 +201,9 @@ export default function CreateSale({ navigate, mode = "sale" }) {
         invoiceDetails,
         customer:    form.customer || undefined,
         isInterState:!!form.isInterState,
-        amountPaid:  isOrder ? 0 : totalPaid,
-        payments: isOrder ? [] : cleanPayments,
-        paymentMode: isOrder ? form.paymentMode : (cleanPayments.length > 1 ? "Multiple" : cleanPayments[0]?.paymentMode || "Credit"),
+        amountPaid: totalPaid,
+        payments: cleanPayments,
+        paymentMode: cleanPayments.length > 1 ? "Multiple" : cleanPayments[0]?.paymentMode || "Credit",
         items: validItems.map(it => ({
           product:  it.product,
           description: it.description?.trim() || "",
@@ -247,7 +249,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
           <FormGroup label="Sale Made By (Employee)">
             <FormSelect value={form.salesEmployee} onChange={set("salesEmployee")}>
               <option value="">Select employee</option>
-              {employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name}{employee.role ? ` - ${employee.role}` : ""} ({employee.incentivePercent || 0}%)</option>)}
+              {employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name}{employee.role ? ` - ${employee.role}` : ""} (M: {employee.manufacturingIncentivePercent || 0}% / I: {employee.importedIncentivePercent || 0}%)</option>)}
             </FormSelect>
           </FormGroup>
         </div>
@@ -259,7 +261,12 @@ export default function CreateSale({ navigate, mode = "sale" }) {
               <FormGroup label="Customer (registered)">
                 <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                   <FormSelect style={{ flex:1 }} value={form.customer}
-                    onChange={e => setForm(p => ({ ...p, customer:e.target.value, customerName:"" }))}>
+                    onChange={e => {
+                      const customer = customers.find(item => item._id === e.target.value);
+                      setForm(p => ({ ...p, customer:e.target.value, customerName:"" }));
+                      const party = partyDetailsFromCustomer(customer);
+                      setInvoiceDetails(prev => ({ ...prev, billTo:party, shipTo:{ ...party } }));
+                    }}>
                     <option value="">Select customer</option>
                     {customers.map(c => (
                       <option key={c._id} value={c._id}>{c.name} – {c.phone}</option>
@@ -306,11 +313,10 @@ export default function CreateSale({ navigate, mode = "sale" }) {
 
         <InvoiceDetailsFields value={invoiceDetails} onChange={setInvoiceDetails} />
 
-        {!isOrder && (
-          <div style={{ marginBottom:20 }}>
+        <div style={{ marginBottom:20 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-              <div style={{ fontWeight:800, fontSize:13, color:"#1e293b" }}>Payment Entries</div>
-              <Btn sm color="blue" onClick={addPayment}>+ Add Payment</Btn>
+              <div style={{ fontWeight:800, fontSize:13, color:"#1e293b" }}>{isOrder ? "Advance Payment Entries" : "Payment Entries"}</div>
+              <Btn sm color="blue" onClick={addPayment}>+ Add {isOrder ? "Advance" : "Payment"}</Btn>
             </div>
             <div style={{ border:"1px solid #e2e8f0", borderRadius:8, overflow:"hidden" }}>
               {payments.map((payment, i) => (
@@ -325,8 +331,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+        </div>
 
         {/* Items */}
         <div style={{ marginBottom:20 }}>
@@ -367,7 +372,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                           <option value="">Select product</option>
                           {products.map(p => (
                             <option key={p._id} value={p._id}>
-                              {p.name} | {p.modelNumber} | Stk:{p.stock}
+                            {p.name} | {p.modelNumber} | {p.productType || "Manufacturing"} | Stk:{p.stock}
                             </option>
                           ))}
                         </select>

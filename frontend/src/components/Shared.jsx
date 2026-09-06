@@ -1,7 +1,7 @@
 // Shared UI components used across all pages
 
 export const PageTitle = ({ children }) => (
-  <div style={{ fontSize: 22, fontWeight: 700, color: "#1e293b", textAlign: "center", marginBottom: 18, fontFamily: "Georgia,serif" }}>
+  <div style={{ width: "100%", maxWidth: "100%", fontSize: 22, fontWeight: 700, color: "#1e293b", textAlign: "center", marginBottom: 18, fontFamily: "Georgia,serif", overflowWrap: "anywhere" }}>
     {children}
   </div>
 );
@@ -27,6 +27,7 @@ export const Btn = ({ children, onClick, color = "teal", sm, disabled }) => {
         cursor: disabled ? "not-allowed" : "pointer",
         border: "none",
         display: "inline-flex", alignItems: "center", gap: 5,
+        justifyContent: "center", whiteSpace: "nowrap", minHeight: sm ? 29 : 34,
         transition: "all 0.15s",
         opacity: disabled ? 0.6 : 1,
         ...colors[color],
@@ -49,12 +50,12 @@ export const Input = ({ placeholder, type = "text", style = {}, value, onChange 
     placeholder={placeholder}
     value={value}
     onChange={onChange}
-    style={{ padding: "7px 11px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, background: "#f9fafb", outline: "none", ...style }}
+    style={{ maxWidth: "100%", padding: "7px 11px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, background: "#f9fafb", outline: "none", boxSizing: "border-box", ...style }}
   />
 );
 
 export const TableWrap = ({ children }) => (
-  <div style={{ background: "#fff", borderRadius: 8, overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", overflowX: "auto" }}>
+  <div style={{ width: "100%", maxWidth: "100%", minWidth: 0, background: "#fff", borderRadius: 8, overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", overflowX: "auto" }}>
     {children}
   </div>
 );
@@ -99,7 +100,7 @@ export const StatsGrid = ({ cards }) => (
 );
 
 export const FormGroup = ({ label, children }) => (
-  <div style={{ marginBottom: 14 }}>
+  <div style={{ marginBottom: 14, minWidth: 0 }}>
     <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 5 }}>{label}</label>
     {children}
   </div>

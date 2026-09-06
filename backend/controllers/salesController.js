@@ -29,6 +29,7 @@ async function resolveProduct(item, fallbackVendorId) {
       name:          np.name,
       modelNumber:   np.modelNumber,
       brand:         np.brand || "",
+      productType:   np.productType || "Manufacturing",
       vendor:        np.vendor || fallbackVendorId || undefined,
       purchasePrice: +np.purchasePrice || 0,
       sellingPrice:  +np.sellingPrice  || 0,
@@ -103,6 +104,7 @@ async function buildSaleItems(items = []) {
       warehouse: normalizeWarehouseName(item.warehouse), gstRate, gstAmount,
       transportAmount, transportGstRate,
       transportGstAmount: (transportAmount * transportGstRate) / 100,
+      productType: product.productType || "Manufacturing",
     });
   }
   return enrichedItems;
@@ -118,12 +120,32 @@ async function applySaleIncentive(sale) {
   }
   const employee = await Employee.findById(sale.salesEmployee);
   if (!employee) throw new Error("Selected sales employee was not found.");
+  const productIds = sale.items.map(item => item.product).filter(Boolean);
+  const products = await Product.find({ _id: { $in: productIds } }).select("productType").lean();
+  const typeByProduct = new Map(products.map(product => [String(product._id), product.productType || "Manufacturing"]));
   sale.salesEmployeeName = employee.name;
-  sale.incentivePercent = +employee.incentivePercent || 0;
   sale.incentiveBaseAmount = Math.round(sale.items.reduce(
     (sum, item) => sum + ((+item.rate || 0) * (+item.qty || 0)), 0
   ) * 100) / 100;
-  sale.incentiveAmount = Math.round((sale.incentiveBaseAmount * sale.incentivePercent / 100) * 100) / 100;
+  let totalIncentive = 0;
+  const legacyPercentage = +employee.incentivePercent || 0;
+  const manufacturingPercentage = (+employee.manufacturingIncentivePercent || +employee.importedIncentivePercent)
+    ? (+employee.manufacturingIncentivePercent || 0) : legacyPercentage;
+  const importedPercentage = (+employee.manufacturingIncentivePercent || +employee.importedIncentivePercent)
+    ? (+employee.importedIncentivePercent || 0) : legacyPercentage;
+  sale.items.forEach(item => {
+    const productType = typeByProduct.get(String(item.product)) || item.productType || "Manufacturing";
+    const percentage = productType === "Imported"
+      ? importedPercentage
+      : manufacturingPercentage;
+    const base = (+item.rate || 0) * (+item.qty || 0);
+    item.productType = productType;
+    item.incentivePercent = percentage;
+    item.incentiveAmount = Math.round((base * percentage / 100) * 100) / 100;
+    totalIncentive += item.incentiveAmount;
+  });
+  sale.incentivePercent = 0;
+  sale.incentiveAmount = Math.round(totalIncentive * 100) / 100;
 }
 
 function currentWarehouseRows(product) {
@@ -299,6 +321,7 @@ exports.createSale = async (req, res) => {
         transportAmount,
         transportGstRate,
         transportGstAmount: (transportAmount * transportGstRate) / 100,
+        productType: product.productType || "Manufacturing",
       });
     }
 
@@ -373,15 +396,31 @@ exports.getOrders = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const { items, customer, ...rest } = req.body;
+    const { items, customer, amountPaid, payments, ...rest } = req.body;
+    const cleanPayments = Array.isArray(payments) ? payments.filter(payment => +payment.amount > 0).map(payment => ({
+      ...payment, amount: +payment.amount, recordedBy: req.user?._id,
+      recordedByName: req.user?.name || req.user?.username || "Staff",
+    })) : [];
     const order = await Order.create({
       ...rest,
       customer: customer || undefined,
       items: await buildSaleItems(items),
-      amountPaid: 0,
+      amountPaid: cleanPayments.reduce((sum, payment) => sum + payment.amount, 0),
+      payments: cleanPayments,
       createdBy: req.user?._id,
       createdByName: req.user?.name || req.user?.username || "Staff",
     });
+    if (order.amountPaid > order.grandTotal) {
+      let remaining = order.grandTotal;
+      order.payments = order.payments.map(payment => {
+        const kept = Math.min(+payment.amount || 0, remaining);
+        remaining -= kept;
+        payment.amount = kept;
+        return payment;
+      }).filter(payment => payment.amount > 0);
+      order.amountPaid = order.grandTotal;
+      await order.save();
+    }
     if (order.salesEmployee) {
       const employee = await Employee.findById(order.salesEmployee);
       if (!employee) return res.status(400).json({ success:false, message:"Selected sales employee was not found." });
@@ -403,7 +442,7 @@ exports.updateOrder = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
     const before = order.toObject();
-    const { items, customer, customerName, saleType, paymentMode, date, isInterState, notes, invoiceDetails, salesEmployee } = req.body;
+    const { items, customer, customerName, saleType, paymentMode, date, isInterState, notes, invoiceDetails, salesEmployee, amountPaid } = req.body;
     if (Array.isArray(items)) {
       if (!items.length) return res.status(400).json({ success: false, message: "Add at least one order item." });
       order.items = await buildSaleItems(items);
@@ -424,6 +463,14 @@ exports.updateOrder = async (req, res) => {
     }
 
     await order.save();
+    if (amountPaid !== undefined) {
+      const nextAdvance = Math.min(order.grandTotal, Math.max(0, +amountPaid || 0));
+      if (nextAdvance !== order.amountPaid) {
+        order.amountPaid = nextAdvance;
+        order.payments = nextAdvance > 0 ? [{ amount:nextAdvance, paymentMode:paymentMode === "Credit" ? "Cash" : (paymentMode || "Cash"), date:date || new Date(), notes:"Order advance updated", recordedBy:req.user?._id, recordedByName:req.user?.name || req.user?.username || "Staff" }] : [];
+        await order.save();
+      }
+    }
     await order.populate("customer", "name phone");
     await order.populate("items.product", "name modelNumber gstRate");
     await logActivity(req, {
@@ -441,7 +488,8 @@ exports.convertOrderToSale = async (req, res) => {
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
     if (order.status !== "Open")
       return res.status(400).json({ success: false, message: `Only open orders can be converted. Current status: ${order.status}` });
-    const convertedAmountPaid = +req.body.amountPaid || 0;
+    const additionalAmountPaid = +req.body.amountPaid || 0;
+    const convertedAmountPaid = Math.min(order.grandTotal, (+order.amountPaid || 0) + additionalAmountPaid);
     const convertedPaymentMode = req.body.paymentMode || order.paymentMode || "Credit";
     const convertedByName = req.user?.name || req.user?.username || "Staff";
     const sale = new Sale({
@@ -449,14 +497,14 @@ exports.convertOrderToSale = async (req, res) => {
       saleType: order.saleType, paymentMode: convertedPaymentMode,
       date: req.body.date || new Date(), items: order.items.map(item => item.toObject()),
       amountPaid: convertedAmountPaid,
-      payments: convertedAmountPaid > 0 ? [{
-        amount: convertedAmountPaid,
+      payments: [ ...(order.payments || []).map(payment => payment.toObject ? payment.toObject() : payment), ...(additionalAmountPaid > 0 ? [{
+        amount: Math.min(additionalAmountPaid, Math.max(0, order.grandTotal - (+order.amountPaid || 0))),
         paymentMode: convertedPaymentMode === "Credit" ? "Cash" : convertedPaymentMode,
         date: req.body.date || new Date(),
         notes: "Payment recorded during order conversion",
         recordedBy: req.user?._id,
         recordedByName: convertedByName,
-      }] : [],
+      }] : []) ].filter(payment => +payment.amount > 0),
       isInterState: order.isInterState,
       notes: order.notes, invoiceDetails: order.invoiceDetails || {}, sourceOrder: order._id,
       salesEmployee: order.salesEmployee || undefined, salesEmployeeName: order.salesEmployeeName || "",
@@ -1069,6 +1117,7 @@ exports.updateSaleDetails = async (req, res) => {
           transportAmount,
           transportGstRate,
           transportGstAmount: (transportAmount * transportGstRate) / 100,
+          productType: product.productType || "Manufacturing",
         });
       }
       sale.items = enrichedItems;

@@ -13,6 +13,7 @@ const productSchema = new mongoose.Schema(
     name:          { type: String, required: true, trim: true },
     modelNumber:   { type: String, required: true, trim: true, unique: true },
     brand:         { type: String, trim: true },
+    productType:   { type: String, enum: ["Manufacturing", "Imported"], default: "Manufacturing", required: true },
     vendor:        { type: mongoose.Schema.Types.ObjectId, ref: "Vendor" },
     purchasePrice: { type: Number, required: true, min: 0, default: 0 },
     sellingPrice:  { type: Number, required: false, min: 0, default: 0 },

@@ -53,6 +53,7 @@ export default function ProductList({ navigate }) {
     name:         p.name,
     modelNumber:  p.modelNumber,
     brand:        p.brand || "",
+    productType:  p.productType || "Manufacturing",
     vendor:       p.vendor?._id || "",
     purchasePrice:String(p.purchasePrice),
     sellingPrice: String(p.sellingPrice),
@@ -74,6 +75,7 @@ export default function ProductList({ navigate }) {
         name:          editProd.name,
         modelNumber:   editProd.modelNumber,
         brand:         editProd.brand,
+        productType:   editProd.productType,
         vendor:        editProd.vendor || undefined,
         purchasePrice: +editProd.purchasePrice,
         sellingPrice:  +editProd.sellingPrice,
@@ -117,12 +119,12 @@ export default function ProductList({ navigate }) {
         <TableWrap>
           <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
             <thead>
-              <tr>{["Product","Model No.","Brand","Vendor","Warehouse","Purchase ₹","Selling ₹",
+              <tr>{["Product","Model No.","Type","Brand","Vendor","Warehouse","Purchase ₹","Selling ₹",
                 "Margin","Stock","GST%","Action"].map(h=><Th key={h}>{h}</Th>)}</tr>
             </thead>
             <tbody>
               {products.length === 0
-                ? <tr><td colSpan={11}><EmptyState text="No products found. Add one!" /></td></tr>
+                ? <tr><td colSpan={12}><EmptyState text="No products found. Add one!" /></td></tr>
                 : products.map(p => (
                   <tr key={p._id} style={{ borderBottom:"1px solid #f1f5f9" }}
                     onMouseEnter={e=>e.currentTarget.style.background="#f0fdfa"}
@@ -131,6 +133,7 @@ export default function ProductList({ navigate }) {
                     <Td style={{ fontFamily:"monospace", color:"#0ea5e9", fontSize:11 }}>
                       {p.modelNumber}
                     </Td>
+                    <Td><Badge color={p.productType === "Imported" ? "purple" : "green"}>{p.productType || "Manufacturing"}</Badge></Td>
                     <Td>{p.brand||"—"}</Td>
                     <Td style={{ color:"#64748b" }}>{p.vendor?.name||"—"}</Td>
                     <Td style={{ color:"#475569", fontSize:11, maxWidth:190 }}>
@@ -188,6 +191,7 @@ export default function ProductList({ navigate }) {
               <FormGroup label="Brand">
                 <FormInput value={editProd.brand} onChange={setE("brand")} />
               </FormGroup>
+              <FormGroup label="Product Type *"><FormSelect value={editProd.productType} onChange={setE("productType")}><option>Manufacturing</option><option>Imported</option></FormSelect></FormGroup>
               <FormGroup label="Vendor">
                 <FormSelect value={editProd.vendor} onChange={setE("vendor")}>
                   <option value="">Select vendor</option>

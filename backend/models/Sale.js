@@ -17,6 +17,9 @@ const saleItemSchema = new mongoose.Schema({
   transportAmount: { type: Number, default: 0 },
   transportGstRate: { type: Number, default: 0 },
   transportGstAmount: { type: Number, default: 0 },
+  productType: { type: String, enum: ["Manufacturing", "Imported"], default: "Manufacturing" },
+  incentivePercent: { type: Number, min: 0, default: 0 },
+  incentiveAmount: { type: Number, min: 0, default: 0 },
 });
 
 const salePaymentSchema = new mongoose.Schema({

@@ -18,6 +18,7 @@ export default function QuickAddProduct({ mode="purchase", vendorId, defaultRate
     name:          "",
     modelNumber:   "",
     brand:         "",
+    productType:   "Manufacturing",
     purchasePrice: defaultRate || "",
     sellingPrice:  "",
     gstRate:       "18",
@@ -46,6 +47,7 @@ export default function QuickAddProduct({ mode="purchase", vendorId, defaultRate
         name:          form.name,
         modelNumber:   form.modelNumber,
         brand:         form.brand,
+        productType:   form.productType,
         vendor:        vendorId || undefined,
         purchasePrice: +form.purchasePrice,
         sellingPrice:  +form.sellingPrice || 0,
@@ -102,6 +104,7 @@ export default function QuickAddProduct({ mode="purchase", vendorId, defaultRate
           <FormInput placeholder="e.g. Prestige"
             value={form.brand} onChange={set("brand")} />
         </FormGroup>
+        <FormGroup label="Product Type *"><FormSelect value={form.productType} onChange={set("productType")}><option>Manufacturing</option><option>Imported</option></FormSelect></FormGroup>
         <FormGroup label={`Purchase Price (₹)${mode === "sale" ? " (optional)" : " *"}`}>
           <FormInput type="number" placeholder="0"
             value={form.purchasePrice} onChange={set("purchasePrice")} />

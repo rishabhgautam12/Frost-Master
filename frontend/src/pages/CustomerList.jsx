@@ -10,7 +10,7 @@ const stColor   = { Active:"green", VIP:"purple", Inactive:"red" };
 const typeColor = { Retail:"green", Wholesale:"blue", VIP:"purple", Dealer:"yellow", Online:"gray" };
 
 const BLANK = { name:"", phone:"", email:"", customerType:"Retail",
-                city:"", address:"", gstin:"", creditLimit:"", notes:"" };
+                city:"", stateName:"", stateCode:"", address:"", gstin:"", creditLimit:"", notes:"" };
 
 const normalizePhone = value => value.replace(/\D/g, "").slice(0, 10);
 const isValidPhone = value => /^\d{10}$/.test(value);
@@ -73,6 +73,8 @@ export default function CustomerList({ navigate }) {
       email:       c.email || "",
       customerType:c.customerType || "Retail",
       city:        c.city || "",
+      stateName:   c.stateName || "",
+      stateCode:   c.stateCode || "",
       address:     c.address || "",
       gstin:       c.gstin || "",
       creditLimit: String(c.creditLimit || ""),
@@ -125,6 +127,8 @@ export default function CustomerList({ navigate }) {
         <FormGroup label="GSTIN">
           <FormInput placeholder="27AAAAA0000A1Z5" value={form.gstin} onChange={set("gstin")} />
         </FormGroup>
+        <FormGroup label="State Name"><FormInput placeholder="Delhi" value={form.stateName} onChange={set("stateName")} /></FormGroup>
+        <FormGroup label="State Code"><FormInput placeholder="07" value={form.stateCode} onChange={set("stateCode")} /></FormGroup>
         <FormGroup label="Credit Limit (₹)">
           <FormInput type="number" placeholder="0" value={form.creditLimit}
             onChange={set("creditLimit")} />

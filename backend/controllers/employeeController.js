@@ -9,7 +9,7 @@ const Sale = require("../models/Sale");
 const { createdChanges, logActivity, toChanges } = require("../utils/auditLogger");
 
 const warehouseFields = ["name", "location", "notes", "isActive"];
-const employeeFields = ["name", "phone", "role", "warehouse", "monthlySalary", "incentivePercent", "joiningDate", "status", "notes"];
+const employeeFields = ["name", "phone", "role", "warehouse", "monthlySalary", "manufacturingIncentivePercent", "importedIncentivePercent", "joiningDate", "status", "notes"];
 
 function requireAdmin(req, res) {
   if (req.user.role !== "admin") {
@@ -105,12 +105,13 @@ async function earnedForMonth(employee, month) {
     salesEmployee: employee._id,
     status: { $ne: "Cancelled" },
     date: { $gte: monthStart, $lt: nextMonth },
-  }).select("invoiceNo date items.rate items.qty incentivePercent incentiveBaseAmount incentiveAmount").lean();
+  }).select("invoiceNo date items.rate items.qty items.productType items.incentivePercent items.incentiveAmount incentiveBaseAmount incentiveAmount").lean();
   const calculatedIncentiveSales = incentiveSales.map((sale) => {
     const incentiveBaseAmount = Math.round((sale.items || []).reduce(
       (sum, item) => sum + ((+item.rate || 0) * (+item.qty || 0)), 0
     ) * 100) / 100;
-    const incentiveAmount = Math.round((incentiveBaseAmount * (+sale.incentivePercent || 0) / 100) * 100) / 100;
+    const itemIncentive = (sale.items || []).reduce((sum, item) => sum + (+item.incentiveAmount || 0), 0);
+    const incentiveAmount = Math.round((itemIncentive || +sale.incentiveAmount || 0) * 100) / 100;
     return { ...sale, incentiveBaseAmount, incentiveAmount };
   });
   const incentiveEarned = Math.round(calculatedIncentiveSales.reduce((sum, sale) => sum + sale.incentiveAmount, 0) * 100) / 100;

@@ -2,7 +2,7 @@ const Product = require("../models/Product");
 const Purchase = require("../models/Purchase");
 const { createdChanges, logActivity, toChanges } = require("../utils/auditLogger");
 
-const productFields = ["name", "modelNumber", "brand", "vendor", "purchasePrice", "sellingPrice", "stock", "warehouses", "minStockAlert", "gstRate", "description"];
+const productFields = ["name", "modelNumber", "brand", "productType", "vendor", "purchasePrice", "sellingPrice", "stock", "warehouses", "minStockAlert", "gstRate", "description"];
 
 function normalizeWarehouses(warehouses, fallbackStock) {
   const rows = Array.isArray(warehouses) ? warehouses : [];

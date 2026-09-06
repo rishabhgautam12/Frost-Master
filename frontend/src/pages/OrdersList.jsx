@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { PageTitle, Btn, Badge, TableWrap, Th, Td, LoadingSpinner, ErrorMsg, EmptyState, Modal, FormGroup, FormInput, FormSelect, SuccessToast } from "../components/Shared";
 import { salesAPI, customerAPI, productAPI, employeeAPI } from "../services/api";
-import InvoiceDetailsFields from "../components/InvoiceDetailsFields";
+import InvoiceDetailsFields, { partyDetailsFromCustomer } from "../components/InvoiceDetailsFields";
 import TransactionDetailsModal from "../components/TransactionDetailsModal";
 
 const statusColor = { Open: "yellow", Converted: "green", Cancelled: "gray" };
@@ -17,7 +17,7 @@ function OrderEditModal({ order, onClose, onDone }) {
     customer: order.customer?._id || order.customer || "", customerName: order.customerName || "",
     saleType: order.saleType || "GST Invoice", paymentMode: order.paymentMode || "Credit",
     date: new Date(order.date).toISOString().slice(0, 10), isInterState: !!order.isInterState, notes: order.notes || "",
-    invoiceDetails: order.invoiceDetails || { billTo:{}, shipTo:{} }, salesEmployee: order.salesEmployee?._id || order.salesEmployee || "",
+    invoiceDetails: order.invoiceDetails || { billTo:{}, shipTo:{} }, salesEmployee: order.salesEmployee?._id || order.salesEmployee || "", amountPaid: order.amountPaid || 0,
   });
   const [items, setItems] = useState((order.items || []).map(item => ({
     product: item.product?._id || item.product || "", description: item.description || "", warehouse: item.warehouse || "Main Warehouse",
@@ -25,7 +25,16 @@ function OrderEditModal({ order, onClose, onDone }) {
     gstRate: item.gstRate ?? 18, transportAmount: item.transportAmount || 0, transportGstRate: item.transportGstRate || 0,
   })));
 
-  useEffect(() => { Promise.all([customerAPI.getAll(), productAPI.getAll(), employeeAPI.getAll()]).then(([c, p, e]) => { setCustomers(c.data || []); setProducts(p.data || []); setEmployees(e.data || []); }).catch(() => {}); }, []);
+  useEffect(() => { Promise.all([customerAPI.getAll(), productAPI.getAll(), employeeAPI.getAll()]).then(([c, p, e]) => {
+    setCustomers(c.data || []); setProducts(p.data || []); setEmployees(e.data || []);
+    setForm(prev => {
+      const customer=(c.data || []).find(item=>item._id===prev.customer);
+      if(!customer) return prev;
+      const party=partyDetailsFromCustomer(customer); const current=prev.invoiceDetails || {};
+      const hasCustomConsignee=current.shipTo?.name || current.shipTo?.address || current.shipTo?.gstin;
+      return {...prev,invoiceDetails:{...current,billTo:party,shipTo:hasCustomConsignee?current.shipTo:{...party}}};
+    });
+  }).catch(() => {}); }, []);
   const changeForm = key => e => setForm(prev => ({ ...prev, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
   const changeItem = (index, key, value) => setItems(prev => prev.map((item, i) => {
     if (i !== index) return item;
@@ -63,9 +72,10 @@ function OrderEditModal({ order, onClose, onDone }) {
       <FormGroup label="Order Date"><FormInput type="date" value={form.date} onChange={changeForm("date")} /></FormGroup>
       <FormGroup label="Sale Type"><FormSelect value={form.saleType} onChange={changeForm("saleType")}>{["GST Invoice","Cash Sale"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
       <FormGroup label="Payment Mode"><FormSelect value={form.paymentMode} onChange={changeForm("paymentMode")}>{["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
-      <FormGroup label="Customer"><FormSelect value={form.customer} onChange={e => setForm(p => ({...p, customer:e.target.value, customerName:e.target.value ? "" : p.customerName}))}><option value="">Walk-in customer</option>{customers.map(c => <option key={c._id} value={c._id}>{c.name} - {c.phone}</option>)}</FormSelect></FormGroup>
+      <FormGroup label="Customer"><FormSelect value={form.customer} onChange={e => { const customer=customers.find(item=>item._id===e.target.value); const party=partyDetailsFromCustomer(customer); setForm(p => ({...p, customer:e.target.value, customerName:e.target.value ? "" : p.customerName, invoiceDetails:{...(p.invoiceDetails||{}),billTo:party,shipTo:{...party}}})); }}><option value="">Walk-in customer</option>{customers.map(c => <option key={c._id} value={c._id}>{c.name} - {c.phone}</option>)}</FormSelect></FormGroup>
       <FormGroup label="Walk-in Customer Name"><FormInput value={form.customerName} onChange={changeForm("customerName")} /></FormGroup>
-      <FormGroup label="Sale Made By (Employee)"><FormSelect value={form.salesEmployee} onChange={changeForm("salesEmployee")}><option value="">Select employee</option>{employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name} ({employee.incentivePercent || 0}%)</option>)}</FormSelect></FormGroup>
+      <FormGroup label="Sale Made By (Employee)"><FormSelect value={form.salesEmployee} onChange={changeForm("salesEmployee")}><option value="">Select employee</option>{employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name} (M: {employee.manufacturingIncentivePercent || 0}% / I: {employee.importedIncentivePercent || 0}%)</option>)}</FormSelect></FormGroup>
+      <FormGroup label="Advance Paid"><FormInput type="number" min="0" max={total || undefined} value={form.amountPaid} onChange={changeForm("amountPaid")} /></FormGroup>
     </div>
     <label style={{ display:"flex", gap:7, alignItems:"center", marginBottom:12, fontWeight:700 }}><input type="checkbox" checked={form.isInterState} onChange={changeForm("isInterState")} /> Inter-state order</label>
     <InvoiceDetailsFields value={form.invoiceDetails} onChange={invoiceDetails => setForm(prev => ({ ...prev, invoiceDetails }))} />
@@ -139,16 +149,16 @@ export default function OrdersList({ navigate }) {
     <div>
       <PageTitle>All Orders</PageTitle>
       {toast && <SuccessToast msg={toast} />}
-      <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"end", marginBottom:14 }}>
-        <Btn color="teal" onClick={() => navigate("order-create")}>+ Create Order</Btn>
+      <div className="order-filter-bar" style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"flex-end", marginBottom:14 }}>
+        <div style={{ marginBottom:14 }}><Btn color="teal" onClick={() => navigate("order-create")}>+ Create Order</Btn></div>
         <FormGroup label="Filter by month"><FormInput type="month" value={monthFilter} onChange={e => { setMonthFilter(e.target.value); if (e.target.value) setDateFilter(""); }} /></FormGroup>
         <FormGroup label="Filter by date"><FormInput type="date" value={dateFilter} onChange={e => { setDateFilter(e.target.value); if (e.target.value) setMonthFilter(""); }} /></FormGroup>
-        <Btn color="blue" onClick={() => load()}>Filter</Btn>
-        <Btn color="cancel" onClick={() => { setMonthFilter(""); setDateFilter(""); load({ monthFilter:"", dateFilter:"" }); }}>Reset</Btn>
+        <div style={{ marginBottom:14 }}><Btn color="blue" onClick={() => load()}>Filter</Btn></div>
+        <div style={{ marginBottom:14 }}><Btn color="cancel" onClick={() => { setMonthFilter(""); setDateFilter(""); load({ monthFilter:"", dateFilter:"" }); }}>Reset</Btn></div>
       </div>
       {loading ? <LoadingSpinner /> : error ? <ErrorMsg message={error} onRetry={load} /> : orders.length === 0 ? <EmptyState text="No orders found." /> : (
         <TableWrap><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-          <thead><tr>{["Order No.", "Order Date", "Customer", "Items", "Total", "Status", "Converted Sale", "Actions"].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
+          <thead><tr>{["Order No.", "Order Date", "Customer", "Items", "Total", "Advance Paid", "Status", "Converted Sale", "Actions"].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
           <tbody>{orders.map(order => (
             <tr key={order._id} style={{ borderBottom: "1px solid #f1f5f9" }}>
               <Td style={{ fontWeight: 800 }}>{order.orderNo}</Td>
@@ -156,6 +166,7 @@ export default function OrdersList({ navigate }) {
               <Td>{order.customer?.name || order.customerName || "Walk-in"}</Td>
               <Td>{(order.items || []).map((item, index) => <div key={item._id || index} style={{ marginBottom:4 }}><strong>{item.productName || item.product?.name}</strong>{item.description && <div style={{ color:"#64748b", fontSize:10.5, whiteSpace:"pre-wrap" }}>{item.description}</div>}</div>)}</Td>
               <Td style={{ fontWeight: 800 }}>₹{(+order.grandTotal || 0).toLocaleString("en-IN")}</Td>
+              <Td style={{ color:"#15803d", fontWeight:800 }}>₹{(+order.amountPaid || 0).toLocaleString("en-IN")}</Td>
               <Td><Badge color={statusColor[order.status] || "gray"}>{order.status}</Badge></Td>
               <Td>{order.convertedSale ? `${order.convertedSale.invoiceNo} (${new Date(order.convertedSale.date).toLocaleDateString("en-IN")})` : "-"}</Td>
               <Td><div style={{ display:"flex", gap:6, flexWrap:"wrap" }}><Btn sm color="teal" onClick={() => setViewing(order)}>View Details</Btn><Btn sm color="blue" onClick={() => setEditing(order)}>Edit Details</Btn>{order.status === "Open" && <Btn sm color="green" onClick={() => openConvert(order)}>Convert to Sale</Btn>}</div></Td>
@@ -168,7 +179,8 @@ export default function OrdersList({ navigate }) {
         <div style={{ color: "#64748b", fontSize: 12, marginBottom: 14 }}>The order will remain in this list with its original date. The new sale will use the date below.</div>
         <FormGroup label="Sale Date"><FormInput type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} /></FormGroup>
         <FormGroup label="Payment Mode"><FormSelect value={form.paymentMode} onChange={e => setForm(p => ({ ...p, paymentMode: e.target.value }))}>{["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
-        <FormGroup label="Amount Paid"><FormInput type="number" min="0" value={form.amountPaid} onChange={e => setForm(p => ({ ...p, amountPaid: e.target.value }))} placeholder="0" /></FormGroup>
+        {converting?.amountPaid > 0 && <div style={{ background:"#f0fdf4", border:"1px solid #86efac", color:"#166534", padding:10, borderRadius:7, marginBottom:10 }}>Order advance already received: <strong>₹{(+converting.amountPaid).toLocaleString("en-IN")}</strong></div>}
+        <FormGroup label="Additional Amount Paid During Conversion"><FormInput type="number" min="0" value={form.amountPaid} onChange={e => setForm(p => ({ ...p, amountPaid: e.target.value }))} placeholder="0" /></FormGroup>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}><Btn color="cancel" onClick={() => setConverting(null)}>Cancel</Btn><Btn color="green" disabled={saving} onClick={convert}>{saving ? "Converting..." : "Convert to Sale"}</Btn></div>
       </Modal>
       {editing && <OrderEditModal order={editing} onClose={() => setEditing(null)} onDone={edited} />}

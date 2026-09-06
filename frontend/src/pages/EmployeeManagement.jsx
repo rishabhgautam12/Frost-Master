@@ -90,7 +90,7 @@ export default function EmployeeManagement({ user }) {
   const [employeeOpen, setEmployeeOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [employeeForm, setEmployeeForm] = useState({
-    name: "", phone: "", role: "", monthlySalary: "", incentivePercent: "0", joiningDate: "", status: "Active", notes: "",
+    name: "", phone: "", role: "", monthlySalary: "", manufacturingIncentivePercent: "0", importedIncentivePercent: "0", joiningDate: "", status: "Active", notes: "",
   });
   const [attendancePicker, setAttendancePicker] = useState(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -232,7 +232,7 @@ export default function EmployeeManagement({ user }) {
 
   const openCreateEmployee = () => {
     setEditingEmployee(null);
-    setEmployeeForm({ name: "", phone: "", role: "", monthlySalary: "", incentivePercent: "0", joiningDate: "", status: "Active", notes: "" });
+    setEmployeeForm({ name: "", phone: "", role: "", monthlySalary: "", manufacturingIncentivePercent: "0", importedIncentivePercent: "0", joiningDate: "", status: "Active", notes: "" });
     setEmployeeOpen(true);
   };
 
@@ -245,7 +245,8 @@ export default function EmployeeManagement({ user }) {
       phone: employee.phone || "",
       role: employee.role || "",
       monthlySalary: String(employee.monthlySalary || ""),
-      incentivePercent: String(employee.incentivePercent || 0),
+      manufacturingIncentivePercent: String(employee.manufacturingIncentivePercent ?? employee.incentivePercent ?? 0),
+      importedIncentivePercent: String(employee.importedIncentivePercent ?? employee.incentivePercent ?? 0),
       joiningDate: employee.joiningDate ? new Date(employee.joiningDate).toISOString().split("T")[0] : "",
       status: employee.status || "Active",
       notes: employee.notes || "",
@@ -260,7 +261,8 @@ export default function EmployeeManagement({ user }) {
         ...employeeForm,
         warehouse: editingEmployee?.warehouse?._id || editingEmployee?.warehouse || selectedWarehouse,
         monthlySalary: +employeeForm.monthlySalary || 0,
-        incentivePercent: +employeeForm.incentivePercent || 0,
+        manufacturingIncentivePercent: +employeeForm.manufacturingIncentivePercent || 0,
+        importedIncentivePercent: +employeeForm.importedIncentivePercent || 0,
         joiningDate: employeeForm.joiningDate || undefined,
       };
       const res = editingEmployee
@@ -269,7 +271,7 @@ export default function EmployeeManagement({ user }) {
       showToast(editingEmployee ? "Employee updated" : "Employee added");
       setEmployeeOpen(false);
       setEditingEmployee(null);
-      setEmployeeForm({ name: "", phone: "", role: "", monthlySalary: "", incentivePercent: "0", joiningDate: "", status: "Active", notes: "" });
+      setEmployeeForm({ name: "", phone: "", role: "", monthlySalary: "", manufacturingIncentivePercent: "0", importedIncentivePercent: "0", joiningDate: "", status: "Active", notes: "" });
       await loadEmployees();
       setSelectedEmployee(res.data);
       setDetail((prev) => prev ? { ...prev, employee: res.data } : prev);
@@ -926,7 +928,8 @@ export default function EmployeeManagement({ user }) {
           <FormGroup label="Phone"><FormInput value={employeeForm.phone} onChange={(e) => setEmployeeForm((p) => ({ ...p, phone: e.target.value }))} /></FormGroup>
           <FormGroup label="Role"><FormInput value={employeeForm.role} onChange={(e) => setEmployeeForm((p) => ({ ...p, role: e.target.value }))} placeholder="Loader, Manager, Helper" /></FormGroup>
           <FormGroup label="Monthly Salary *"><FormInput type="number" value={employeeForm.monthlySalary} onChange={(e) => setEmployeeForm((p) => ({ ...p, monthlySalary: e.target.value }))} /></FormGroup>
-          <FormGroup label="Sales Incentive %"><FormInput type="number" min="0" max="100" step="0.01" value={employeeForm.incentivePercent} onChange={(e) => setEmployeeForm((p) => ({ ...p, incentivePercent: e.target.value }))} /></FormGroup>
+          <FormGroup label="Manufacturing Incentive %"><FormInput type="number" min="0" max="100" step="0.01" value={employeeForm.manufacturingIncentivePercent} onChange={(e) => setEmployeeForm((p) => ({ ...p, manufacturingIncentivePercent: e.target.value }))} /></FormGroup>
+          <FormGroup label="Imported Incentive %"><FormInput type="number" min="0" max="100" step="0.01" value={employeeForm.importedIncentivePercent} onChange={(e) => setEmployeeForm((p) => ({ ...p, importedIncentivePercent: e.target.value }))} /></FormGroup>
           <FormGroup label="Joining Date"><FormInput type="date" value={employeeForm.joiningDate} onChange={(e) => setEmployeeForm((p) => ({ ...p, joiningDate: e.target.value }))} /></FormGroup>
           <FormGroup label="Status">
             <FormSelect value={employeeForm.status} onChange={(e) => setEmployeeForm((p) => ({ ...p, status: e.target.value }))}>

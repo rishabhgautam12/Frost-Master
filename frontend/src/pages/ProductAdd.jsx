@@ -6,7 +6,7 @@ import WarehouseStockEditor, { defaultWarehouseRows, warehousePayload, warehouse
 export default function ProductAdd({ navigate }) {
   const [vendors, setVendors] = useState([]);
   const [form,    setForm]    = useState({
-    name:"", modelNumber:"", brand:"", vendor:"",
+    name:"", modelNumber:"", brand:"", productType:"Manufacturing", vendor:"",
     purchasePrice:"", sellingPrice:"", stock:"",
     minStockAlert:"5", gstRate:"18", description:""
   });
@@ -36,6 +36,7 @@ export default function ProductAdd({ navigate }) {
         name:          form.name,
         modelNumber:   form.modelNumber,
         brand:         form.brand,
+        productType:   form.productType,
         vendor:        form.vendor || undefined,
         purchasePrice: +form.purchasePrice,
         sellingPrice:  +form.sellingPrice,
@@ -78,6 +79,9 @@ export default function ProductAdd({ navigate }) {
           </FormGroup>
           <FormGroup label="Brand">
             <FormInput placeholder="e.g. Prestige" value={form.brand} onChange={set("brand")} />
+          </FormGroup>
+          <FormGroup label="Product Type *">
+            <FormSelect value={form.productType} onChange={set("productType")}><option>Manufacturing</option><option>Imported</option></FormSelect>
           </FormGroup>
           <FormGroup label="Vendor">
             <FormSelect value={form.vendor} onChange={set("vendor")}>

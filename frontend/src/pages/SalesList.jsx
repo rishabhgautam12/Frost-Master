@@ -6,7 +6,7 @@ import {
 } from "../components/Shared";
 import { salesAPI, customerAPI, productAPI, employeeAPI } from "../services/api";
 import { downloadCSV } from "../services/csvExport";
-import InvoiceDetailsFields from "../components/InvoiceDetailsFields";
+import InvoiceDetailsFields, { partyDetailsFromCustomer } from "../components/InvoiceDetailsFields";
 import TransactionDetailsModal from "../components/TransactionDetailsModal";
 
 const stColor = { Paid: "green", Partial: "yellow", Pending: "red", Cancelled: "gray" };
@@ -274,6 +274,14 @@ function FullEditModal({ sale, onClose, onDone }) {
         setCustomers(c.data || []);
         setProducts(p.data || []);
         setEmployees(e.data || []);
+        setForm(prev => {
+          const customer = (c.data || []).find(item => item._id === prev.customer);
+          if (!customer) return prev;
+          const party = partyDetailsFromCustomer(customer);
+          const current = prev.invoiceDetails || {};
+          const hasCustomConsignee = current.shipTo?.name || current.shipTo?.address || current.shipTo?.gstin;
+          return { ...prev, invoiceDetails:{ ...current, billTo:party, shipTo:hasCustomConsignee ? current.shipTo : { ...party } } };
+        });
       })
       .catch(() => {});
   }, []);
@@ -375,14 +383,18 @@ function FullEditModal({ sale, onClose, onDone }) {
           <FormInput type="date" value={form.date} onChange={set("date")} />
         </FormGroup>
         <FormGroup label="Sale Made By (Employee)">
-          <FormSelect value={form.salesEmployee} onChange={set("salesEmployee")}><option value="">Select employee</option>{employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name} ({employee.incentivePercent || 0}%)</option>)}</FormSelect>
+          <FormSelect value={form.salesEmployee} onChange={set("salesEmployee")}><option value="">Select employee</option>{employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name} (M: {employee.manufacturingIncentivePercent || 0}% / I: {employee.importedIncentivePercent || 0}%)</option>)}</FormSelect>
         </FormGroup>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 12 }}>
         <FormGroup label="Customer">
           <FormSelect value={form.customer}
-            onChange={e => setForm(p => ({ ...p, customer: e.target.value, customerName: e.target.value ? "" : p.customerName }))}>
+            onChange={e => {
+              const customer = customers.find(item => item._id === e.target.value);
+              const party = partyDetailsFromCustomer(customer);
+              setForm(p => ({ ...p, customer:e.target.value, customerName:e.target.value ? "" : p.customerName, invoiceDetails:{ ...(p.invoiceDetails || {}), billTo:party, shipTo:{ ...party } } }));
+            }}>
             <option value="">Walk-in / cash customer</option>
             {customers.map(c => <option key={c._id} value={c._id}>{c.name} - {c.phone}</option>)}
           </FormSelect>
@@ -760,9 +772,6 @@ export default function SalesList({ navigate }) {
                       <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                         <Btn sm color="blue" onClick={() => setDetailModal(s)}>View Details</Btn>
                         <Btn sm color="teal" onClick={() => setPaymentDrawer(s)}>Payments ({s.payments?.length || 0})</Btn>
-                        {s.status !== "Paid" && s.status !== "Cancelled" && (
-                          <Btn sm color="green" onClick={() => setPayModal(s)}>💰 Pay</Btn>
-                        )}
                         <Btn sm color="blue" onClick={() => setEditModal(s)}>✏️ Edit</Btn>
                         {s.status !== "Cancelled" && (
                           <Btn sm color="red" onClick={() => handleCancel(s._id)}>✕</Btn>

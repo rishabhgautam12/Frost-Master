@@ -113,7 +113,7 @@ export default function App() {
         <span>{getLabel(page)}</span>
       </div>
 
-      <div style={{ padding: "20px" }}>
+      <div style={{ padding: "20px", minWidth: 0, maxWidth: "100vw", overflowX: "hidden" }}>
         {/* Dashboard — always visible to any logged-in user */}
         {page === "dashboard"        && <Dashboard navigate={setPage} />}
 
