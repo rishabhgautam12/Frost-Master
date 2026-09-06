@@ -1,4 +1,5 @@
 const Sale     = require("../models/Sale");
+const Order    = require("../models/Order");
 const Product  = require("../models/Product");
 const Customer = require("../models/Customer");
 const User     = require("../models/User");
@@ -71,6 +72,39 @@ function buildPurchaseItemPayload(item, product) {
     transportGstAmount,
     warehouse: normalizeWarehouseName(item.warehouse),
   };
+}
+
+async function buildSaleItems(items = []) {
+  const enrichedItems = [];
+  for (const item of items) {
+    const product = await resolveProduct(item, null);
+    if (!product) throw new Error("A valid product is required for every item.");
+    const rate = +item.rate || 0;
+    const billingRate = item.billingRate !== undefined && item.billingRate !== "" ? (+item.billingRate || 0) : rate;
+    const qty = +item.qty || 0;
+    const discount = +(item.discount || 0);
+    if (qty <= 0 || rate <= 0) throw new Error("Quantity and rate must be greater than zero.");
+    if (!Number.isFinite(discount) || discount < 0 || discount > 100)
+      throw new Error("Discount must be between 0% and 100%.");
+    const gstRate = item.gstRate !== undefined ? +item.gstRate : (product.gstRate || 18);
+    const grossAmount = rate * qty;
+    const billingTotal = billingRate * qty;
+    const discountAmount = (grossAmount * discount) / 100;
+    const itemTotal = grossAmount - discountAmount;
+    const gstAmount = (Math.max(0, billingTotal - discountAmount) * gstRate) / 100;
+    const transportAmount = +item.transportAmount || 0;
+    const transportGstRate = +item.transportGstRate || 0;
+    enrichedItems.push({
+      product: product._id, productName: product.name,
+      description: String(item.description ?? product.description ?? "").trim(),
+      qty, rate, billingRate, billingTotal,
+      discount, discountAmount, total: itemTotal,
+      warehouse: normalizeWarehouseName(item.warehouse), gstRate, gstAmount,
+      transportAmount, transportGstRate,
+      transportGstAmount: (transportAmount * transportGstRate) / 100,
+    });
+  }
+  return enrichedItems;
 }
 
 function currentWarehouseRows(product) {
@@ -212,6 +246,7 @@ exports.createSale = async (req, res) => {
       }
 
       const rate = +item.rate;
+      const billingRate = item.billingRate !== undefined && item.billingRate !== "" ? (+item.billingRate || 0) : rate;
       const qty = +item.qty;
       const discount = +(item.discount || 0);
       if (!Number.isFinite(discount) || discount < 0 || discount > 100)
@@ -221,19 +256,28 @@ exports.createSale = async (req, res) => {
       const grossAmount = rate * qty;
       const discountAmount = (grossAmount * discount) / 100;
       const itemTotal = grossAmount - discountAmount;
-      const gstAmt    = (itemTotal * gstRate) / 100;
+      const billingTotal = billingRate * qty;
+      const gstAmt    = (Math.max(0, billingTotal - discountAmount) * gstRate) / 100;
+      const transportAmount = +item.transportAmount || 0;
+      const transportGstRate = +item.transportGstRate || 0;
 
       enrichedItems.push({
         product:     product._id,
         productName: product.name,
+        description: String(item.description ?? product.description ?? "").trim(),
         qty,
         rate,
+        billingRate,
+        billingTotal,
         discount,
         discountAmount,
         total:       itemTotal,
         warehouse:   item.warehouse || undefined,
         gstRate,
         gstAmount:   gstAmt,
+        transportAmount,
+        transportGstRate,
+        transportGstAmount: (transportAmount * transportGstRate) / 100,
       });
     }
 
@@ -274,6 +318,79 @@ exports.createSale = async (req, res) => {
     });
     res.status(201).json({ success:true, data:sale, message:"Sale created successfully" });
   } catch (err) { res.status(500).json({ success:false, message:err.message }); }
+};
+
+exports.getOrders = async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    const filter = {};
+    if (from || to) {
+      filter.date = {};
+      if (from) filter.date.$gte = new Date(from);
+      if (to) filter.date.$lte = new Date(`${to}T23:59:59`);
+    }
+    const orders = await Order.find(filter)
+      .populate("customer", "name phone")
+      .populate("convertedSale", "invoiceNo date")
+      .populate("items.product", "name modelNumber")
+      .sort({ date: -1, createdAt: -1 });
+    res.json({ success: true, data: orders });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+};
+
+exports.createOrder = async (req, res) => {
+  try {
+    const { items, customer, ...rest } = req.body;
+    const order = await Order.create({
+      ...rest,
+      customer: customer || undefined,
+      items: await buildSaleItems(items),
+      amountPaid: 0,
+      createdBy: req.user?._id,
+      createdByName: req.user?.name || req.user?.username || "Staff",
+    });
+    await order.populate("customer", "name phone");
+    await logActivity(req, {
+      action: "created", entityType: "Order", entityId: order._id, entityLabel: order.orderNo,
+      summary: `Created order ${order.orderNo}`,
+      changes: [{ field: "status", before: null, after: "Open" }],
+    });
+    res.status(201).json({ success: true, data: order, message: "Order created successfully" });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+};
+
+exports.convertOrderToSale = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    if (order.status !== "Open")
+      return res.status(400).json({ success: false, message: `Only open orders can be converted. Current status: ${order.status}` });
+    const sale = new Sale({
+      customer: order.customer || undefined, customerName: order.customerName,
+      saleType: order.saleType, paymentMode: req.body.paymentMode || order.paymentMode || "Credit",
+      date: req.body.date || new Date(), items: order.items.map(item => item.toObject()),
+      amountPaid: +req.body.amountPaid || 0, isInterState: order.isInterState,
+      notes: order.notes, sourceOrder: order._id,
+      soldBy: req.user?._id, soldByName: req.user?.name || req.user?.username || "Staff",
+    });
+    await sale.save();
+    for (const item of sale.items) await deductStockFromWarehouses(item.product, item.qty, item.warehouse);
+    if (sale.customer) {
+      await Customer.findByIdAndUpdate(sale.customer, {
+        $inc: { totalBilled: sale.grandTotal, totalReceived: sale.amountPaid },
+      });
+    }
+    order.status = "Converted";
+    order.convertedSale = sale._id;
+    order.convertedAt = sale.date;
+    await order.save();
+    await logActivity(req, {
+      action: "created", entityType: "Sale", entityId: sale._id, entityLabel: sale.invoiceNo,
+      summary: `Converted order ${order.orderNo} to sale ${sale.invoiceNo}`,
+      changes: [{ field: "sourceOrder", before: null, after: order.orderNo }],
+    });
+    res.status(201).json({ success: true, data: sale, message: `${order.orderNo} converted to ${sale.invoiceNo}` });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
 
 // PATCH update payment
@@ -468,7 +585,14 @@ const Purchase = require("../models/Purchase");
 
 exports.getPurchases = async (req, res) => {
   try {
-    const purchases = await Purchase.find()
+    const { from, to } = req.query;
+    const filter = {};
+    if (from || to) {
+      filter.date = {};
+      if (from) filter.date.$gte = new Date(from);
+      if (to) filter.date.$lte = new Date(`${to}T23:59:59`);
+    }
+    const purchases = await Purchase.find(filter)
       .populate("vendor", "name company")
       .populate("items.product", "name modelNumber")
       .sort({ date: -1 });
@@ -810,6 +934,7 @@ exports.updateSaleDetails = async (req, res) => {
       for (const item of req.body.items) {
         const product = await resolveProduct(item, null);
         const rate = +item.rate;
+        const billingRate = item.billingRate !== undefined && item.billingRate !== "" ? (+item.billingRate || 0) : rate;
         const qty = +item.qty;
         const discount = +(item.discount || 0);
         if (!product || qty <= 0 || rate < 0)
@@ -821,19 +946,28 @@ exports.updateSaleDetails = async (req, res) => {
         const grossAmount = rate * qty;
         const discountAmount = (grossAmount * discount) / 100;
         const itemTotal = grossAmount - discountAmount;
-        const gstAmt = (itemTotal * gstRate) / 100;
+        const billingTotal = billingRate * qty;
+        const gstAmt = (Math.max(0, billingTotal - discountAmount) * gstRate) / 100;
+        const transportAmount = +item.transportAmount || 0;
+        const transportGstRate = +item.transportGstRate || 0;
 
         enrichedItems.push({
           product: product._id,
           productName: product.name,
+          description: String(item.description ?? product.description ?? "").trim(),
           qty,
           rate,
+          billingRate,
+          billingTotal,
           discount,
           discountAmount,
           total: itemTotal,
           warehouse: item.warehouse || undefined,
           gstRate,
           gstAmount: gstAmt,
+          transportAmount,
+          transportGstRate,
+          transportGstAmount: (transportAmount * transportGstRate) / 100,
         });
       }
       sale.items = enrichedItems;

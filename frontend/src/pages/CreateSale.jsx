@@ -3,13 +3,13 @@ import {
   PageTitle, Btn, FormGroup, FormInput, FormSelect,
   SuccessToast, Modal,
 } from "../components/Shared";
-import { salesAPI, customerAPI, productAPI } from "../services/api";
+import { salesAPI, customerAPI, productAPI, employeeAPI } from "../services/api";
 import QuickAddProduct from "../components/QuickAddProduct";
 
 const normalizePhone = value => value.replace(/\D/g, "").slice(0, 10);
 const isValidPhone = value => /^\d{10}$/.test(value);
-const SALE_ITEM_GRID = "minmax(320px, 2fr) 90px 64px 90px 80px 80px 100px 40px";
-const SALE_ITEM_MIN_WIDTH = 864;
+const SALE_ITEM_GRID = "minmax(240px,2fr) 90px 130px 64px 85px 95px 72px 72px 85px 76px 100px 40px";
+const SALE_ITEM_MIN_WIDTH = 1250;
 
 /* ── inline quick-add customer ── */
 function QuickAddCustomer({ onSaved, onCancel }) {
@@ -80,9 +80,11 @@ function QuickAddCustomer({ onSaved, onCancel }) {
 }
 
 /* ── main page ── */
-export default function CreateSale({ navigate }) {
+export default function CreateSale({ navigate, mode = "sale" }) {
+  const isOrder = mode === "order";
   const [customers,   setCustomers]   = useState([]);
   const [products,    setProducts]    = useState([]);
+  const [warehouses,  setWarehouses]  = useState([]);
   const [showAddCust, setShowAddCust] = useState(false);
   const [newProductRow, setNewProductRow] = useState(null); // row index showing new-product form
   const [form, setForm] = useState({
@@ -90,8 +92,9 @@ export default function CreateSale({ navigate }) {
     date:new Date().toISOString().split("T")[0], isInterState:false,
     amountPaid:"", notes:""
   });
+  const [payments, setPayments] = useState([{ paymentMode:"Credit", amount:"", date:new Date().toISOString().split("T")[0], notes:"" }]);
   const [items, setItems] = useState([
-    { product:"", qty:1, rate:"", discount:0, gstRate:18 }
+    { product:"", description:"", qty:1, rate:"", billingRate:"", discount:0, gstRate:18, warehouse:"Main Warehouse", transportAmount:"", transportGstRate:0 }
   ]);
   const [saving, setSaving] = useState(false);
   const [toast,  setToast]  = useState(null);
@@ -101,14 +104,17 @@ export default function CreateSale({ navigate }) {
   };
 
   useEffect(() => {
-    Promise.all([customerAPI.getAll(), productAPI.getAll()])
-      .then(([c, p]) => { setCustomers(c.data); setProducts(p.data); })
+    Promise.all([customerAPI.getAll(), productAPI.getAll(), employeeAPI.getWarehouses()])
+      .then(([c, p, w]) => { setCustomers(c.data); setProducts(p.data); setWarehouses(w.data || []); })
       .catch(() => {});
   }, []);
 
   const set = k => e => setForm(p => ({
     ...p, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value
   }));
+  const setPayment = (i, key, value) => setPayments(prev => prev.map((payment, index) => index === i ? { ...payment, [key]: value } : payment));
+  const addPayment = () => setPayments(prev => [...prev, { paymentMode:"Cash", amount:"", date:form.date, notes:"" }]);
+  const removePayment = i => setPayments(prev => prev.length > 1 ? prev.filter((_, index) => index !== i) : prev);
 
   const handleCustomerSaved = newCustomer => {
     setCustomers(prev => [newCustomer, ...prev]);
@@ -125,7 +131,9 @@ export default function CreateSale({ navigate }) {
       return {
         ...it,
         product: newProduct._id,
+        description: newProduct.description || "",
         rate:    newProduct.sellingPrice,
+        billingRate: newProduct.sellingPrice,
         gstRate: newProduct.gstRate || 18,
       };
     }));
@@ -138,21 +146,24 @@ export default function CreateSale({ navigate }) {
     const u = { ...it, [k]: v };
     if (k === "product" && v) {
       const prod = products.find(p => p._id === v);
-      if (prod) { u.rate = prod.sellingPrice; u.gstRate = prod.gstRate || 18; }
+      if (prod) { u.rate = prod.sellingPrice; u.billingRate = prod.sellingPrice; u.gstRate = prod.gstRate || 18; u.description = prod.description || ""; }
     }
     return u;
   }));
 
-  const addItem    = () => setItems(p => [...p, { product:"", qty:1, rate:"", discount:0, gstRate:18 }]);
+  const addItem    = () => setItems(p => [...p, { product:"", description:"", qty:1, rate:"", billingRate:"", discount:0, gstRate:18, warehouse:warehouses[0]?.name || "Main Warehouse", transportAmount:"", transportGstRate:0 }]);
   const removeItem = i  => setItems(p => p.filter((_,idx) => idx !== i));
 
   const calcItem = it => {
     const gross = (+it.rate || 0) * (+it.qty || 0);
+    const billing = (+it.billingRate || +it.rate || 0) * (+it.qty || 0);
     const discountPercent = Math.min(100, Math.max(0, +it.discount || 0));
     const discountAmount = (gross * discountPercent) / 100;
     const taxable = gross - discountAmount;
-    const gst = (taxable * (+it.gstRate || 0)) / 100;
-    return { gross, discountAmount, taxable, gst, total: taxable + gst };
+    const gst = (Math.max(0, billing - discountAmount) * (+it.gstRate || 0)) / 100;
+    const transport = +it.transportAmount || 0;
+    const transportGst = (transport * (+it.transportGstRate || 0)) / 100;
+    return { gross, discountAmount, taxable, billing, transport, gst: gst + transportGst, total: taxable + transport + gst + transportGst };
   };
 
   const totals = items.reduce((s, it) => {
@@ -161,14 +172,17 @@ export default function CreateSale({ navigate }) {
       subtotal: s.subtotal + c.gross,
       discount: s.discount + c.discountAmount,
       gst: s.gst + c.gst,
+      transport: s.transport + c.transport,
       total: s.total + c.total,
     };
-  }, { subtotal:0, discount:0, gst:0, total:0 });
+  }, { subtotal:0, discount:0, gst:0, transport:0, total:0 });
 
   const cgst = form.isInterState ? 0 : totals.gst / 2;
   const sgst = form.isInterState ? 0 : totals.gst / 2;
   const igst = form.isInterState ? totals.gst : 0;
-  const due  = Math.max(0, totals.total - (+form.amountPaid || 0));
+  const cleanPayments = payments.filter(p => p.paymentMode !== "Credit" && (+p.amount || 0) > 0).map(p => ({ ...p, amount:+p.amount }));
+  const totalPaid = cleanPayments.reduce((sum, payment) => sum + payment.amount, 0);
+  const due  = Math.max(0, totals.total - totalPaid);
 
   const handleSave = async () => {
     const validItems = items.filter(it => it.product && +it.qty > 0 && +it.rate > 0);
@@ -177,29 +191,36 @@ export default function CreateSale({ navigate }) {
       return alert("Select a customer or enter a name for a cash sale.");
     setSaving(true);
     try {
-      await salesAPI.create({
+      await (isOrder ? salesAPI.createOrder : salesAPI.create)({
         ...form,
         customer:    form.customer || undefined,
         isInterState:!!form.isInterState,
-        amountPaid:  +form.amountPaid || 0,
+        amountPaid:  isOrder ? 0 : totalPaid,
+        payments: isOrder ? [] : cleanPayments,
+        paymentMode: isOrder ? form.paymentMode : (cleanPayments.length > 1 ? "Multiple" : cleanPayments[0]?.paymentMode || "Credit"),
         items: validItems.map(it => ({
           product:  it.product,
+          description: it.description?.trim() || "",
           qty:      +it.qty,
           rate:     +it.rate,
+          billingRate: it.billingRate === "" ? undefined : +it.billingRate,
           discount: +it.discount || 0,
           gstRate:  +it.gstRate || 0,
+          warehouse: it.warehouse || "Main Warehouse",
+          transportAmount: +it.transportAmount || 0,
+          transportGstRate: +it.transportGstRate || 0,
         })),
       });
-      setToast("Sale created successfully!");
-      setTimeout(() => navigate("sales-list"), 1500);
+      setToast(`${isOrder ? "Order" : "Sale"} created successfully!`);
+      setTimeout(() => navigate(isOrder ? "orders-list" : "sales-list"), 1500);
     } catch (e) { alert(e.message); setSaving(false); }
   };
 
   const selectedCustomer = customers.find(c => c._id === form.customer);
 
   return (
-    <div style={{ maxWidth:960, margin:"auto" }}>
-      <PageTitle>Create Sale / Invoice</PageTitle>
+    <div style={{ maxWidth:1180, margin:"auto" }}>
+      <PageTitle>{isOrder ? "Create Order" : "Create Sale / Invoice"}</PageTitle>
       {toast && <SuccessToast msg={toast} />}
 
       <div style={{ background:"#fff", borderRadius:10, padding:28, border:"1px solid #e2e8f0" }}>
@@ -253,7 +274,7 @@ export default function CreateSale({ navigate }) {
               <FormGroup label="Walk-in / Cash Customer Name">
                 <FormInput placeholder="Enter name if not registered"
                   value={form.customerName} onChange={set("customerName")}
-                  disabled={!!form.customer} />
+                />
               </FormGroup>
             </div>
           </div>
@@ -273,10 +294,32 @@ export default function CreateSale({ navigate }) {
           </label>
         </div>
 
+        {!isOrder && (
+          <div style={{ marginBottom:20 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+              <div style={{ fontWeight:800, fontSize:13, color:"#1e293b" }}>Payment Entries</div>
+              <Btn sm color="blue" onClick={addPayment}>+ Add Payment</Btn>
+            </div>
+            <div style={{ border:"1px solid #e2e8f0", borderRadius:8, overflow:"hidden" }}>
+              {payments.map((payment, i) => (
+                <div key={i} style={{ display:"grid", gridTemplateColumns:"150px 1fr 150px 1.4fr 36px", gap:8, padding:10, borderTop:i ? "1px solid #f1f5f9" : "none", alignItems:"center" }}>
+                  <FormSelect value={payment.paymentMode} onChange={e => setPayment(i, "paymentMode", e.target.value)}>
+                    {["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(value => <option key={value}>{value}</option>)}
+                  </FormSelect>
+                  <FormInput type="number" placeholder="Amount" disabled={payment.paymentMode === "Credit"} value={payment.amount} onChange={e => setPayment(i, "amount", e.target.value)} />
+                  <FormInput type="date" value={payment.date} onChange={e => setPayment(i, "date", e.target.value)} />
+                  <FormInput placeholder="Payment notes / reference" value={payment.notes} onChange={e => setPayment(i, "notes", e.target.value)} />
+                  <button type="button" onClick={() => removePayment(i)} style={{ border:"none", borderRadius:6, background:"#fee2e2", color:"#991b1b", height:34, cursor:"pointer", fontWeight:800 }}>x</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Items */}
         <div style={{ marginBottom:20 }}>
           <div style={{ fontWeight:700, fontSize:13, marginBottom:10, color:"#1e293b" }}>
-            📦 Sale Items
+            📦 {isOrder ? "Order" : "Sale"} Items
           </div>
 
           <div style={{ background:"#fff", border:"1px solid #e2e8f0", borderRadius:8, overflowX:"auto" }}>
@@ -285,7 +328,7 @@ export default function CreateSale({ navigate }) {
               gridTemplateColumns:SALE_ITEM_GRID, minWidth:SALE_ITEM_MIN_WIDTH,
               gap:0, background:"#f8fafc", padding:"8px 10px",
               fontSize:11, fontWeight:700, color:"#374155" }}>
-              {["Product","Model No.","Qty","Rate (₹)","Disc. (%)","GST %","Total (₹)",""].map(h => (
+              {["Product","Model No.","Warehouse","Qty","Rate","Billing Rate","Disc. %","GST %","Transport","Trans GST","Total",""].map(h => (
                 <div key={h} style={{ padding:"0 4px" }}>{h}</div>
               ))}
             </div>
@@ -330,12 +373,26 @@ export default function CreateSale({ navigate }) {
                           {isNewForm ? "✕" : "+ New"}
                         </button>
                       </div>
+                      <textarea
+                        value={it.description || ""}
+                        onChange={e => setItem(i, "description", e.target.value)}
+                        placeholder="Product description (optional)"
+                        rows={2}
+                        style={{ width:"100%", marginTop:6, padding:"6px 8px", border:"1px solid #d1d5db", borderRadius:6, fontSize:11, resize:"vertical", boxSizing:"border-box", background:"#fff" }}
+                      />
                     </div>
 
                     {/* Model No */}
                     <div style={{ padding:"0 4px", fontFamily:"monospace",
                       color:"#0ea5e9", fontSize:11 }}>
                       {prod?.modelNumber || "—"}
+                    </div>
+
+                    <div style={{ padding:"0 4px" }}>
+                      <select value={it.warehouse || "Main Warehouse"} onChange={e => setItem(i, "warehouse", e.target.value)}
+                        style={{ width:"100%", padding:"7px 5px", border:"1px solid #d1d5db", borderRadius:6, fontSize:11, background:"#f9fafb" }}>
+                        {warehouses.length ? warehouses.map(w => <option key={w._id} value={w.name}>{w.name}</option>) : <option>Main Warehouse</option>}
+                      </select>
                     </div>
 
                     {/* Qty */}
@@ -352,6 +409,12 @@ export default function CreateSale({ navigate }) {
                         onChange={e => setItem(i, "rate", e.target.value)}
                         style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db",
                           borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
+                    </div>
+
+                    <div style={{ padding:"0 4px" }}>
+                      <input type="number" value={it.billingRate}
+                        onChange={e => setItem(i, "billingRate", e.target.value)} placeholder="Taxable"
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
                     </div>
 
                     {/* Discount */}
@@ -376,6 +439,19 @@ export default function CreateSale({ navigate }) {
                         {["0","5","9","12","18","28"].map(r => (
                           <option key={r} value={r}>{r}%</option>
                         ))}
+                      </select>
+                    </div>
+
+                    <div style={{ padding:"0 4px" }}>
+                      <input type="number" min="0" value={it.transportAmount}
+                        onChange={e => setItem(i, "transportAmount", e.target.value)} placeholder="0"
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
+                    </div>
+
+                    <div style={{ padding:"0 4px" }}>
+                      <select value={it.transportGstRate} onChange={e => setItem(i, "transportGstRate", e.target.value)}
+                        style={{ width:"100%", padding:"7px 4px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                        {["0","5","12","18","28"].map(r => <option key={r} value={r}>{r}%</option>)}
                       </select>
                     </div>
 
@@ -421,19 +497,18 @@ export default function CreateSale({ navigate }) {
               <FormInput placeholder="Any notes for this sale..."
                 value={form.notes} onChange={set("notes")} />
             </FormGroup>
-            <FormGroup label="Amount Paid (₹)">
-              <FormInput type="number" placeholder="0 for credit"
-                value={form.amountPaid} onChange={set("amountPaid")} />
-            </FormGroup>
           </div>
           <div style={{ background:"#f8fafc", borderRadius:8, padding:16, fontSize:13 }}>
             <div style={{ fontWeight:700, marginBottom:10 }}>Invoice Summary</div>
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}>
               <span>Subtotal</span><span>₹{totals.subtotal.toFixed(2)}</span>
             </div>
+            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#64748b" }}>
+              <span>Transport</span><span>₹{totals.transport.toFixed(2)}</span>
+            </div>
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#f59e0b" }}>
-              <span>{form.paymentMode === "Cash" ? "Cash Amount" : "Discount"}</span>
-              <span>{form.paymentMode === "Cash" ? `₹${(+form.amountPaid || 0).toFixed(2)}` : `-₹${totals.discount.toFixed(2)}`}</span>
+              <span>Discount</span>
+              <span>-₹{totals.discount.toFixed(2)}</span>
             </div>
             {form.isInterState ? (
               <div style={{ display:"flex", justifyContent:"space-between",
@@ -458,7 +533,7 @@ export default function CreateSale({ navigate }) {
             </div>
             <div style={{ display:"flex", justifyContent:"space-between",
               padding:"4px 0", color:"#16a34a" }}>
-              <span>Amount Paid</span><span>₹{(+form.amountPaid||0).toFixed(2)}</span>
+              <span>Amount Paid</span><span>₹{totalPaid.toFixed(2)}</span>
             </div>
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0",
               color:due>0?"#ef4444":"#94a3b8", fontWeight:700 }}>
@@ -468,9 +543,9 @@ export default function CreateSale({ navigate }) {
         </div>
 
         <div style={{ display:"flex", gap:10, marginTop:20 }}>
-          <Btn color="cancel" onClick={() => navigate("sales-list")}>Cancel</Btn>
+          <Btn color="cancel" onClick={() => navigate(isOrder ? "orders-list" : "sales-list")}>Cancel</Btn>
           <Btn color="teal" onClick={handleSave} disabled={saving}>
-            {saving ? "Creating..." : "🧾 Create Sale"}
+            {saving ? "Creating..." : isOrder ? "Create Order" : "🧾 Create Sale"}
           </Btn>
         </div>
       </div>

@@ -190,11 +190,18 @@ export default function PurchasesList({ navigate }) {
   const [payments, setPayments] = useState([]);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [monthFilter, setMonthFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   const canEdit = currentUser()?.role === "admin";
 
-  const load = () => {
+  const load = (filters = {}) => {
     setLoading(true);
-    salesAPI.getPurchases()
+    const selectedDate = filters.dateFilter ?? dateFilter;
+    const selectedMonth = filters.monthFilter ?? monthFilter;
+    const params = selectedDate
+      ? { from:selectedDate, to:selectedDate }
+      : selectedMonth ? { from:`${selectedMonth}-01`, to:`${selectedMonth}-${String(new Date(+selectedMonth.slice(0, 4), +selectedMonth.slice(5, 7), 0).getDate()).padStart(2, "0")}` } : {};
+    salesAPI.getPurchases(params)
       .then((r) => { setPurchases(r.data); setLoading(false); })
       .catch((e) => { setError(e.message); setLoading(false); });
   };
@@ -305,7 +312,7 @@ export default function PurchasesList({ navigate }) {
           </div>
         ))}
       </div>
-      <div style={{ marginBottom: 14 }}>
+      <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"end", marginBottom:14 }}>
         <Btn color="teal" onClick={() => navigate("purchase-create")}>+ Create Purchase</Btn>
         <Btn color="green" onClick={() => downloadCSV(purchases, [
           { label:"Purchase No.", key:"purchaseNo" },
@@ -317,6 +324,10 @@ export default function PurchasesList({ navigate }) {
           { label:"Payment Mode", key:"paymentMode" },
           { label:"Status", key:"status" },
         ], "all_purchases")}>Export CSV</Btn>
+        <FormGroup label="Filter by month"><FormInput type="month" value={monthFilter} onChange={e => { setMonthFilter(e.target.value); if (e.target.value) setDateFilter(""); }} /></FormGroup>
+        <FormGroup label="Filter by date"><FormInput type="date" value={dateFilter} onChange={e => { setDateFilter(e.target.value); if (e.target.value) setMonthFilter(""); }} /></FormGroup>
+        <Btn color="blue" onClick={() => load()}>Filter</Btn>
+        <Btn color="cancel" onClick={() => { setMonthFilter(""); setDateFilter(""); load({ monthFilter:"", dateFilter:"" }); }}>Reset</Btn>
       </div>
       {loading ? <LoadingSpinner /> : error ? <ErrorMsg message={error} /> : (
         <TableWrap>

@@ -188,6 +188,7 @@ function FullEditModal({ sale, onClose, onDone }) {
   });
   const [items, setItems] = useState(() => (sale?.items || []).map(it => ({
     product: it.product?._id || it.product || "",
+    description: it.description || "",
     qty: it.qty || 1,
     rate: it.rate ?? "",
     discount: discountPercentFor(it),
@@ -266,6 +267,7 @@ function FullEditModal({ sale, onClose, onDone }) {
         amountPaid: +form.amountPaid || 0,
         items: validItems.map(it => ({
           product: it.product,
+          description: it.description || "",
           qty: +it.qty,
           rate: +it.rate,
           discount: +it.discount || 0,
@@ -305,7 +307,7 @@ function FullEditModal({ sale, onClose, onDone }) {
           {selectedCustomer && <div style={{ marginTop: 5, fontSize: 11, color: "#64748b" }}>{selectedCustomer.name} selected</div>}
         </FormGroup>
         <FormGroup label="Walk-in Customer Name">
-          <FormInput placeholder="Customer name" value={form.customerName} onChange={set("customerName")} disabled={!!form.customer} />
+          <FormInput placeholder="Customer name" value={form.customerName} onChange={set("customerName")} />
         </FormGroup>
       </div>
 
@@ -447,7 +449,10 @@ function ExpandedRow({ sale, cols }) {
                   <tbody>
                     {sale.items.map((it, i) => (
                       <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f8fafc" }}>
-                        <td style={{ padding: "5px 10px" }}>{it.productName || it.product?.name}</td>
+                        <td style={{ padding: "5px 10px" }}>
+                          <div>{it.productName || it.product?.name}</div>
+                          {it.description && <div style={{ marginTop:3, color:"#64748b", fontSize:10.5, whiteSpace:"pre-wrap" }}>{it.description}</div>}
+                        </td>
                         <td style={{ padding: "5px 10px" }}>{it.warehouse || "Main Warehouse"}</td>
                         <td style={{ padding: "5px 10px" }}>{it.qty}</td>
                         <td style={{ padding: "5px 10px" }}>₹{it.rate?.toLocaleString()}</td>
@@ -479,26 +484,30 @@ export default function SalesList({ navigate }) {
   const [status,   setStatus]   = useState("");
   const [month,    setMonth]    = useState("");
   const [year,     setYear]     = useState(String(currentYear));
+  const [dateFilter, setDateFilter] = useState("");
   const [toast,    setToast]    = useState(null);
   const [expanded, setExpanded] = useState(null);
   const [payModal, setPayModal] = useState(null);
   const [editModal,setEditModal]= useState(null);
 
   // Derive date range from month + year pickers
-  const getDateRange = () => {
-    if (!month) {
-      return { from: `${year}-01-01`, to: `${year}-12-31` };
+  const getDateRange = (exactDate = dateFilter, selectedMonth = month, selectedYear = year) => {
+    if (exactDate) return { from: exactDate, to: exactDate };
+    if (!selectedMonth) {
+      return { from: `${selectedYear}-01-01`, to: `${selectedYear}-12-31` };
     }
-    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-    return { from: `${year}-${month}-01`, to: `${year}-${month}-${lastDay}` };
+    const lastDay = new Date(parseInt(selectedYear), parseInt(selectedMonth), 0).getDate();
+    return { from: `${selectedYear}-${selectedMonth}-01`, to: `${selectedYear}-${selectedMonth}-${lastDay}` };
   };
 
-  const load = () => {
+  const load = (filters = {}) => {
     setLoading(true);
-    const range  = getDateRange();
+    const range  = getDateRange(filters.dateFilter, filters.month, filters.year);
     const params = { from: range.from, to: range.to };
-    if (status) params.status = status;
-    if (search) params.search = search;
+    const selectedStatus = filters.status ?? status;
+    const selectedSearch = filters.search ?? search;
+    if (selectedStatus) params.status = selectedStatus;
+    if (selectedSearch) params.search = selectedSearch;
     salesAPI.getAll(params)
       .then((r) => { setSales(r.data); setSummary(r.summary || {}); setLoading(false); })
       .catch((e) => { setError(e.message); setLoading(false); });
@@ -592,6 +601,7 @@ export default function SalesList({ navigate }) {
       <SearchBar>
         <Input placeholder="Search invoice / customer..." value={search}
           onChange={(e) => setSearch(e.target.value)} style={{ minWidth: 200 }} />
+        <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} title="Filter by exact date" />
         <select value={month} onChange={(e) => setMonth(e.target.value)}
           style={{ padding: "7px 10px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, background: "#f9fafb" }}>
           {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -607,8 +617,8 @@ export default function SalesList({ navigate }) {
         </select>
         <Btn color="blue" onClick={load}>Filter</Btn>
         <Btn color="cancel" onClick={() => {
-          setSearch(""); setMonth(""); setYear(String(currentYear)); setStatus("");
-          setTimeout(load, 50);
+          setSearch(""); setMonth(""); setYear(String(currentYear)); setStatus(""); setDateFilter("");
+          load({ dateFilter:"", month:"", year:String(currentYear), status:"", search:"" });
         }}>Reset</Btn>
       </SearchBar>
 

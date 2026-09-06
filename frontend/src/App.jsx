@@ -18,7 +18,9 @@ import ProductStock    from "./pages/ProductStock";
 import CustomerList    from "./pages/CustomerList";
 import CustomerProfile from "./pages/CustomerProfile";
 import CreateSale      from "./pages/CreateSale";
+import CreateOrder     from "./pages/CreateOrder";
 import SalesList       from "./pages/SalesList";
+import OrdersList      from "./pages/OrdersList";
 import CreatePurchase  from "./pages/CreatePurchase";
 import PurchasesList   from "./pages/PurchasesList";
 import GSTReport       from "./pages/GSTReport";
@@ -35,6 +37,7 @@ const bcNames = {
   "product-stock":   "Product Stocks",
   "customer-list":   "Customers",
   "sale-create":     "Create Sale",   "sales-list":       "All Sales",
+  "order-create":    "Create Order",  "orders-list":      "All Orders",
   "purchase-create": "Create Purchase","purchases-list":  "All Purchases",
   "gst-report":      "GST Report",    "sales-report":     "Sales Report",
   "staff-sales-report":"Staff Sales Report",
@@ -136,6 +139,8 @@ export default function App() {
         {/* Sales */}
         {page === "sale-create"      && <Guard perm="sales_create">    <CreateSale     navigate={setPage} /></Guard>}
         {page === "sales-list"       && <Guard perm="sales_view">      <SalesList      navigate={setPage} /></Guard>}
+        {page === "order-create"     && <Guard perm="sales_create">    <CreateOrder    navigate={setPage} /></Guard>}
+        {page === "orders-list"      && <Guard perm="sales_view">      <OrdersList     navigate={setPage} /></Guard>}
         {page === "purchase-create"  && <Guard perm="purchases_create"><CreatePurchase navigate={setPage} /></Guard>}
         {page === "purchases-list"   && <Guard perm="purchases_view">  <PurchasesList  navigate={setPage} /></Guard>}
         {page === "gst-report"       && <Guard perm="reports_gst">     <GSTReport      /></Guard>}

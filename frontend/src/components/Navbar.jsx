@@ -34,6 +34,8 @@ const navConfig = [
   {
     label: "Sales", key: "sales",
     items: [
+      { label: "Create Order",             page: "order-create",    perm: "sales_create"     },
+      { label: "All Orders",               page: "orders-list",     perm: "sales_view"       },
       { label: "🧾 Create Sale / Invoice", page: "sale-create",     perm: "sales_create"     },
       { label: "📋 All Sales",             page: "sales-list",      perm: "sales_view"       },
       { label: "📈 Sales Report",          page: "sales-report",    perm: "reports_sales"    },
