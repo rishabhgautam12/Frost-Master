@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { PageTitle, Btn, Badge, TableWrap, Th, Td, LoadingSpinner, ErrorMsg, EmptyState, Modal, FormGroup, FormInput, FormSelect, SuccessToast } from "../components/Shared";
-import { salesAPI, customerAPI, productAPI } from "../services/api";
+import { salesAPI, customerAPI, productAPI, employeeAPI } from "../services/api";
 import InvoiceDetailsFields from "../components/InvoiceDetailsFields";
 import TransactionDetailsModal from "../components/TransactionDetailsModal";
 
@@ -10,13 +10,14 @@ const today = () => new Date().toISOString().slice(0, 10);
 function OrderEditModal({ order, onClose, onDone }) {
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     customer: order.customer?._id || order.customer || "", customerName: order.customerName || "",
     saleType: order.saleType || "GST Invoice", paymentMode: order.paymentMode || "Credit",
     date: new Date(order.date).toISOString().slice(0, 10), isInterState: !!order.isInterState, notes: order.notes || "",
-    invoiceDetails: order.invoiceDetails || { billTo:{}, shipTo:{} },
+    invoiceDetails: order.invoiceDetails || { billTo:{}, shipTo:{} }, salesEmployee: order.salesEmployee?._id || order.salesEmployee || "",
   });
   const [items, setItems] = useState((order.items || []).map(item => ({
     product: item.product?._id || item.product || "", description: item.description || "", warehouse: item.warehouse || "Main Warehouse",
@@ -24,7 +25,7 @@ function OrderEditModal({ order, onClose, onDone }) {
     gstRate: item.gstRate ?? 18, transportAmount: item.transportAmount || 0, transportGstRate: item.transportGstRate || 0,
   })));
 
-  useEffect(() => { Promise.all([customerAPI.getAll(), productAPI.getAll()]).then(([c, p]) => { setCustomers(c.data || []); setProducts(p.data || []); }).catch(() => {}); }, []);
+  useEffect(() => { Promise.all([customerAPI.getAll(), productAPI.getAll(), employeeAPI.getAll()]).then(([c, p, e]) => { setCustomers(c.data || []); setProducts(p.data || []); setEmployees(e.data || []); }).catch(() => {}); }, []);
   const changeForm = key => e => setForm(prev => ({ ...prev, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
   const changeItem = (index, key, value) => setItems(prev => prev.map((item, i) => {
     if (i !== index) return item;
@@ -64,6 +65,7 @@ function OrderEditModal({ order, onClose, onDone }) {
       <FormGroup label="Payment Mode"><FormSelect value={form.paymentMode} onChange={changeForm("paymentMode")}>{["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
       <FormGroup label="Customer"><FormSelect value={form.customer} onChange={e => setForm(p => ({...p, customer:e.target.value, customerName:e.target.value ? "" : p.customerName}))}><option value="">Walk-in customer</option>{customers.map(c => <option key={c._id} value={c._id}>{c.name} - {c.phone}</option>)}</FormSelect></FormGroup>
       <FormGroup label="Walk-in Customer Name"><FormInput value={form.customerName} onChange={changeForm("customerName")} /></FormGroup>
+      <FormGroup label="Sale Made By (Employee)"><FormSelect value={form.salesEmployee} onChange={changeForm("salesEmployee")}><option value="">Select employee</option>{employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name} ({employee.incentivePercent || 0}%)</option>)}</FormSelect></FormGroup>
     </div>
     <label style={{ display:"flex", gap:7, alignItems:"center", marginBottom:12, fontWeight:700 }}><input type="checkbox" checked={form.isInterState} onChange={changeForm("isInterState")} /> Inter-state order</label>
     <InvoiceDetailsFields value={form.invoiceDetails} onChange={invoiceDetails => setForm(prev => ({ ...prev, invoiceDetails }))} />

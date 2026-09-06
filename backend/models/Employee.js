@@ -11,6 +11,7 @@ const employeeSchema = new mongoose.Schema(
     role: { type: String, trim: true },
     warehouse: { type: mongoose.Schema.Types.ObjectId, ref: "Warehouse", required: true },
     monthlySalary: { type: Number, required: true, min: 0, default: 0 },
+    incentivePercent: { type: Number, min: 0, max: 100, default: 0 },
     joiningDate: { type: Date, default: Date.now },
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
     notes: { type: String, trim: true },

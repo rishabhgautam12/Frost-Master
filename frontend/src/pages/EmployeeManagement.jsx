@@ -90,7 +90,7 @@ export default function EmployeeManagement({ user }) {
   const [employeeOpen, setEmployeeOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [employeeForm, setEmployeeForm] = useState({
-    name: "", phone: "", role: "", monthlySalary: "", joiningDate: "", status: "Active", notes: "",
+    name: "", phone: "", role: "", monthlySalary: "", incentivePercent: "0", joiningDate: "", status: "Active", notes: "",
   });
   const [attendancePicker, setAttendancePicker] = useState(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -232,7 +232,7 @@ export default function EmployeeManagement({ user }) {
 
   const openCreateEmployee = () => {
     setEditingEmployee(null);
-    setEmployeeForm({ name: "", phone: "", role: "", monthlySalary: "", joiningDate: "", status: "Active", notes: "" });
+    setEmployeeForm({ name: "", phone: "", role: "", monthlySalary: "", incentivePercent: "0", joiningDate: "", status: "Active", notes: "" });
     setEmployeeOpen(true);
   };
 
@@ -245,6 +245,7 @@ export default function EmployeeManagement({ user }) {
       phone: employee.phone || "",
       role: employee.role || "",
       monthlySalary: String(employee.monthlySalary || ""),
+      incentivePercent: String(employee.incentivePercent || 0),
       joiningDate: employee.joiningDate ? new Date(employee.joiningDate).toISOString().split("T")[0] : "",
       status: employee.status || "Active",
       notes: employee.notes || "",
@@ -259,6 +260,7 @@ export default function EmployeeManagement({ user }) {
         ...employeeForm,
         warehouse: editingEmployee?.warehouse?._id || editingEmployee?.warehouse || selectedWarehouse,
         monthlySalary: +employeeForm.monthlySalary || 0,
+        incentivePercent: +employeeForm.incentivePercent || 0,
         joiningDate: employeeForm.joiningDate || undefined,
       };
       const res = editingEmployee
@@ -267,7 +269,7 @@ export default function EmployeeManagement({ user }) {
       showToast(editingEmployee ? "Employee updated" : "Employee added");
       setEmployeeOpen(false);
       setEditingEmployee(null);
-      setEmployeeForm({ name: "", phone: "", role: "", monthlySalary: "", joiningDate: "", status: "Active", notes: "" });
+      setEmployeeForm({ name: "", phone: "", role: "", monthlySalary: "", incentivePercent: "0", joiningDate: "", status: "Active", notes: "" });
       await loadEmployees();
       setSelectedEmployee(res.data);
       setDetail((prev) => prev ? { ...prev, employee: res.data } : prev);
@@ -442,9 +444,9 @@ export default function EmployeeManagement({ user }) {
     text(money(salary.dueAmount), padding + 20, cardY + 78, { color: "#0f766e", size: 28, weight: 300 });
     text(`Previous due: ${money(salary.openingBalance || 0)} | Opening advance: ${money(salary.openingAdvance || 0)}`, padding + 20, cardY + 102, { color: "#64748b", size: 10 });
     rect(width - padding - 420, cardY, 420, 118, "#fff", "#cbd5e1");
-    text("Month Salary", width - padding - 400, cardY + 36, { color: "#334155", size: 14 });
+    text("Month Salary + Incentive", width - padding - 400, cardY + 36, { color: "#334155", size: 14 });
     text(money(salary.salaryEarned), width - padding - 400, cardY + 72, { color: "#0f172a", size: 22, weight: 800 });
-    text(`Payable ${money(salary.grossDue ?? salary.salaryEarned)} - Paid ${money(salary.totalPaid)} | Advance ${money(salary.advanceAmount || 0)}`, width - padding - 400, cardY + 100, { color: "#64748b", size: 10 });
+    text(`Incentive ${money(salary.incentiveEarned || 0)} | Payable ${money(salary.grossDue ?? salary.salaryEarned)} - Paid ${money(salary.totalPaid)}`, width - padding - 400, cardY + 100, { color: "#64748b", size: 10 });
 
     text(`<`, padding + 12, titleY, { size: 24, weight: 800 });
     text(`Attendance  ${monthLabel(month)}`, width / 2, titleY, { size: 20, weight: 800, align: "center" });
@@ -493,7 +495,7 @@ export default function EmployeeManagement({ user }) {
 
     rect(padding, statsTop + 84, calendarW, 70, "#f1f5f9");
     text(fullCycleLabel(month), padding + 18, statsTop + 112, { size: 12 });
-    text(`total: ${money(salary.salaryEarned)}`, padding + 18, statsTop + 135, { size: 12, weight: 700 });
+    text(`total earnings: ${money(salary.totalEarnings ?? salary.salaryEarned)}`, padding + 18, statsTop + 135, { size: 12, weight: 700 });
     text("VIEW SUMMARY", width - padding - 22, statsTop + 126, { size: 13, weight: 900, color: "#0f766e", align: "right" });
 
     let y = statsTop + 184;
@@ -661,14 +663,14 @@ export default function EmployeeManagement({ user }) {
                 <div style={{
                   marginTop: isMobile ? -58 : 0,
                   display: "grid",
-                  gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
+                  gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)",
                   gap: 12,
                 }}>
                   <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 6, padding: 18, boxShadow: "0 4px 16px rgba(15,23,42,0.1)" }}>
                     <div style={{ color: "#334155", fontSize: 16, marginBottom: 8 }}>Total Due</div>
                     <div style={{ color: "#0f766e", fontSize: isMobile ? 34 : 38, fontWeight: 300 }}>{money(salary.dueAmount)}</div>
                     <div style={{ color: "#64748b", fontSize: 12, marginTop: 6 }}>
-                      Previous due {money(salary.openingBalance || 0)} + this month {money(salary.salaryEarned)}
+                      Previous due {money(salary.openingBalance || 0)} + this month {money(salary.totalEarnings ?? salary.salaryEarned)}
                     </div>
                   </div>
                   <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 6, padding: 18, boxShadow: "0 4px 16px rgba(15,23,42,0.08)" }}>
@@ -683,6 +685,13 @@ export default function EmployeeManagement({ user }) {
                     <div style={{ fontSize: 24, fontWeight: 800, color: "#0f172a" }}>{money(salary.salaryEarned)}</div>
                     <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>
                       Payable {money(salary.grossDue ?? salary.salaryEarned)} - Paid {money(salary.totalPaid)}
+                    </div>
+                  </div>
+                  <div style={{ background: "#fff", border: "1px solid #bbf7d0", borderRadius: 6, padding: 18 }}>
+                    <div style={{ color: "#166534", fontSize: 16, marginBottom: 8 }}>Monthly Incentive</div>
+                    <div style={{ fontSize: 24, fontWeight: 800, color: "#15803d" }}>{money(salary.incentiveEarned || 0)}</div>
+                    <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>
+                      {(salary.incentiveSales || []).length} sale{(salary.incentiveSales || []).length === 1 ? "" : "s"} · Total earnings {money(salary.totalEarnings ?? salary.salaryEarned)}
                     </div>
                   </div>
                 </div>
@@ -917,6 +926,7 @@ export default function EmployeeManagement({ user }) {
           <FormGroup label="Phone"><FormInput value={employeeForm.phone} onChange={(e) => setEmployeeForm((p) => ({ ...p, phone: e.target.value }))} /></FormGroup>
           <FormGroup label="Role"><FormInput value={employeeForm.role} onChange={(e) => setEmployeeForm((p) => ({ ...p, role: e.target.value }))} placeholder="Loader, Manager, Helper" /></FormGroup>
           <FormGroup label="Monthly Salary *"><FormInput type="number" value={employeeForm.monthlySalary} onChange={(e) => setEmployeeForm((p) => ({ ...p, monthlySalary: e.target.value }))} /></FormGroup>
+          <FormGroup label="Sales Incentive %"><FormInput type="number" min="0" max="100" step="0.01" value={employeeForm.incentivePercent} onChange={(e) => setEmployeeForm((p) => ({ ...p, incentivePercent: e.target.value }))} /></FormGroup>
           <FormGroup label="Joining Date"><FormInput type="date" value={employeeForm.joiningDate} onChange={(e) => setEmployeeForm((p) => ({ ...p, joiningDate: e.target.value }))} /></FormGroup>
           <FormGroup label="Status">
             <FormSelect value={employeeForm.status} onChange={(e) => setEmployeeForm((p) => ({ ...p, status: e.target.value }))}>

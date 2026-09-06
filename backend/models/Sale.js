@@ -35,6 +35,11 @@ const saleSchema = new mongoose.Schema(
     customerName: { type: String },               // for walk-in / cash sales
     soldBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     soldByName: { type: String },
+    salesEmployee: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
+    salesEmployeeName: { type: String, trim: true },
+    incentivePercent: { type: Number, min: 0, default: 0 },
+    incentiveBaseAmount: { type: Number, min: 0, default: 0 },
+    incentiveAmount: { type: Number, min: 0, default: 0 },
     saleType: {
       type: String,
       enum: ["GST Invoice", "Cash Sale"],

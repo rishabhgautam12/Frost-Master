@@ -3,6 +3,7 @@ const Order    = require("../models/Order");
 const Product  = require("../models/Product");
 const Customer = require("../models/Customer");
 const User     = require("../models/User");
+const Employee = require("../models/Employee");
 const { createdChanges, logActivity, toChanges } = require("../utils/auditLogger");
 
 const saleFields = ["invoiceNo", "customer", "customerName", "soldBy", "soldByName", "saleType", "paymentMode", "date", "items", "subtotal", "totalDiscount", "totalGST", "grandTotal", "amountPaid", "amountDue", "isInterState", "notes", "status"];
@@ -107,6 +108,24 @@ async function buildSaleItems(items = []) {
   return enrichedItems;
 }
 
+async function applySaleIncentive(sale) {
+  if (!sale.salesEmployee) {
+    sale.salesEmployeeName = "";
+    sale.incentivePercent = 0;
+    sale.incentiveBaseAmount = 0;
+    sale.incentiveAmount = 0;
+    return;
+  }
+  const employee = await Employee.findById(sale.salesEmployee);
+  if (!employee) throw new Error("Selected sales employee was not found.");
+  sale.salesEmployeeName = employee.name;
+  sale.incentivePercent = +employee.incentivePercent || 0;
+  sale.incentiveBaseAmount = Math.round(sale.items.reduce(
+    (sum, item) => sum + ((+item.rate || 0) * (+item.qty || 0)), 0
+  ) * 100) / 100;
+  sale.incentiveAmount = Math.round((sale.incentiveBaseAmount * sale.incentivePercent / 100) * 100) / 100;
+}
+
 function currentWarehouseRows(product) {
   const rows = Array.isArray(product.warehouses) ? product.warehouses.map((row) => ({
     warehouse: row.warehouse,
@@ -200,6 +219,7 @@ exports.getSales = async (req, res) => {
     const sales = await Sale.find(filter)
       .populate("customer", "name phone")
       .populate("soldBy", "name username role")
+      .populate("salesEmployee", "name role incentivePercent")
       .populate("items.product", "name modelNumber")
       .sort({ date: -1 });
 
@@ -220,6 +240,7 @@ exports.getSaleById = async (req, res) => {
     const sale = await Sale.findById(req.params.id)
       .populate("customer", "name phone address gstin city")
       .populate("soldBy", "name username role")
+      .populate("salesEmployee", "name role incentivePercent")
       .populate("items.product", "name modelNumber gstRate");
     if (!sale) return res.status(404).json({ success:false, message:"Sale not found" });
     res.json({ success:true, data:sale });
@@ -299,6 +320,8 @@ exports.createSale = async (req, res) => {
       soldByName: recordedByName,
     });
     await sale.save();
+    await applySaleIncentive(sale);
+    await sale.save();
 
     // Deduct stock
     for (let idx = 0; idx < sale.items.length; idx += 1) {
@@ -340,6 +363,7 @@ exports.getOrders = async (req, res) => {
     }
     const orders = await Order.find(filter)
       .populate("customer", "name phone")
+      .populate("salesEmployee", "name role incentivePercent")
       .populate("convertedSale", "invoiceNo date")
       .populate("items.product", "name modelNumber")
       .sort({ date: -1, createdAt: -1 });
@@ -358,6 +382,12 @@ exports.createOrder = async (req, res) => {
       createdBy: req.user?._id,
       createdByName: req.user?.name || req.user?.username || "Staff",
     });
+    if (order.salesEmployee) {
+      const employee = await Employee.findById(order.salesEmployee);
+      if (!employee) return res.status(400).json({ success:false, message:"Selected sales employee was not found." });
+      order.salesEmployeeName = employee.name;
+      await order.save();
+    }
     await order.populate("customer", "name phone");
     await logActivity(req, {
       action: "created", entityType: "Order", entityId: order._id, entityLabel: order.orderNo,
@@ -373,7 +403,7 @@ exports.updateOrder = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
     const before = order.toObject();
-    const { items, customer, customerName, saleType, paymentMode, date, isInterState, notes, invoiceDetails } = req.body;
+    const { items, customer, customerName, saleType, paymentMode, date, isInterState, notes, invoiceDetails, salesEmployee } = req.body;
     if (Array.isArray(items)) {
       if (!items.length) return res.status(400).json({ success: false, message: "Add at least one order item." });
       order.items = await buildSaleItems(items);
@@ -386,6 +416,12 @@ exports.updateOrder = async (req, res) => {
     if (isInterState !== undefined) order.isInterState = !!isInterState;
     if (notes !== undefined) order.notes = notes;
     if (invoiceDetails !== undefined) order.invoiceDetails = invoiceDetails;
+    if (salesEmployee !== undefined) {
+      order.salesEmployee = salesEmployee || undefined;
+      const employee = salesEmployee ? await Employee.findById(salesEmployee) : null;
+      if (salesEmployee && !employee) return res.status(400).json({ success:false, message:"Selected sales employee was not found." });
+      order.salesEmployeeName = employee?.name || "";
+    }
 
     await order.save();
     await order.populate("customer", "name phone");
@@ -423,8 +459,11 @@ exports.convertOrderToSale = async (req, res) => {
       }] : [],
       isInterState: order.isInterState,
       notes: order.notes, invoiceDetails: order.invoiceDetails || {}, sourceOrder: order._id,
+      salesEmployee: order.salesEmployee || undefined, salesEmployeeName: order.salesEmployeeName || "",
       soldBy: req.user?._id, soldByName: convertedByName,
     });
+    await sale.save();
+    await applySaleIncentive(sale);
     await sale.save();
     for (const item of sale.items) await deductStockFromWarehouses(item.product, item.qty, item.warehouse);
     if (sale.customer) {
@@ -1046,6 +1085,7 @@ exports.updateSaleDetails = async (req, res) => {
       notes,
       status,
       invoiceDetails,
+      salesEmployee,
     } = req.body;
 
     if (customer !== undefined) sale.customer = customer || undefined;
@@ -1057,9 +1097,12 @@ exports.updateSaleDetails = async (req, res) => {
     if (amountPaid !== undefined) sale.amountPaid = Math.max(0, +amountPaid || 0);
     if (notes !== undefined) sale.notes = notes;
     if (invoiceDetails !== undefined) sale.invoiceDetails = invoiceDetails;
+    if (salesEmployee !== undefined) sale.salesEmployee = salesEmployee || undefined;
     if (status === "Cancelled") sale.status = "Cancelled";
     else if (status) sale.status = "Pending";
 
+    await sale.save();
+    await applySaleIncentive(sale);
     await sale.save();
 
     if (status === "Paid" || sale.amountPaid > sale.grandTotal) {

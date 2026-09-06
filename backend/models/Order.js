@@ -25,6 +25,8 @@ const orderSchema = new mongoose.Schema({
   customerName: String,
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   createdByName: String,
+  salesEmployee: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
+  salesEmployeeName: { type: String, trim: true },
   saleType: { type: String, enum: ["GST Invoice", "Cash Sale"], default: "GST Invoice" },
   paymentMode: { type: String, default: "Credit" },
   date: { type: Date, default: Date.now },

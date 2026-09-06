@@ -9,7 +9,7 @@ const Sale = require("../models/Sale");
 const { createdChanges, logActivity, toChanges } = require("../utils/auditLogger");
 
 const warehouseFields = ["name", "location", "notes", "isActive"];
-const employeeFields = ["name", "phone", "role", "warehouse", "monthlySalary", "joiningDate", "status", "notes"];
+const employeeFields = ["name", "phone", "role", "warehouse", "monthlySalary", "incentivePercent", "joiningDate", "status", "notes"];
 
 function requireAdmin(req, res) {
   if (req.user.role !== "admin") {
@@ -98,6 +98,23 @@ async function earnedForMonth(employee, month) {
   const payableUnits = days.reduce((sum, d) => sum + paidUnits(d.status), 0);
   const dailyRate = dates.length ? ((+employee.monthlySalary || 0) / dates.length) : 0;
   const salaryEarned = Math.round(payableUnits * dailyRate * 100) / 100;
+  const { year, monthIndex } = parseMonth(month);
+  const monthStart = new Date(year, monthIndex, 1);
+  const nextMonth = new Date(year, monthIndex + 1, 1);
+  const incentiveSales = await Sale.find({
+    salesEmployee: employee._id,
+    status: { $ne: "Cancelled" },
+    date: { $gte: monthStart, $lt: nextMonth },
+  }).select("invoiceNo date items.rate items.qty incentivePercent incentiveBaseAmount incentiveAmount").lean();
+  const calculatedIncentiveSales = incentiveSales.map((sale) => {
+    const incentiveBaseAmount = Math.round((sale.items || []).reduce(
+      (sum, item) => sum + ((+item.rate || 0) * (+item.qty || 0)), 0
+    ) * 100) / 100;
+    const incentiveAmount = Math.round((incentiveBaseAmount * (+sale.incentivePercent || 0) / 100) * 100) / 100;
+    return { ...sale, incentiveBaseAmount, incentiveAmount };
+  });
+  const incentiveEarned = Math.round(calculatedIncentiveSales.reduce((sum, sale) => sum + sale.incentiveAmount, 0) * 100) / 100;
+  const totalEarnings = Math.round((salaryEarned + incentiveEarned) * 100) / 100;
 
   return {
     totalDays: dates.length,
@@ -107,6 +124,9 @@ async function earnedForMonth(employee, month) {
     paidLeave,
     payableUnits,
     salaryEarned,
+    incentiveEarned,
+    totalEarnings,
+    incentiveSales: calculatedIncentiveSales,
     days,
   };
 }
@@ -117,7 +137,7 @@ async function getOpeningBalance(employee, month) {
 
   while (compareMonth(cursor, month) < 0) {
     const summary = await earnedForMonth(employee, cursor);
-    earned += summary.salaryEarned;
+    earned += summary.totalEarnings;
     cursor = nextMonthKey(cursor);
   }
 
@@ -138,7 +158,7 @@ async function getSalarySummary(employee, month) {
     .sort({ date: -1 })
     .lean();
   const totalPaid = payments.reduce((sum, payment) => sum + (+payment.amount || 0), 0);
-  const payableBeforePayment = Math.round((openingNetBalance + earned.salaryEarned) * 100) / 100;
+  const payableBeforePayment = Math.round((openingNetBalance + earned.totalEarnings) * 100) / 100;
   const closingNetBalance = Math.round((payableBeforePayment - totalPaid) * 100) / 100;
   const openingBalance = Math.max(0, openingNetBalance);
   const openingAdvance = Math.max(0, -openingNetBalance);
@@ -155,6 +175,9 @@ async function getSalarySummary(employee, month) {
     payableUnits: earned.payableUnits,
     monthlySalary: employee.monthlySalary,
     salaryEarned: earned.salaryEarned,
+    incentiveEarned: earned.incentiveEarned,
+    totalEarnings: earned.totalEarnings,
+    incentiveSales: earned.incentiveSales,
     openingBalance,
     openingAdvance,
     openingNetBalance,

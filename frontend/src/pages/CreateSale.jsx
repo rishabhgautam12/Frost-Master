@@ -86,12 +86,13 @@ export default function CreateSale({ navigate, mode = "sale" }) {
   const [customers,   setCustomers]   = useState([]);
   const [products,    setProducts]    = useState([]);
   const [warehouses,  setWarehouses]  = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [showAddCust, setShowAddCust] = useState(false);
   const [newProductRow, setNewProductRow] = useState(null); // row index showing new-product form
   const [form, setForm] = useState({
     customer:"", customerName:"", saleType:"GST Invoice", paymentMode:"Cash",
     date:new Date().toISOString().split("T")[0], isInterState:false,
-    amountPaid:"", notes:""
+    amountPaid:"", notes:"", salesEmployee:""
   });
   const [payments, setPayments] = useState([{ paymentMode:"Credit", amount:"", date:new Date().toISOString().split("T")[0], notes:"" }]);
   const [invoiceDetails, setInvoiceDetails] = useState({ billTo:{}, shipTo:{} });
@@ -106,8 +107,8 @@ export default function CreateSale({ navigate, mode = "sale" }) {
   };
 
   useEffect(() => {
-    Promise.all([customerAPI.getAll(), productAPI.getAll(), employeeAPI.getWarehouses()])
-      .then(([c, p, w]) => { setCustomers(c.data); setProducts(p.data); setWarehouses(w.data || []); })
+    Promise.all([customerAPI.getAll(), productAPI.getAll(), employeeAPI.getWarehouses(), employeeAPI.getAll({ status:"Active" })])
+      .then(([c, p, w, e]) => { setCustomers(c.data); setProducts(p.data); setWarehouses(w.data || []); setEmployees(e.data || []); })
       .catch(() => {});
   }, []);
 
@@ -229,7 +230,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
       <div style={{ background:"#fff", borderRadius:10, padding:28, border:"1px solid #e2e8f0" }}>
 
         {/* Sale type / payment / date */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:20 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))", gap:12, marginBottom:20 }}>
           <FormGroup label="Sale Type">
             <FormSelect value={form.saleType} onChange={set("saleType")}>
               {["GST Invoice","Cash Sale"].map(t => <option key={t}>{t}</option>)}
@@ -242,6 +243,12 @@ export default function CreateSale({ navigate, mode = "sale" }) {
           </FormGroup>
           <FormGroup label="Date">
             <FormInput type="date" value={form.date} onChange={set("date")} />
+          </FormGroup>
+          <FormGroup label="Sale Made By (Employee)">
+            <FormSelect value={form.salesEmployee} onChange={set("salesEmployee")}>
+              <option value="">Select employee</option>
+              {employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name}{employee.role ? ` - ${employee.role}` : ""} ({employee.incentivePercent || 0}%)</option>)}
+            </FormSelect>
           </FormGroup>
         </div>
 
