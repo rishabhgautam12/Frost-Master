@@ -42,7 +42,8 @@ const YEARS = Array.from({ length: 4 }, (_, i) => currentYear - i);
 // ── Payment Modal ──────────────────────────────────────────────────────────────
 function PaymentModal({ sale, onClose, onDone }) {
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState(sale?.paymentMode || "Cash");
+  const [method, setMethod] = useState(sale?.paymentMode && sale.paymentMode !== "Multiple" && sale.paymentMode !== "Credit" ? sale.paymentMode : "Cash");
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
   const [notes,  setNotes]  = useState("");
   const [saving, setSaving] = useState(false);
   const [err,    setErr]    = useState("");
@@ -56,7 +57,7 @@ function PaymentModal({ sale, onClose, onDone }) {
     if (amt > due + 0.01) return setErr(`Maximum payable: ₹${due.toLocaleString()}`);
     setSaving(true); setErr("");
     try {
-      await salesAPI.payForSale(sale._id, { amount: amt, method, notes });
+      await salesAPI.payForSale(sale._id, { amount: amt, method, notes, date: paymentDate });
       onDone(`₹${amt.toLocaleString()} payment recorded for ${sale.invoiceNo}`);
     } catch (e) { setErr(e.message); setSaving(false); }
   };
@@ -90,8 +91,12 @@ function PaymentModal({ sale, onClose, onDone }) {
 
       <FormGroup label="Payment Method">
         <FormSelect value={method} onChange={(e) => setMethod(e.target.value)}>
-          {["Cash","UPI","Card","Bank Transfer","Cheque","Credit"].map(m => <option key={m}>{m}</option>)}
+          {["Cash","UPI","Card","Bank Transfer","Cheque"].map(m => <option key={m}>{m}</option>)}
         </FormSelect>
+      </FormGroup>
+
+      <FormGroup label="Payment Date">
+        <FormInput type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
       </FormGroup>
 
       <FormGroup label="Notes (optional)">
@@ -111,6 +116,63 @@ function PaymentModal({ sale, onClose, onDone }) {
 }
 
 // ── Edit Modal ─────────────────────────────────────────────────────────────────
+function PaymentHistoryDrawer({ sale, onClose, onAddPayment }) {
+  if (!sale) return null;
+  const payments = [...(sale.payments || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const trackedTotal = payments.reduce((sum, payment) => sum + (+payment.amount || 0), 0);
+  const legacyAmount = Math.max(0, (+sale.amountPaid || 0) - trackedTotal);
+  const canPay = sale.status !== "Paid" && sale.status !== "Cancelled" && sale.amountDue > 0;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 10000 }}>
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(15,23,42,.42)" }} />
+      <aside style={{ position: "absolute", top: 0, right: 0, height: "100%", width: "min(460px, 100vw)", background: "#f8fafc", boxShadow: "-12px 0 30px rgba(15,23,42,.18)", display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "20px 22px", background: "#fff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", gap: 14 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a" }}>Payment History</div>
+            <div style={{ marginTop: 3, fontSize: 12, color: "#64748b" }}>{sale.invoiceNo} · {sale.customer?.name || sale.customerName || "Walk-in"}</div>
+          </div>
+          <button onClick={onClose} aria-label="Close payment history" style={{ border: 0, background: "#f1f5f9", borderRadius: 8, width: 34, height: 34, cursor: "pointer", fontSize: 20 }}>×</button>
+        </div>
+        <div style={{ padding: 18, overflowY: "auto", flex: 1 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 18 }}>
+            {[["Invoice Total", sale.grandTotal, "#0f172a"], ["Total Paid", sale.amountPaid, "#16a34a"], ["Balance Due", sale.amountDue, "#dc2626"]].map(([label, value, color]) => (
+              <div key={label} style={{ padding: "11px 9px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 9 }}>
+                <div style={{ fontSize: 9, fontWeight: 800, color: "#64748b", textTransform: "uppercase" }}>{label}</div>
+                <div style={{ marginTop: 4, fontSize: 15, fontWeight: 800, color }}>₹{(+value || 0).toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#334155", marginBottom: 10 }}>{payments.length} recorded payment{payments.length === 1 ? "" : "s"}</div>
+          {legacyAmount > 0 && (
+            <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 9, padding: 12, marginBottom: 10 }}>
+              <div style={{ fontWeight: 800, color: "#92400e" }}>₹{legacyAmount.toLocaleString()} previously paid</div>
+              <div style={{ fontSize: 11, color: "#a16207", marginTop: 3 }}>This amount was saved before detailed payment tracking was enabled.</div>
+            </div>
+          )}
+          {payments.length === 0 && legacyAmount === 0 ? (
+            <div style={{ textAlign: "center", color: "#94a3b8", padding: "42px 10px", background: "#fff", border: "1px dashed #cbd5e1", borderRadius: 10 }}>No payments recorded yet.</div>
+          ) : payments.map((payment, index) => (
+            <div key={payment._id || `${payment.date}-${index}`} style={{ background: "#fff", border: "1px solid #e2e8f0", borderLeft: "4px solid #22c55e", borderRadius: 9, padding: 13, marginBottom: 9 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ fontWeight: 800, color: "#15803d", fontSize: 17 }}>₹{(+payment.amount || 0).toLocaleString()}</div>
+                <Badge color="green">{payment.paymentMode || "Cash"}</Badge>
+              </div>
+              <div style={{ marginTop: 7, color: "#475569", fontSize: 12 }}>{new Date(payment.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
+              <div style={{ marginTop: 3, color: "#64748b", fontSize: 11 }}>Recorded by {payment.recordedByName || "Staff"}</div>
+              {payment.notes && <div style={{ marginTop: 8, padding: "7px 9px", borderRadius: 6, background: "#f8fafc", color: "#475569", fontSize: 12 }}>{payment.notes}</div>}
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: "14px 18px", background: "#fff", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 9 }}>
+          <Btn color="cancel" onClick={onClose}>Close</Btn>
+          {canPay && <Btn color="green" onClick={onAddPayment}>+ Add Payment</Btn>}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 function EditModal({ sale, onClose, onDone }) {
   const [notes,       setNotes]       = useState(sale?.notes || "");
   const [paymentMode, setPaymentMode] = useState(sale?.paymentMode || "Cash");
@@ -488,6 +550,7 @@ export default function SalesList({ navigate }) {
   const [toast,    setToast]    = useState(null);
   const [expanded, setExpanded] = useState(null);
   const [payModal, setPayModal] = useState(null);
+  const [paymentDrawer, setPaymentDrawer] = useState(null);
   const [editModal,setEditModal]= useState(null);
 
   // Derive date range from month + year pickers
@@ -542,7 +605,7 @@ export default function SalesList({ navigate }) {
       {toast && <SuccessToast msg={toast} />}
 
       {/* ── Summary Cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 12, marginBottom: 16 }}>
+      <div className="sales-summary-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 12, marginBottom: 16 }}>
         {[
           { label: "Total Sales",     value: sales.length,                          color: "#3b82f6", icon: "🧾" },
           { label: "Total Revenue",   value: `₹${totalRevenue.toLocaleString()}`,   color: "#8b5cf6", icon: "💼" },
@@ -550,11 +613,11 @@ export default function SalesList({ navigate }) {
           { label: "Amount Due",      value: `₹${totalDue.toLocaleString()}`,       color: "#ef4444", icon: "🔴" },
           { label: "Total GST",       value: `₹${totalGST.toLocaleString()}`,       color: "#f59e0b", icon: "📋" },
         ].map((c, i) => (
-          <div key={i} style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #e2e8f0", borderLeft: `4px solid ${c.color}` }}>
-            <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+          <div className="sales-summary-card" key={i} style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #e2e8f0", borderLeft: `4px solid ${c.color}` }}>
+            <div className="sales-summary-label" style={{ fontSize: 11, color: "#64748b", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
               {c.icon} {c.label}
             </div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", marginTop: 4 }}>{c.value}</div>
+            <div className="sales-summary-value" style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", marginTop: 4 }}>{c.value}</div>
           </div>
         ))}
       </div>
@@ -664,6 +727,7 @@ export default function SalesList({ navigate }) {
                     <Td><Badge color={stColor[s.status] || "gray"}>{s.status}</Badge></Td>
                     <Td>
                       <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                        <Btn sm color="teal" onClick={() => setPaymentDrawer(s)}>Payments ({s.payments?.length || 0})</Btn>
                         {s.status !== "Paid" && s.status !== "Cancelled" && (
                           <Btn sm color="green" onClick={() => setPayModal(s)}>💰 Pay</Btn>
                         )}
@@ -706,6 +770,11 @@ export default function SalesList({ navigate }) {
       )}
 
       {payModal  && <PaymentModal sale={payModal}  onClose={() => setPayModal(null)}  onDone={afterPay}  />}
+      {paymentDrawer && <PaymentHistoryDrawer
+        sale={paymentDrawer}
+        onClose={() => setPaymentDrawer(null)}
+        onAddPayment={() => { setPaymentDrawer(null); setPayModal(paymentDrawer); }}
+      />}
       {editModal && <FullEditModal sale={editModal} onClose={() => setEditModal(null)} onDone={afterEdit} />}
     </div>
   );

@@ -24,6 +24,8 @@ const salePaymentSchema = new mongoose.Schema({
   paymentMode: { type: String, enum: ["Cash", "UPI", "Card", "Bank Transfer", "Cheque"], default: "Cash" },
   date: { type: Date, default: Date.now },
   notes: { type: String, trim: true },
+  recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  recordedByName: { type: String, trim: true },
 }, { _id: true });
 
 const saleSchema = new mongoose.Schema(

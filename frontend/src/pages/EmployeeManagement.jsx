@@ -440,11 +440,11 @@ export default function EmployeeManagement({ user }) {
     rect(padding, cardY, 420, 118, "#fff", "#cbd5e1");
     text("Total Due", padding + 20, cardY + 36, { color: "#334155", size: 14 });
     text(money(salary.dueAmount), padding + 20, cardY + 78, { color: "#0f766e", size: 28, weight: 300 });
-    text(`Previous due: ${money(salary.openingBalance || 0)} + this month: ${money(salary.salaryEarned)}`, padding + 20, cardY + 104, { color: "#64748b", size: 11 });
+    text(`Previous due: ${money(salary.openingBalance || 0)} | Opening advance: ${money(salary.openingAdvance || 0)}`, padding + 20, cardY + 102, { color: "#64748b", size: 10 });
     rect(width - padding - 420, cardY, 420, 118, "#fff", "#cbd5e1");
     text("Month Salary", width - padding - 400, cardY + 36, { color: "#334155", size: 14 });
     text(money(salary.salaryEarned), width - padding - 400, cardY + 72, { color: "#0f172a", size: 22, weight: 800 });
-    text(`Payable ${money(salary.grossDue || salary.salaryEarned)} - Paid ${money(salary.totalPaid)}`, width - padding - 400, cardY + 100, { color: "#64748b", size: 11 });
+    text(`Payable ${money(salary.grossDue ?? salary.salaryEarned)} - Paid ${money(salary.totalPaid)} | Advance ${money(salary.advanceAmount || 0)}`, width - padding - 400, cardY + 100, { color: "#64748b", size: 10 });
 
     text(`<`, padding + 12, titleY, { size: 24, weight: 800 });
     text(`Attendance  ${monthLabel(month)}`, width / 2, titleY, { size: 20, weight: 800, align: "center" });
@@ -661,7 +661,7 @@ export default function EmployeeManagement({ user }) {
                 <div style={{
                   marginTop: isMobile ? -58 : 0,
                   display: "grid",
-                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                  gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
                   gap: 12,
                 }}>
                   <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 6, padding: 18, boxShadow: "0 4px 16px rgba(15,23,42,0.1)" }}>
@@ -671,11 +671,18 @@ export default function EmployeeManagement({ user }) {
                       Previous due {money(salary.openingBalance || 0)} + this month {money(salary.salaryEarned)}
                     </div>
                   </div>
+                  <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 6, padding: 18, boxShadow: "0 4px 16px rgba(15,23,42,0.08)" }}>
+                    <div style={{ color: "#334155", fontSize: 16, marginBottom: 8 }}>Advance Balance</div>
+                    <div style={{ color: "#2563eb", fontSize: isMobile ? 34 : 38, fontWeight: 300 }}>{money(salary.advanceAmount || 0)}</div>
+                    <div style={{ color: "#64748b", fontSize: 12, marginTop: 6 }}>
+                      Opening advance {money(salary.openingAdvance || 0)}; future salary adjusts automatically
+                    </div>
+                  </div>
                   <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 6, padding: 18 }}>
                     <div style={{ color: "#334155", fontSize: 16, marginBottom: 8 }}>Month Salary</div>
                     <div style={{ fontSize: 24, fontWeight: 800, color: "#0f172a" }}>{money(salary.salaryEarned)}</div>
                     <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>
-                      Payable {money(salary.grossDue || salary.salaryEarned)} - Paid {money(salary.totalPaid)}
+                      Payable {money(salary.grossDue ?? salary.salaryEarned)} - Paid {money(salary.totalPaid)}
                     </div>
                   </div>
                 </div>
@@ -753,7 +760,7 @@ export default function EmployeeManagement({ user }) {
                     <div style={{ fontSize: isMobile ? 18 : 14 }}>{fullCycleLabel(month)}</div>
                     <div style={{ fontSize: isMobile ? 18 : 14 }}>Total: {money(salary.salaryEarned)}</div>
                   </div>
-                  <button onClick={() => alert(`Present: ${salary.present}\nAbsent: ${salary.absent}\nHalf Day: ${salary.halfDay}\nPaid Leave: ${salary.paidLeave}\nPrevious Due: ${money(salary.openingBalance || 0)}\nThis Month: ${money(salary.salaryEarned)}\nPaid: ${money(salary.totalPaid)}\nDue: ${money(salary.dueAmount)}`)}
+                  <button onClick={() => alert(`Present: ${salary.present}\nAbsent: ${salary.absent}\nHalf Day: ${salary.halfDay}\nPaid Leave: ${salary.paidLeave}\nPrevious Due: ${money(salary.openingBalance || 0)}\nOpening Advance: ${money(salary.openingAdvance || 0)}\nThis Month: ${money(salary.salaryEarned)}\nPaid: ${money(salary.totalPaid)}\nDue: ${money(salary.dueAmount)}\nAdvance Balance: ${money(salary.advanceAmount || 0)}`)}
                     style={{ border: "none", background: "transparent", color: "#0f766e", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
                     VIEW SUMMARY
                   </button>
@@ -935,7 +942,10 @@ export default function EmployeeManagement({ user }) {
         <FormGroup label="Date"><FormInput type="date" value={paymentForm.date} onChange={(e) => setPaymentForm((p) => ({ ...p, date: e.target.value }))} /></FormGroup>
         <FormGroup label="Notes"><FormInput value={paymentForm.notes} onChange={(e) => setPaymentForm((p) => ({ ...p, notes: e.target.value }))} /></FormGroup>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-          <div style={{ color: "#64748b", fontSize: 12 }}>Current due: {money(salary?.dueAmount || 0)}</div>
+          <div style={{ color: "#64748b", fontSize: 12 }}>
+            Current due: {money(salary?.dueAmount || 0)} · Advance: {money(salary?.advanceAmount || 0)}<br />
+            You may pay more than the current due; the extra amount will be stored as advance.
+          </div>
           <div style={{ display: "flex", gap: 10 }}>
             <Btn color="cancel" onClick={() => { setPaymentOpen(false); setEditingPayment(null); }} disabled={paymentSaving}>Cancel</Btn>
             <Btn color="blue" onClick={addPayment} disabled={paymentSaving}>

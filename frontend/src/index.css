@@ -2,3 +2,27 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; min-height: 100vh; font-size: 13px; }
+
+@media (max-width: 600px) {
+  .sales-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+  }
+
+  .sales-summary-card {
+    min-width: 0;
+    padding: 11px 10px !important;
+  }
+
+  .sales-summary-label {
+    font-size: 10px !important;
+    line-height: 1.2;
+  }
+
+  .sales-summary-value {
+    font-size: clamp(14px, 4.4vw, 18px) !important;
+    line-height: 1.2;
+    letter-spacing: -0.35px;
+    white-space: nowrap;
+  }
+}

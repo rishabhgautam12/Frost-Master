@@ -126,18 +126,23 @@ async function getOpeningBalance(employee, month) {
     month: { $lt: month },
   }).lean();
   const paid = payments.reduce((sum, payment) => sum + (+payment.amount || 0), 0);
-  return Math.max(0, Math.round((earned - paid) * 100) / 100);
+  // Positive means salary is due; negative means the employee has advance credit.
+  return Math.round((earned - paid) * 100) / 100;
 }
 
 async function getSalarySummary(employee, month) {
   const earned = await earnedForMonth(employee, month);
-  const openingBalance = await getOpeningBalance(employee, month);
+  const openingNetBalance = await getOpeningBalance(employee, month);
 
   const payments = await SalaryPayment.find({ employee: employee._id, month })
     .sort({ date: -1 })
     .lean();
   const totalPaid = payments.reduce((sum, payment) => sum + (+payment.amount || 0), 0);
-  const grossDue = openingBalance + earned.salaryEarned;
+  const payableBeforePayment = Math.round((openingNetBalance + earned.salaryEarned) * 100) / 100;
+  const closingNetBalance = Math.round((payableBeforePayment - totalPaid) * 100) / 100;
+  const openingBalance = Math.max(0, openingNetBalance);
+  const openingAdvance = Math.max(0, -openingNetBalance);
+  const grossDue = Math.max(0, payableBeforePayment);
   const lock = await SalaryLock.findOne({ employee: employee._id, month }).lean();
 
   return {
@@ -151,9 +156,13 @@ async function getSalarySummary(employee, month) {
     monthlySalary: employee.monthlySalary,
     salaryEarned: earned.salaryEarned,
     openingBalance,
+    openingAdvance,
+    openingNetBalance,
     grossDue,
     totalPaid,
-    dueAmount: Math.max(0, Math.round((grossDue - totalPaid) * 100) / 100),
+    dueAmount: Math.max(0, closingNetBalance),
+    advanceAmount: Math.max(0, -closingNetBalance),
+    closingNetBalance,
     isLocked: !!lock?.isLocked,
     lockedAt: lock?.lockedAt || null,
     days: earned.days,
@@ -425,7 +434,7 @@ exports.addSalaryPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: "This month is locked. Unlock it before adding payment." });
     }
     const summary = await getSalarySummary(employee, parsed);
-    const paying = Math.min(Math.max(0, +amount || 0), summary.dueAmount);
+    const paying = Math.max(0, +amount || 0);
     if (paying <= 0) return res.status(400).json({ success: false, message: "Valid payment amount required" });
 
     const payment = await SalaryPayment.create({
@@ -465,9 +474,7 @@ exports.updateSalaryPayment = async (req, res) => {
     if (await isSalaryMonthLocked(employee._id, parsed) || await isSalaryMonthLocked(employee._id, payment.month)) {
       return res.status(400).json({ success: false, message: "This month is locked. Unlock it before changing payment." });
     }
-    const summary = await getSalarySummary(employee, parsed);
-    const maxPayable = summary.dueAmount + (payment.month === parsed ? (+payment.amount || 0) : 0);
-    const paying = Math.min(Math.max(0, +amount || 0), maxPayable);
+    const paying = Math.max(0, +amount || 0);
     if (paying <= 0) return res.status(400).json({ success: false, message: "Valid payment amount required" });
 
     const beforeAmount = payment.amount;

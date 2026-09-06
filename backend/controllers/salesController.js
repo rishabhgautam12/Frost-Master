@@ -281,13 +281,22 @@ exports.createSale = async (req, res) => {
       });
     }
 
+    const recordedByName = req.user?.name || req.user?.username || "Staff";
+    const initialPayments = Array.isArray(rest.payments)
+      ? rest.payments.map(payment => ({
+          ...payment,
+          recordedBy: req.user?._id,
+          recordedByName,
+        }))
+      : [];
     const sale = new Sale({
       ...rest,
       customer:   customer || undefined,
       items:      enrichedItems,
       amountPaid: amountPaid || 0,
+      payments:   initialPayments,
       soldBy:     req.user?._id,
-      soldByName: req.user?.name || req.user?.username || "Staff",
+      soldByName: recordedByName,
     });
     await sale.save();
 
@@ -365,13 +374,25 @@ exports.convertOrderToSale = async (req, res) => {
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
     if (order.status !== "Open")
       return res.status(400).json({ success: false, message: `Only open orders can be converted. Current status: ${order.status}` });
+    const convertedAmountPaid = +req.body.amountPaid || 0;
+    const convertedPaymentMode = req.body.paymentMode || order.paymentMode || "Credit";
+    const convertedByName = req.user?.name || req.user?.username || "Staff";
     const sale = new Sale({
       customer: order.customer || undefined, customerName: order.customerName,
-      saleType: order.saleType, paymentMode: req.body.paymentMode || order.paymentMode || "Credit",
+      saleType: order.saleType, paymentMode: convertedPaymentMode,
       date: req.body.date || new Date(), items: order.items.map(item => item.toObject()),
-      amountPaid: +req.body.amountPaid || 0, isInterState: order.isInterState,
+      amountPaid: convertedAmountPaid,
+      payments: convertedAmountPaid > 0 ? [{
+        amount: convertedAmountPaid,
+        paymentMode: convertedPaymentMode === "Credit" ? "Cash" : convertedPaymentMode,
+        date: req.body.date || new Date(),
+        notes: "Payment recorded during order conversion",
+        recordedBy: req.user?._id,
+        recordedByName: convertedByName,
+      }] : [],
+      isInterState: order.isInterState,
       notes: order.notes, sourceOrder: order._id,
-      soldBy: req.user?._id, soldByName: req.user?.name || req.user?.username || "Staff",
+      soldBy: req.user?._id, soldByName: convertedByName,
     });
     await sale.save();
     for (const item of sale.items) await deductStockFromWarehouses(item.product, item.qty, item.warehouse);
@@ -728,9 +749,19 @@ exports.payForSale = async (req, res) => {
     if (maxPayable <= 0)
       return res.status(400).json({ success:false, message:"This invoice is already fully paid." });
     const paying    = Math.min(+amount, maxPayable);
+    const paymentMethod = method || "Cash";
+    sale.payments.push({
+      amount: paying,
+      paymentMode: paymentMethod,
+      date: date || new Date(),
+      notes: notes || "",
+      recordedBy: req.user?._id,
+      recordedByName: req.user?.name || req.user?.username || "Staff",
+    });
     sale.amountPaid += paying;
     sale.amountDue   = Math.max(0, sale.grandTotal - sale.amountPaid);
     sale.status      = sale.amountDue === 0 ? "Paid" : "Partial";
+    sale.paymentMode = sale.payments.length > 1 ? "Multiple" : paymentMethod;
     await sale.save();
     const customer = await Customer.findById(sale.customer);
     if (customer) { customer.totalReceived += paying; await customer.save(); }

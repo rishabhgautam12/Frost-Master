@@ -191,9 +191,19 @@ exports.payForSale = async (req, res) => {
 
     const paying = Math.min(+amount, maxPayable); // cannot overpay
 
+    const paymentMethod = method || "Cash";
+    sale.payments.push({
+      amount: paying,
+      paymentMode: paymentMethod,
+      date: date || new Date(),
+      notes: notes || "",
+      recordedBy: req.user?._id,
+      recordedByName: req.user?.name || req.user?.username || "Staff",
+    });
     sale.amountPaid += paying;
     sale.amountDue   = Math.max(0, sale.grandTotal - sale.amountPaid);
     sale.status      = sale.amountDue === 0 ? "Paid" : "Partial";
+    sale.paymentMode = sale.payments.length > 1 ? "Multiple" : paymentMethod;
     await sale.save();
 
     // Keep customer running totals in sync
