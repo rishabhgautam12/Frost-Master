@@ -2,7 +2,7 @@ const Product = require("../models/Product");
 const Purchase = require("../models/Purchase");
 const { createdChanges, logActivity, toChanges } = require("../utils/auditLogger");
 
-const productFields = ["name", "modelNumber", "brand", "productType", "vendor", "purchasePrice", "sellingPrice", "stock", "warehouses", "minStockAlert", "gstRate", "description"];
+const productFields = ["name", "modelNumber", "hsnCode", "brand", "productType", "vendor", "purchasePrice", "sellingPrice", "stock", "warehouses", "minStockAlert", "gstRate", "description"];
 
 function normalizeWarehouses(warehouses, fallbackStock) {
   const rows = Array.isArray(warehouses) ? warehouses : [];
@@ -42,6 +42,7 @@ exports.getProducts = async (req, res) => {
     if (search)   filter.$or = [
       { name:        { $regex: search, $options: "i" } },
       { modelNumber: { $regex: search, $options: "i" } },
+      { hsnCode:     { $regex: search, $options: "i" } },
       { brand:       { $regex: search, $options: "i" } },
     ];
     if (lowStock === "true") filter.$expr = { $lte: ["$stock", "$minStockAlert"] };
@@ -85,8 +86,7 @@ exports.getProductById = async (req, res) => {
 
 exports.createProduct = async (req, res) => {
   try {
-    // Strip out category/hsnCode if accidentally sent
-    const { category, hsnCode, ...rest } = req.body;
+    const { category, ...rest } = req.body;
     const product = new Product(withWarehouseTotals(rest));
     await product.save();
     await product.populate("vendor", "name company");
@@ -107,7 +107,7 @@ exports.createProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
-    const { category, hsnCode, ...rest } = req.body;
+    const { category, ...rest } = req.body;
     const before = await Product.findById(req.params.id);
     if (!before) return res.status(404).json({ success: false, message: "Product not found" });
     const product = await Product.findByIdAndUpdate(req.params.id, withWarehouseTotals(rest), { new: true, runValidators: true })

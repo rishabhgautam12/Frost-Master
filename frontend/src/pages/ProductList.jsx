@@ -52,6 +52,7 @@ export default function ProductList({ navigate }) {
     _id:          p._id,
     name:         p.name,
     modelNumber:  p.modelNumber,
+    hsnCode:      p.hsnCode || "",
     brand:        p.brand || "",
     productType:  p.productType || "Manufacturing",
     vendor:       p.vendor?._id || "",
@@ -74,6 +75,7 @@ export default function ProductList({ navigate }) {
       await productAPI.update(editProd._id, {
         name:          editProd.name,
         modelNumber:   editProd.modelNumber,
+        hsnCode:       editProd.hsnCode,
         brand:         editProd.brand,
         productType:   editProd.productType,
         vendor:        editProd.vendor || undefined,
@@ -119,12 +121,12 @@ export default function ProductList({ navigate }) {
         <TableWrap>
           <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
             <thead>
-              <tr>{["Product","Model No.","Type","Brand","Vendor","Warehouse","Purchase ₹","Selling ₹",
+              <tr>{["Product","Model No.","HSN Code","Type","Brand","Vendor","Warehouse","Purchase ₹","Selling ₹",
                 "Margin","Stock","GST%","Action"].map(h=><Th key={h}>{h}</Th>)}</tr>
             </thead>
             <tbody>
               {products.length === 0
-                ? <tr><td colSpan={12}><EmptyState text="No products found. Add one!" /></td></tr>
+                ? <tr><td colSpan={13}><EmptyState text="No products found. Add one!" /></td></tr>
                 : products.map(p => (
                   <tr key={p._id} style={{ borderBottom:"1px solid #f1f5f9" }}
                     onMouseEnter={e=>e.currentTarget.style.background="#f0fdfa"}
@@ -133,6 +135,7 @@ export default function ProductList({ navigate }) {
                     <Td style={{ fontFamily:"monospace", color:"#0ea5e9", fontSize:11 }}>
                       {p.modelNumber}
                     </Td>
+                    <Td style={{ fontFamily:"monospace" }}>{p.hsnCode || "-"}</Td>
                     <Td><Badge color={p.productType === "Imported" ? "purple" : "green"}>{p.productType || "Manufacturing"}</Badge></Td>
                     <Td>{p.brand||"—"}</Td>
                     <Td style={{ color:"#64748b" }}>{p.vendor?.name||"—"}</Td>
@@ -187,6 +190,9 @@ export default function ProductList({ navigate }) {
               </FormGroup>
               <FormGroup label="Model Number *">
                 <FormInput value={editProd.modelNumber} onChange={setE("modelNumber")} />
+              </FormGroup>
+              <FormGroup label="HSN Code">
+                <FormInput value={editProd.hsnCode} onChange={setE("hsnCode")} placeholder="e.g. 8418" />
               </FormGroup>
               <FormGroup label="Brand">
                 <FormInput value={editProd.brand} onChange={setE("brand")} />

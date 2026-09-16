@@ -17,6 +17,7 @@ export default function QuickAddProduct({ mode="purchase", vendorId, defaultRate
   const [form, setForm] = useState({
     name:          "",
     modelNumber:   "",
+    hsnCode:       "",
     brand:         "",
     productType:   "Manufacturing",
     purchasePrice: defaultRate || "",
@@ -46,6 +47,7 @@ export default function QuickAddProduct({ mode="purchase", vendorId, defaultRate
       const res = await productAPI.create({
         name:          form.name,
         modelNumber:   form.modelNumber,
+        hsnCode:       form.hsnCode,
         brand:         form.brand,
         productType:   form.productType,
         vendor:        vendorId || undefined,
@@ -99,6 +101,9 @@ export default function QuickAddProduct({ mode="purchase", vendorId, defaultRate
         <FormGroup label="Model Number *">
           <FormInput placeholder="e.g. RT-TW-030"
             value={form.modelNumber} onChange={set("modelNumber")} />
+        </FormGroup>
+        <FormGroup label="HSN Code">
+          <FormInput placeholder="e.g. 8418" value={form.hsnCode} onChange={set("hsnCode")} />
         </FormGroup>
         <FormGroup label="Brand">
           <FormInput placeholder="e.g. Prestige"

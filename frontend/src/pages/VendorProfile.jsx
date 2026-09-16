@@ -359,7 +359,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
   const [addModal,   setAddModal]   = useState(false);
   const [editModal,  setEditModal]  = useState(null); // product being edited
   const [form,       setForm]       = useState({
-    name:"", modelNumber:"", brand:"",
+    name:"", modelNumber:"", hsnCode:"", brand:"",
     purchasePrice:"", sellingPrice:"", stock:"",
     minStockAlert:"5", gstRate:"18", description:""
   });
@@ -382,6 +382,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
     setEditForm({
       name:          p.name,
       modelNumber:   p.modelNumber,
+      hsnCode:       p.hsnCode || "",
       brand:         p.brand || "",
       purchasePrice: String(p.purchasePrice),
       sellingPrice:  String(p.sellingPrice || ""),
@@ -401,6 +402,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
       await productAPI.create({
         name:          form.name,
         modelNumber:   form.modelNumber,
+        hsnCode:       form.hsnCode,
         brand:         form.brand,
         vendor:        vendorId,
         purchasePrice: +form.purchasePrice,
@@ -412,7 +414,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
       });
       setToast("Product added successfully!");
       setAddModal(false);
-      setForm({ name:"", modelNumber:"", brand:"", purchasePrice:"", sellingPrice:"",
+      setForm({ name:"", modelNumber:"", hsnCode:"", brand:"", purchasePrice:"", sellingPrice:"",
                 stock:"", minStockAlert:"5", gstRate:"18", description:"" });
       load();
       onRefresh();
@@ -428,6 +430,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
       await productAPI.update(editModal._id, {
         name:          editForm.name,
         modelNumber:   editForm.modelNumber,
+        hsnCode:       editForm.hsnCode,
         brand:         editForm.brand,
         purchasePrice: +editForm.purchasePrice,
         sellingPrice:  +editForm.sellingPrice || 0,
@@ -472,6 +475,9 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
         <FormGroup label="Model Number *">
           <FormInput placeholder="e.g. RT-TW-030" value={f.modelNumber} onChange={setF("modelNumber")} />
         </FormGroup>
+        <FormGroup label="HSN Code">
+          <FormInput placeholder="e.g. 8418" value={f.hsnCode || ""} onChange={setF("hsnCode")} />
+        </FormGroup>
         <FormGroup label="Brand">
           <FormInput placeholder="e.g. Prestige" value={f.brand} onChange={setF("brand")} />
         </FormGroup>
@@ -513,7 +519,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
           <div style={{ overflowX:"auto" }}>
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
               <thead><tr>
-                {["Product Name","Model No.","Brand","Purchase ₹","Selling ₹","Margin","Stock","GST %","Status",""]
+                {["Product Name","Model No.","HSN Code","Brand","Purchase ₹","Selling ₹","Margin","Stock","GST %","Status",""]
                   .map(h=><TH key={h}>{h}</TH>)}
               </tr></thead>
               <tbody>
@@ -528,6 +534,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
                       onMouseLeave={e=>e.currentTarget.style.background=""}>
                       <TD style={{ fontWeight:700 }}>{p.name}</TD>
                       <TD style={{ fontFamily:"monospace", color:"#0ea5e9", fontSize:11 }}>{p.modelNumber}</TD>
+                      <TD style={{ fontFamily:"monospace" }}>{p.hsnCode || "-"}</TD>
                       <TD>{p.brand||"—"}</TD>
                       <TD>₹{p.purchasePrice.toLocaleString()}</TD>
                       <TD style={{ color:"#16a34a", fontWeight:700 }}>

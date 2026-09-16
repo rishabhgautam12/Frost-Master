@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const saleItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
   productName: { type: String },
+  hsnCode: { type: String, trim: true },
   description: { type: String, trim: true },
   qty: { type: Number, required: true, min: 1 },
   rate: { type: Number, required: true },       // selling price at time of sale

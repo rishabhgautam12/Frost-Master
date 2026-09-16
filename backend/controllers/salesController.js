@@ -28,6 +28,7 @@ async function resolveProduct(item, fallbackVendorId) {
     const created = await Product.create({
       name:          np.name,
       modelNumber:   np.modelNumber,
+      hsnCode:       np.hsnCode || "",
       brand:         np.brand || "",
       productType:   np.productType || "Manufacturing",
       vendor:        np.vendor || fallbackVendorId || undefined,
@@ -98,6 +99,7 @@ async function buildSaleItems(items = []) {
     const transportGstRate = +item.transportGstRate || 0;
     enrichedItems.push({
       product: product._id, productName: product.name,
+      hsnCode: String(item.hsnCode ?? product.hsnCode ?? "").trim(),
       description: String(item.description ?? product.description ?? "").trim(),
       qty, rate, billingRate, billingTotal,
       discount, discountAmount, total: itemTotal,
@@ -242,7 +244,7 @@ exports.getSales = async (req, res) => {
       .populate("customer", "name phone")
       .populate("soldBy", "name username role")
       .populate("salesEmployee", "name role incentivePercent")
-      .populate("items.product", "name modelNumber")
+      .populate("items.product", "name modelNumber hsnCode")
       .sort({ date: -1 });
 
     const summary = {
@@ -263,7 +265,7 @@ exports.getSaleById = async (req, res) => {
       .populate("customer", "name phone address gstin city")
       .populate("soldBy", "name username role")
       .populate("salesEmployee", "name role incentivePercent")
-      .populate("items.product", "name modelNumber gstRate");
+      .populate("items.product", "name modelNumber hsnCode gstRate");
     if (!sale) return res.status(404).json({ success:false, message:"Sale not found" });
     res.json({ success:true, data:sale });
   } catch (err) { res.status(500).json({ success:false, message:err.message }); }
@@ -308,6 +310,7 @@ exports.createSale = async (req, res) => {
       enrichedItems.push({
         product:     product._id,
         productName: product.name,
+        hsnCode:     String(item.hsnCode ?? product.hsnCode ?? "").trim(),
         description: String(item.description ?? product.description ?? "").trim(),
         qty,
         rate,
@@ -389,7 +392,7 @@ exports.getOrders = async (req, res) => {
       .populate("customer", "name phone")
       .populate("salesEmployee", "name role incentivePercent")
       .populate("convertedSale", "invoiceNo date")
-      .populate("items.product", "name modelNumber")
+      .populate("items.product", "name modelNumber hsnCode")
       .sort({ date: -1, createdAt: -1 });
     res.json({ success: true, data: orders });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
@@ -474,7 +477,7 @@ exports.updateOrder = async (req, res) => {
       }
     }
     await order.populate("customer", "name phone");
-    await order.populate("items.product", "name modelNumber gstRate");
+    await order.populate("items.product", "name modelNumber hsnCode gstRate");
     await logActivity(req, {
       action: "updated", entityType: "Order", entityId: order._id, entityLabel: order.orderNo,
       summary: `Updated order ${order.orderNo}`,
@@ -711,7 +714,7 @@ exports.getStaffSalesReport = async (req, res) => {
 
     const sales = await Sale.find(filter)
       .populate("soldBy", "name username role")
-      .populate("items.product", "name modelNumber")
+      .populate("items.product", "name modelNumber hsnCode")
       .sort({ date: -1 });
     const staffUsers = await User.find({ isActive: true }).select("name username role").sort({ role: 1, name: 1 });
 
@@ -810,7 +813,7 @@ exports.getPurchases = async (req, res) => {
     }
     const purchases = await Purchase.find(filter)
       .populate("vendor", "name company")
-      .populate("items.product", "name modelNumber")
+      .populate("items.product", "name modelNumber hsnCode")
       .sort({ date: -1 });
     res.json({ success:true, data:purchases });
   } catch (err) { res.status(500).json({ success:false, message:err.message }); }
@@ -848,6 +851,7 @@ exports.createPurchase = async (req, res) => {
           product = await Product.create({
             name:          np.name,
             modelNumber:   np.modelNumber,
+            hsnCode:       np.hsnCode || "",
             brand:         np.brand || "",
             vendor:        vendor,          // link to current vendor
             purchasePrice: +item.rate || 0, // use purchase rate as purchase price
@@ -1120,7 +1124,7 @@ exports.updatePurchase = async (req, res) => {
     }
 
     await purchase.populate("vendor", "name company");
-    await purchase.populate("items.product", "name modelNumber");
+    await purchase.populate("items.product", "name modelNumber hsnCode");
     const changes = toChanges(before, purchase, purchaseFields);
     if (changes.length > 0) {
       await logActivity(req, {
@@ -1291,7 +1295,7 @@ exports.updateSaleDetails = async (req, res) => {
 
     await sale.populate("customer", "name phone");
     await sale.populate("soldBy", "name username role");
-    await sale.populate("items.product", "name modelNumber gstRate");
+    await sale.populate("items.product", "name modelNumber hsnCode gstRate");
     const changes = toChanges(before, sale, saleFields);
     if (changes.length > 0) {
       await logActivity(req, {

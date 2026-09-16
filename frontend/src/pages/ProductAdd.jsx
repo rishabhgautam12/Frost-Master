@@ -6,7 +6,7 @@ import WarehouseStockEditor, { defaultWarehouseRows, warehousePayload, warehouse
 export default function ProductAdd({ navigate }) {
   const [vendors, setVendors] = useState([]);
   const [form,    setForm]    = useState({
-    name:"", modelNumber:"", brand:"", productType:"Manufacturing", vendor:"",
+    name:"", modelNumber:"", hsnCode:"", brand:"", productType:"Manufacturing", vendor:"",
     purchasePrice:"", sellingPrice:"", stock:"",
     minStockAlert:"5", gstRate:"18", description:""
   });
@@ -35,6 +35,7 @@ export default function ProductAdd({ navigate }) {
       await productAPI.create({
         name:          form.name,
         modelNumber:   form.modelNumber,
+        hsnCode:       form.hsnCode,
         brand:         form.brand,
         productType:   form.productType,
         vendor:        form.vendor || undefined,
@@ -76,6 +77,9 @@ export default function ProductAdd({ navigate }) {
           </FormGroup>
           <FormGroup label="Model Number *">
             <FormInput placeholder="e.g. RT-TW-030" value={form.modelNumber} onChange={set("modelNumber")} />
+          </FormGroup>
+          <FormGroup label="HSN Code">
+            <FormInput placeholder="e.g. 8418" value={form.hsnCode} onChange={set("hsnCode")} />
           </FormGroup>
           <FormGroup label="Brand">
             <FormInput placeholder="e.g. Prestige" value={form.brand} onChange={set("brand")} />

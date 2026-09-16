@@ -1,6 +1,7 @@
 import { FormGroup, FormInput } from "./Shared";
 
 const fields = [
+  ["eWayBillNo", "E-Way Bill No."],
   ["dispatchedThrough", "Dispatched Through"], ["destination", "Destination"],
   ["motorVehicleNo", "Motor Vehicle No."],
 ];
