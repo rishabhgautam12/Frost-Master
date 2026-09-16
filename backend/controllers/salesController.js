@@ -629,6 +629,44 @@ exports.cancelSale = async (req, res) => {
   } catch (err) { res.status(500).json({ success:false, message:err.message }); }
 };
 
+// DELETE sale (admin only) and reverse its accounting/stock effects
+exports.deleteSale = async (req, res) => {
+  try {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Only an admin can delete sales." });
+    }
+    const sale = await Sale.findById(req.params.id);
+    if (!sale) return res.status(404).json({ success: false, message: "Sale not found" });
+    if (sale.status !== "Cancelled") {
+      for (const item of sale.items) {
+        if (item.product) await addStockToWarehouse(item.product, item.qty, item.warehouse);
+      }
+      if (sale.customer) {
+        await Customer.findByIdAndUpdate(sale.customer, {
+          $inc: { totalBilled: -sale.grandTotal, totalReceived: -sale.amountPaid },
+        });
+      }
+    }
+    if (sale.sourceOrder) {
+      await Order.findOneAndUpdate(
+        { _id: sale.sourceOrder, convertedSale: sale._id },
+        { $set: { status: "Open" }, $unset: { convertedSale: 1, convertedAt: 1 } }
+      );
+    }
+    await Sale.findByIdAndDelete(sale._id);
+    await logActivity(req, {
+      action: "deleted",
+      entityType: "Sale",
+      entityId: sale._id,
+      entityLabel: sale.invoiceNo,
+      summary: `Deleted sale ${sale.invoiceNo}`,
+      changes: saleFields.map((field) => ({ field, before: sale[field], after: null })),
+      metadata: { stockRestored: sale.status !== "Cancelled", sourceOrder: sale.sourceOrder },
+    });
+    res.json({ success: true, message: "Sale deleted successfully" });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+};
+
 // GET GST report
 exports.getGSTReport = async (req, res) => {
   try {
@@ -1095,6 +1133,39 @@ exports.updatePurchase = async (req, res) => {
       });
     }
     res.json({ success: true, data: purchase, message: "Purchase updated" });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+};
+
+// DELETE purchase (admin only) and reverse its accounting/stock effects
+exports.deletePurchase = async (req, res) => {
+  try {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Only an admin can delete purchases." });
+    }
+    const purchase = await Purchase.findById(req.params.id);
+    if (!purchase) return res.status(404).json({ success: false, message: "Purchase not found" });
+    for (const item of purchase.items) {
+      if (item.product) await addStockToWarehouse(item.product, -item.qty, item.warehouse);
+    }
+    const Vendor = require("../models/Vendor");
+    const VendorLedger = require("../models/VendorLedger");
+    if (purchase.vendor) {
+      await Vendor.findByIdAndUpdate(purchase.vendor, {
+        $inc: { totalPurchased: -purchase.grandTotal, totalPaid: -(purchase.amountPaid || 0) },
+      });
+      await VendorLedger.deleteMany({ vendor: purchase.vendor, invoiceNo: purchase.purchaseNo, type: "Purchase" });
+    }
+    await Purchase.findByIdAndDelete(purchase._id);
+    await logActivity(req, {
+      action: "deleted",
+      entityType: "Purchase",
+      entityId: purchase._id,
+      entityLabel: purchase.purchaseNo,
+      summary: `Deleted purchase ${purchase.purchaseNo}`,
+      changes: purchaseFields.map((field) => ({ field, before: purchase[field], after: null })),
+      metadata: { stockRemoved: true },
+    });
+    res.json({ success: true, message: "Purchase deleted successfully" });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
 // PUT update sale details

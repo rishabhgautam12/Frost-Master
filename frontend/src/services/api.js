@@ -85,11 +85,13 @@ export const salesAPI = {
   payForSale:              (id, body)    => request(`/sales/${id}/pay`,   { method: "PATCH", body: JSON.stringify(body) }),
   updateSaleDetails:       (id, body)    => request(`/sales/${id}/details`,{ method: "PUT",  body: JSON.stringify(body) }),
   cancel:                  (id)          => request(`/sales/${id}/cancel`,  { method: "PATCH" }),
+  deleteSale:              (id)          => request(`/sales/${id}`, { method: "DELETE" }),
   getGSTReport:            (params = {}) => request(`/sales/gst-report?${new URLSearchParams(params)}`),
   getStaffReport:          (params = {}) => request(`/sales/staff-report?${new URLSearchParams(params)}`),
   getPurchases:            (params = {}) => request(`/sales/purchases/all?${new URLSearchParams(params)}`),
   createPurchase:          (body)        => request("/sales/purchases",  { method: "POST",  body: JSON.stringify(body) }),
   updatePurchase:          (id, body)    => request(`/sales/purchases/${id}`, { method: "PUT",   body: JSON.stringify(body) }),
+  deletePurchase:          (id)          => request(`/sales/purchases/${id}`, { method: "DELETE" }),
   updatePurchasePayment:   (id, body)    => request(`/sales/purchases/${id}/payment`, { method: "PATCH", body: JSON.stringify(body) }),
 };
 

@@ -11,9 +11,11 @@ const {
   getPurchases,
   createPurchase,
   updatePurchase,
+  deletePurchase,
   updatePurchasePayment,
   payForSale,
   updateSaleDetails,
+  deleteSale,
   getOrders,
   createOrder,
   updateOrder,
@@ -25,6 +27,7 @@ const {
 router.get("/purchases/all", getPurchases);
 router.post("/purchases", createPurchase);
 router.put("/purchases/:id", updatePurchase);
+router.delete("/purchases/:id", deletePurchase);
 router.patch("/purchases/:id/payment", updatePurchasePayment);
 
 // Sales
@@ -41,6 +44,7 @@ router.patch("/:id/payment", updateSalePayment);
 router.patch("/:id/cancel", cancelSale);
 router.patch("/:saleId/pay", payForSale);          // proper pay endpoint
 router.put("/:id/details", updateSaleDetails);      // edit notes / status
+router.delete("/:id", deleteSale);
 router.get("/:id", getSaleById);
 
 module.exports = router;

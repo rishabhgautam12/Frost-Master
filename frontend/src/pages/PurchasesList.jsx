@@ -38,7 +38,7 @@ function summarize(items) {
 }
 
 function PurchaseModal({
-  purchase, editMode, canEdit, onClose, onEdit, onSave, saving,
+  purchase, editMode, canEdit, onClose, onEdit, onDelete, onSave, saving,
   form, setForm, items, setItems, payments, setPayments, warehouseOptions,
 }) {
   if (!purchase) return null;
@@ -65,6 +65,7 @@ function PurchaseModal({
           </div>
           <div style={{ display:"flex", gap:8 }}>
             {!editMode && canEdit && <Btn sm color="blue" onClick={onEdit}>Edit</Btn>}
+            {!editMode && canEdit && <Btn sm color="red" onClick={onDelete}>Delete</Btn>}
             {editMode && <Btn sm color="cancel" onClick={onClose}>Cancel</Btn>}
             {editMode && <Btn sm color="teal" onClick={onSave} disabled={saving}>{saving ? "Saving..." : "Save"}</Btn>}
           </div>
@@ -292,6 +293,20 @@ export default function PurchasesList({ navigate }) {
     setSaving(false);
   };
 
+  const deletePurchase = async () => {
+    if (!selected) return;
+    if (!confirm(`Permanently delete ${selected.purchaseNo}? Stock and vendor balances will be reversed.`)) return;
+    try {
+      await salesAPI.deletePurchase(selected._id);
+      setSelected(null);
+      setEditMode(false);
+      setToast("Purchase deleted successfully!");
+      load();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
   const total = purchases.reduce((s, p) => s + p.grandTotal, 0);
   const paid = purchases.reduce((s, p) => s + (p.amountPaid || 0), 0);
 
@@ -377,6 +392,7 @@ export default function PurchasesList({ navigate }) {
         canEdit={canEdit}
         onClose={closeModal}
         onEdit={() => setEditMode(true)}
+        onDelete={deletePurchase}
         onSave={savePurchase}
         saving={saving}
         form={form}

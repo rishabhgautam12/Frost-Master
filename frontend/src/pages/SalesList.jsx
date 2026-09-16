@@ -10,6 +10,10 @@ import InvoiceDetailsFields, { partyDetailsFromCustomer } from "../components/In
 import TransactionDetailsModal from "../components/TransactionDetailsModal";
 
 const stColor = { Paid: "green", Partial: "yellow", Pending: "red", Cancelled: "gray" };
+function currentUser() {
+  try { return JSON.parse(localStorage.getItem("ht_user") || "null"); }
+  catch { return null; }
+}
 const discountAmountFor = item => {
   if (+item.discountAmount > 0) return +item.discountAmount;
   return (+item.discount || 0) * (+item.qty || 0);
@@ -594,6 +598,7 @@ export default function SalesList({ navigate }) {
   const [paymentDrawer, setPaymentDrawer] = useState(null);
   const [detailModal, setDetailModal] = useState(null);
   const [editModal,setEditModal]= useState(null);
+  const isAdmin = currentUser()?.role === "admin";
 
   // Derive date range from month + year pickers
   const getDateRange = (exactDate = dateFilter, selectedMonth = month, selectedYear = year) => {
@@ -629,6 +634,15 @@ export default function SalesList({ navigate }) {
     if (!confirm("Cancel this sale and restore stock?")) return;
     try { await salesAPI.cancel(id); showToast("Sale cancelled & stock restored"); load(); }
     catch (e) { alert(e.message); }
+  };
+
+  const handleDelete = async (sale) => {
+    if (!confirm(`Permanently delete ${sale.invoiceNo}? Stock and customer balances will be reversed.`)) return;
+    try {
+      await salesAPI.deleteSale(sale._id);
+      showToast("Sale deleted successfully");
+      load();
+    } catch (e) { alert(e.message); }
   };
 
   const afterPay  = (msg) => { setPayModal(null);  showToast(msg); load(); };
@@ -767,6 +781,7 @@ export default function SalesList({ navigate }) {
                         <Btn sm color="blue" onClick={() => setDetailModal(s)}>View Details</Btn>
                         <Btn sm color="teal" onClick={() => setPaymentDrawer(s)}>Payments ({s.payments?.length || 0})</Btn>
                         <Btn sm color="blue" onClick={() => setEditModal(s)}>✏️ Edit</Btn>
+                        {isAdmin && <Btn sm color="red" onClick={() => handleDelete(s)}>Delete</Btn>}
                         {s.status !== "Cancelled" && (
                           <Btn sm color="red" onClick={() => handleCancel(s._id)}>✕</Btn>
                         )}
