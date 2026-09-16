@@ -3,7 +3,6 @@ const Order    = require("../models/Order");
 const Quotation = require("../models/Quotation");
 const Product  = require("../models/Product");
 const Customer = require("../models/Customer");
-const User     = require("../models/User");
 const Employee = require("../models/Employee");
 const { createdChanges, logActivity, toChanges } = require("../utils/auditLogger");
 
@@ -810,39 +809,44 @@ exports.getStaffSalesReport = async (req, res) => {
         if (to) filter.date.$lte = new Date(`${to}T23:59:59`);
       }
     }
-    if (staff && staff !== "all" && staff !== "unassigned") filter.soldBy = staff;
-    if (staff === "unassigned") filter.soldBy = { $exists: false };
+    if (staff && staff !== "all" && staff !== "unassigned") filter.salesEmployee = staff;
+    if (staff === "unassigned") filter.$or = [{ salesEmployee: { $exists: false } }, { salesEmployee: null }];
 
     const sales = await Sale.find(filter)
-      .populate("soldBy", "name username role")
+      .populate("salesEmployee", "name role manufacturingIncentivePercent importedIncentivePercent")
+      .populate("customer", "name")
       .populate("items.product", "name modelNumber hsnCode")
       .sort({ date: -1 });
-    const staffUsers = await User.find({ isActive: true }).select("name username role").sort({ role: 1, name: 1 });
+    const staffUsers = await Employee.find({ status: "Active" })
+      .select("name role manufacturingIncentivePercent importedIncentivePercent")
+      .sort({ name: 1 });
 
     const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const memberMap = new Map();
     const monthlyMap = new Map();
     const productMap = new Map();
     const staffLabel = (sale) => {
-      const id = sale.soldBy?._id ? String(sale.soldBy._id) : "unassigned";
+      const id = sale.salesEmployee?._id ? String(sale.salesEmployee._id) : "unassigned";
       return {
         id,
-        name: sale.soldBy?.name || sale.soldByName || "Unassigned",
-        username: sale.soldBy?.username || "",
-        role: sale.soldBy?.role || "",
+        name: sale.salesEmployee?.name || sale.salesEmployeeName || "Unassigned",
+        role: sale.salesEmployee?.role || "",
+        manufacturingRate: +sale.salesEmployee?.manufacturingIncentivePercent || 0,
+        importedRate: +sale.salesEmployee?.importedIncentivePercent || 0,
       };
     };
 
     for (const sale of sales) {
       const member = staffLabel(sale);
       if (!memberMap.has(member.id)) {
-        memberMap.set(member.id, { ...member, invoices: 0, qty: 0, revenue: 0, received: 0, due: 0 });
+        memberMap.set(member.id, { ...member, invoices: 0, qty: 0, revenue: 0, received: 0, due: 0, incentive: 0 });
       }
       const memberRow = memberMap.get(member.id);
       memberRow.invoices += 1;
       memberRow.revenue += sale.grandTotal || 0;
       memberRow.received += sale.amountPaid || 0;
       memberRow.due += sale.amountDue || 0;
+      memberRow.incentive += sale.incentiveAmount || 0;
 
       const date = new Date(sale.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -857,11 +861,17 @@ exports.getStaffSalesReport = async (req, res) => {
           invoices: 0,
           qty: 0,
           revenue: 0,
+          received: 0,
+          due: 0,
+          incentive: 0,
         });
       }
       const monthRow = monthlyMap.get(monthlyKey);
       monthRow.invoices += 1;
       monthRow.revenue += sale.grandTotal || 0;
+      monthRow.received += sale.amountPaid || 0;
+      monthRow.due += sale.amountDue || 0;
+      monthRow.incentive += sale.incentiveAmount || 0;
 
       for (const item of sale.items || []) {
         const qty = +item.qty || 0;
@@ -878,11 +888,14 @@ exports.getStaffSalesReport = async (req, res) => {
             modelNumber: item.product?.modelNumber || "",
             qty: 0,
             revenue: 0,
+            productType: item.productType || "Manufacturing",
+            incentive: 0,
           });
         }
         const productRow = productMap.get(productKey);
         productRow.qty += qty;
         productRow.revenue += (item.total || 0) + (item.gstAmount || 0);
+        productRow.incentive += item.incentiveAmount || 0;
       }
     }
 
@@ -895,9 +908,24 @@ exports.getStaffSalesReport = async (req, res) => {
       revenue: acc.revenue + row.revenue,
       received: acc.received + row.received,
       due: acc.due + row.due,
-    }), { invoices: 0, qty: 0, revenue: 0, received: 0, due: 0 });
+      incentive: acc.incentive + row.incentive,
+    }), { invoices: 0, qty: 0, revenue: 0, received: 0, due: 0, incentive: 0 });
 
-    res.json({ success: true, data: { summary, byMember, byMonth, byProduct, staff: staffUsers } });
+    const invoices = sales.map(sale => ({
+      _id: sale._id,
+      invoiceNo: sale.invoiceNo,
+      date: sale.date,
+      staffId: sale.salesEmployee?._id ? String(sale.salesEmployee._id) : "unassigned",
+      staffName: sale.salesEmployee?.name || sale.salesEmployeeName || "Unassigned",
+      customerName: sale.customer?.name || sale.customerName || "-",
+      qty: (sale.items || []).reduce((sum, item) => sum + (+item.qty || 0), 0),
+      grandTotal: sale.grandTotal || 0,
+      amountPaid: sale.amountPaid || 0,
+      amountDue: sale.amountDue || 0,
+      incentiveAmount: sale.incentiveAmount || 0,
+      status: sale.status,
+    }));
+    res.json({ success: true, data: { summary, byMember, byMonth, byProduct, invoices, staff: staffUsers } });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
 

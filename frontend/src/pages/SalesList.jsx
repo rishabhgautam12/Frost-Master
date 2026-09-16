@@ -652,7 +652,6 @@ export default function SalesList({ navigate }) {
   const totalRevenue  = sales.reduce((s, o) => s + (o.grandTotal || 0), 0);
   const totalReceived = sales.reduce((s, o) => s + (o.amountPaid || 0), 0);
   const totalDue      = sales.reduce((s, o) => s + (o.amountDue  || 0), 0);
-  const totalGST      = sales.reduce((s, o) => s + (o.totalGST   || 0), 0);
   const dueCount      = sales.filter(o => o.amountDue > 0 && o.status !== "Cancelled").length;
 
   const COLS = 10;
@@ -669,7 +668,6 @@ export default function SalesList({ navigate }) {
           { label: "Total Revenue",   value: `₹${totalRevenue.toLocaleString()}`,   color: "#8b5cf6", icon: "💼" },
           { label: "Amount Received", value: `₹${totalReceived.toLocaleString()}`,  color: "#16a34a", icon: "✅" },
           { label: "Amount Due",      value: `₹${totalDue.toLocaleString()}`,       color: "#ef4444", icon: "🔴" },
-          { label: "Total GST",       value: `₹${totalGST.toLocaleString()}`,       color: "#f59e0b", icon: "📋" },
         ].map((c, i) => (
           <div className="sales-summary-card" key={i} style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #e2e8f0", borderLeft: `4px solid ${c.color}` }}>
             <div className="sales-summary-label" style={{ fontSize: 11, color: "#64748b", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
