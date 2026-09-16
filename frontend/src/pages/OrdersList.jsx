@@ -183,6 +183,10 @@ export default function OrdersList({ navigate }) {
   };
   const edited = message => { setEditing(null); setToast(message); setTimeout(() => setToast(""), 3000); load(); };
   const advanceAdded = message => { setAdvanceOrder(null); setToast(message); setTimeout(() => setToast(""), 3000); load(); };
+  const openConvertedSale = sale => {
+    sessionStorage.setItem("salesListTarget", JSON.stringify({ invoiceNo:sale.invoiceNo, date:sale.date }));
+    navigate("sales-list");
+  };
 
   return (
     <div>
@@ -207,7 +211,7 @@ export default function OrdersList({ navigate }) {
               <Td style={{ fontWeight: 800 }}>₹{(+order.grandTotal || 0).toLocaleString("en-IN")}</Td>
               <Td style={{ color:"#15803d", fontWeight:800 }}>₹{(+order.amountPaid || 0).toLocaleString("en-IN")}</Td>
               <Td><Badge color={statusColor[order.status] || "gray"}>{order.status}</Badge></Td>
-              <Td>{order.convertedSale ? `${order.convertedSale.invoiceNo} (${new Date(order.convertedSale.date).toLocaleDateString("en-IN")})` : "-"}</Td>
+              <Td>{order.convertedSale ? <button type="button" onClick={() => openConvertedSale(order.convertedSale)} style={{background:"none",border:"none",padding:0,color:"#0284c7",fontWeight:800,cursor:"pointer",textAlign:"left",textDecoration:"underline",textUnderlineOffset:3}}>{order.convertedSale.invoiceNo}<span style={{display:"block",fontWeight:500,color:"#475569",textDecoration:"none",marginTop:3}}>({new Date(order.convertedSale.date).toLocaleDateString("en-IN")})</span></button> : "-"}</Td>
               <Td><div style={{ display:"flex", gap:6, flexWrap:"wrap" }}><Btn sm color="purple" onClick={() => setAdvanceOrder(order)}>Advances ({order.payments?.length || 0})</Btn><Btn sm color="teal" onClick={() => setViewing(order)}>View Details</Btn><Btn sm color="blue" onClick={() => setEditing(order)}>Edit Details</Btn>{order.status === "Open" && <Btn sm color="green" onClick={() => openConvert(order)}>Convert to Sale</Btn>}</div></Td>
             </tr>
           ))}</tbody>

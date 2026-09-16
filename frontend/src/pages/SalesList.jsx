@@ -576,17 +576,20 @@ function ExpandedRow({ sale, cols }) {
 
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function SalesList({ navigate }) {
+  const [targetSale] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem("salesListTarget") || "null"); }
+    catch { return null; }
+  });
   const [sales,    setSales]    = useState([]);
   const [summary,  setSummary]  = useState({});
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
-  const [search,   setSearch]   = useState("");
+  const [search,   setSearch]   = useState(targetSale?.invoiceNo || "");
   const [status,   setStatus]   = useState("");
   const [month,    setMonth]    = useState("");
-  const [year,     setYear]     = useState(String(currentYear));
+  const [year,     setYear]     = useState(targetSale?.date ? String(new Date(targetSale.date).getFullYear()) : String(currentYear));
   const [dateFilter, setDateFilter] = useState("");
   const [toast,    setToast]    = useState(null);
-  const [expanded, setExpanded] = useState(null);
   const [payModal, setPayModal] = useState(null);
   const [paymentDrawer, setPaymentDrawer] = useState(null);
   const [detailModal, setDetailModal] = useState(null);
@@ -615,7 +618,10 @@ export default function SalesList({ navigate }) {
       .catch((e) => { setError(e.message); setLoading(false); });
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    sessionStorage.removeItem("salesListTarget");
+    load();
+  }, []);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3500); };
 
@@ -627,7 +633,6 @@ export default function SalesList({ navigate }) {
 
   const afterPay  = (msg) => { setPayModal(null);  showToast(msg); load(); };
   const afterEdit = (msg) => { setEditModal(null); showToast(msg); load(); };
-  const toggleExpand = (id) => setExpanded(prev => prev === id ? null : id);
 
   // Totals from current list
   const totalRevenue  = sales.reduce((s, o) => s + (o.grandTotal || 0), 0);
@@ -636,7 +641,7 @@ export default function SalesList({ navigate }) {
   const totalGST      = sales.reduce((s, o) => s + (o.totalGST   || 0), 0);
   const dueCount      = sales.filter(o => o.amountDue > 0 && o.status !== "Cancelled").length;
 
-  const COLS = 11;
+  const COLS = 10;
 
   return (
     <div>
@@ -729,25 +734,18 @@ export default function SalesList({ navigate }) {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
             <thead>
               <tr>
-                {["","Invoice No.", "Date", "Customer", "Type", "Payment", "Total ₹", "Paid ₹", "Due ₹", "Status", "Actions"].map(h => <Th key={h}>{h}</Th>)}
+                {["Invoice No.", "Date", "Customer", "Type", "Payment", "Total ₹", "Paid ₹", "Due ₹", "Status", "Actions"].map(h => <Th key={h}>{h}</Th>)}
               </tr>
             </thead>
             <tbody>
               {sales.length === 0 ? (
                 <tr><td colSpan={COLS}><EmptyState text="No sales found for the selected period." /></td></tr>
               ) : sales.map(s => (
-                <>
                   <tr key={s._id}
                     style={{ borderBottom: "1px solid #f1f5f9", background: s.amountDue > 0 && s.status !== "Cancelled" ? "#fff9f9" : "" }}
                     onMouseEnter={e => e.currentTarget.style.background = "#f0fdfa"}
                     onMouseLeave={e => e.currentTarget.style.background = s.amountDue > 0 && s.status !== "Cancelled" ? "#fff9f9" : ""}
                   >
-                    <Td>
-                      <button onClick={() => toggleExpand(s._id)}
-                        style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#64748b", padding: "2px 4px" }}>
-                        {expanded === s._id ? "▲" : "▼"}
-                      </button>
-                    </Td>
                     <Td style={{ fontFamily: "monospace", color: "#0ea5e9", fontSize: 11 }}>{s.invoiceNo}</Td>
                     <Td>{new Date(s.date).toLocaleDateString("en-IN")}</Td>
                     <Td style={{ fontWeight: 700 }}>{s.customer?.name || s.customerName || "Walk-in"}</Td>
@@ -775,8 +773,6 @@ export default function SalesList({ navigate }) {
                       </div>
                     </Td>
                   </tr>
-                  {expanded === s._id && <ExpandedRow key={`exp-${s._id}`} sale={s} cols={COLS} />}
-                </>
               ))}
             </tbody>
 
@@ -784,7 +780,7 @@ export default function SalesList({ navigate }) {
             {sales.length > 0 && (
               <tfoot>
                 <tr style={{ background: "#ccfbf1", borderTop: "2px solid #14b8a6" }}>
-                  <td colSpan={6} style={{ padding: "10px 12px", fontWeight: 800, fontSize: 12, color: "#92400e" }}>
+                  <td colSpan={5} style={{ padding: "10px 12px", fontWeight: 800, fontSize: 12, color: "#92400e" }}>
                     📊 TOTAL ({sales.length} invoice{sales.length > 1 ? "s" : ""})
                   </td>
                   <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 13, color: "#1e293b" }}>
