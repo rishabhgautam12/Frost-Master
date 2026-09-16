@@ -83,6 +83,9 @@ function QuickAddCustomer({ onSaved, onCancel }) {
 /* ── main page ── */
 export default function CreateSale({ navigate, mode = "sale" }) {
   const isOrder = mode === "order";
+  const isQuotation = mode === "quotation";
+  const documentName = isQuotation ? "Quotation" : isOrder ? "Order" : "Sale";
+  const listPage = isQuotation ? "quotations-list" : isOrder ? "orders-list" : "sales-list";
   const [customers,   setCustomers]   = useState([]);
   const [products,    setProducts]    = useState([]);
   const [warehouses,  setWarehouses]  = useState([]);
@@ -195,7 +198,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
     if (!form.customer) return alert("Select a registered customer or add a new customer first.");
     setSaving(true);
     try {
-      await (isOrder ? salesAPI.createOrder : salesAPI.create)({
+      await (isQuotation ? salesAPI.createQuotation : isOrder ? salesAPI.createOrder : salesAPI.create)({
         ...form,
         invoiceDetails,
         customer:    form.customer || undefined,
@@ -216,8 +219,8 @@ export default function CreateSale({ navigate, mode = "sale" }) {
           transportGstRate: +it.transportGstRate || 0,
         })),
       });
-      setToast(`${isOrder ? "Order" : "Sale"} created successfully!`);
-      setTimeout(() => navigate(isOrder ? "orders-list" : "sales-list"), 1500);
+      setToast(`${documentName} created successfully!`);
+      setTimeout(() => navigate(listPage), 1500);
     } catch (e) { alert(e.message); setSaving(false); }
   };
 
@@ -225,7 +228,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
 
   return (
     <div style={{ maxWidth:1180, margin:"auto" }}>
-      <PageTitle>{isOrder ? "Create Order" : "Create Sale / Invoice"}</PageTitle>
+      <PageTitle>{isQuotation ? "Create Quotation" : isOrder ? "Create Order" : "Create Sale / Invoice"}</PageTitle>
       {toast && <SuccessToast msg={toast} />}
 
       <div style={{ background:"#fff", borderRadius:10, padding:28, border:"1px solid #e2e8f0" }}>
@@ -309,8 +312,8 @@ export default function CreateSale({ navigate, mode = "sale" }) {
 
         <div style={{ marginBottom:20 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-              <div style={{ fontWeight:800, fontSize:13, color:"#1e293b" }}>{isOrder ? "Advance Payment Entries" : "Payment Entries"}</div>
-              <Btn sm color="blue" onClick={addPayment}>+ Add {isOrder ? "Advance" : "Payment"}</Btn>
+              <div style={{ fontWeight:800, fontSize:13, color:"#1e293b" }}>{isOrder || isQuotation ? "Advance Payment Entries" : "Payment Entries"}</div>
+              <Btn sm color="blue" onClick={addPayment}>+ Add {isOrder || isQuotation ? "Advance" : "Payment"}</Btn>
             </div>
             <div style={{ border:"1px solid #e2e8f0", borderRadius:8, overflow:"hidden" }}>
               {payments.map((payment, i) => (
@@ -330,7 +333,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
         {/* Items */}
         <div style={{ marginBottom:20 }}>
           <div style={{ fontWeight:700, fontSize:13, marginBottom:10, color:"#1e293b" }}>
-            📦 {isOrder ? "Order" : "Sale"} Items
+            📦 {documentName} Items
           </div>
 
           <div style={{ background:"#fff", border:"1px solid #e2e8f0", borderRadius:8, overflowX:"auto" }}>
@@ -554,9 +557,9 @@ export default function CreateSale({ navigate, mode = "sale" }) {
         </div>
 
         <div style={{ display:"flex", gap:10, marginTop:20 }}>
-          <Btn color="cancel" onClick={() => navigate(isOrder ? "orders-list" : "sales-list")}>Cancel</Btn>
+          <Btn color="cancel" onClick={() => navigate(listPage)}>Cancel</Btn>
           <Btn color="teal" onClick={handleSave} disabled={saving}>
-            {saving ? "Creating..." : isOrder ? "Create Order" : "🧾 Create Sale"}
+            {saving ? "Creating..." : isQuotation ? "Create Quotation" : isOrder ? "Create Order" : "🧾 Create Sale"}
           </Btn>
         </div>
       </div>

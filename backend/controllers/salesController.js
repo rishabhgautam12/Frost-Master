@@ -1,5 +1,6 @@
 const Sale     = require("../models/Sale");
 const Order    = require("../models/Order");
+const Quotation = require("../models/Quotation");
 const Product  = require("../models/Product");
 const Customer = require("../models/Customer");
 const User     = require("../models/User");
@@ -376,6 +377,106 @@ exports.createSale = async (req, res) => {
       changes: createdChanges(sale, saleFields),
     });
     res.status(201).json({ success:true, data:sale, message:"Sale created successfully" });
+  } catch (err) { res.status(500).json({ success:false, message:err.message }); }
+};
+
+exports.getQuotations = async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    const filter = { status: "Draft" };
+    if (from || to) {
+      filter.date = {};
+      if (from) filter.date.$gte = new Date(from);
+      if (to) filter.date.$lte = new Date(`${to}T23:59:59`);
+    }
+    const quotations = await Quotation.find(filter)
+      .populate("customer", "name phone address gstin city")
+      .populate("salesEmployee", "name role")
+      .populate("items.product", "name modelNumber hsnCode")
+      .sort({ date: -1, createdAt: -1 });
+    res.json({ success: true, data: quotations });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+};
+
+exports.createQuotation = async (req, res) => {
+  try {
+    const { items, customer, amountPaid, payments, ...rest } = req.body;
+    if (!customer) return res.status(400).json({ success: false, message: "A registered customer is required." });
+    const cleanPayments = Array.isArray(payments) ? payments.filter(p => +p.amount > 0).map(p => ({
+      ...p, amount: +p.amount, recordedBy: req.user?._id,
+      recordedByName: req.user?.name || req.user?.username || "Staff",
+    })) : [];
+    const quotation = await Quotation.create({
+      ...rest, customer, items: await buildSaleItems(items),
+      amountPaid: cleanPayments.reduce((sum, p) => sum + p.amount, 0), payments: cleanPayments,
+      createdBy: req.user?._id, createdByName: req.user?.name || req.user?.username || "Staff",
+    });
+    if (quotation.salesEmployee) {
+      const employee = await Employee.findById(quotation.salesEmployee);
+      quotation.salesEmployeeName = employee?.name || "";
+      await quotation.save();
+    }
+    await quotation.populate("customer", "name phone address gstin city");
+    await logActivity(req, { action:"created", entityType:"Quotation", entityId:quotation._id, entityLabel:quotation.quotationNo, summary:`Created quotation ${quotation.quotationNo}`, changes:[{ field:"status", before:null, after:"Draft" }] });
+    res.status(201).json({ success:true, data:quotation, message:"Quotation created successfully" });
+  } catch (err) { res.status(500).json({ success:false, message:err.message }); }
+};
+
+exports.updateQuotation = async (req, res) => {
+  try {
+    const quotation = await Quotation.findById(req.params.id);
+    if (!quotation) return res.status(404).json({ success:false, message:"Quotation not found" });
+    if (quotation.status !== "Draft") return res.status(400).json({ success:false, message:"Only active quotations can be edited." });
+    const before = quotation.toObject();
+    const { items, customer, customerName, saleType, paymentMode, date, isInterState, notes, invoiceDetails, salesEmployee, amountPaid } = req.body;
+    if (Array.isArray(items)) quotation.items = await buildSaleItems(items);
+    if (customer !== undefined) quotation.customer = customer;
+    if (customerName !== undefined) quotation.customerName = customerName;
+    if (saleType) quotation.saleType = saleType;
+    if (paymentMode) quotation.paymentMode = paymentMode;
+    if (date) quotation.date = new Date(date);
+    if (isInterState !== undefined) quotation.isInterState = !!isInterState;
+    if (notes !== undefined) quotation.notes = notes;
+    if (invoiceDetails !== undefined) quotation.invoiceDetails = invoiceDetails;
+    if (salesEmployee !== undefined) {
+      quotation.salesEmployee = salesEmployee || undefined;
+      const employee = salesEmployee ? await Employee.findById(salesEmployee) : null;
+      quotation.salesEmployeeName = employee?.name || "";
+    }
+    await quotation.save();
+    if (amountPaid !== undefined) {
+      quotation.amountPaid = Math.min(quotation.grandTotal, Math.max(0, +amountPaid || 0));
+      quotation.payments = quotation.amountPaid > 0 ? [{ amount:quotation.amountPaid, paymentMode:paymentMode === "Credit" ? "Cash" : (paymentMode || "Cash"), date:date || new Date(), notes:"Quotation advance", recordedBy:req.user?._id, recordedByName:req.user?.name || req.user?.username || "Staff" }] : [];
+      await quotation.save();
+    }
+    await quotation.populate("customer", "name phone address gstin city");
+    await quotation.populate("items.product", "name modelNumber hsnCode gstRate");
+    await logActivity(req, { action:"updated", entityType:"Quotation", entityId:quotation._id, entityLabel:quotation.quotationNo, summary:`Updated quotation ${quotation.quotationNo}`, changes:toChanges(before, quotation, ["customer","saleType","paymentMode","date","items","grandTotal","notes","invoiceDetails"]) });
+    res.json({ success:true, data:quotation, message:"Quotation updated successfully" });
+  } catch (err) { res.status(500).json({ success:false, message:err.message }); }
+};
+
+exports.convertQuotationToOrder = async (req, res) => {
+  try {
+    const quotation = await Quotation.findById(req.params.id);
+    if (!quotation) return res.status(404).json({ success:false, message:"Quotation not found" });
+    if (quotation.status !== "Draft") return res.status(400).json({ success:false, message:"This quotation is no longer active." });
+    const order = await Order.create({
+      customer:quotation.customer, customerName:quotation.customerName,
+      saleType:quotation.saleType, paymentMode:quotation.paymentMode,
+      date:req.body.date || new Date(), items:quotation.items.map(item => item.toObject()),
+      amountPaid:quotation.amountPaid, payments:quotation.payments.map(p => p.toObject()),
+      isInterState:quotation.isInterState, notes:quotation.notes,
+      invoiceDetails:quotation.invoiceDetails || {}, salesEmployee:quotation.salesEmployee,
+      salesEmployeeName:quotation.salesEmployeeName, sourceQuotation:quotation._id,
+      createdBy:req.user?._id, createdByName:req.user?.name || req.user?.username || "Staff",
+    });
+    quotation.status = "Converted";
+    quotation.convertedOrder = order._id;
+    quotation.convertedAt = new Date();
+    await quotation.save();
+    await logActivity(req, { action:"updated", entityType:"Quotation", entityId:quotation._id, entityLabel:quotation.quotationNo, summary:`Converted quotation ${quotation.quotationNo} to ${order.orderNo}`, changes:[{ field:"status", before:"Draft", after:"Converted" }] });
+    res.status(201).json({ success:true, data:order, message:`${quotation.quotationNo} converted to ${order.orderNo}` });
   } catch (err) { res.status(500).json({ success:false, message:err.message }); }
 };
 

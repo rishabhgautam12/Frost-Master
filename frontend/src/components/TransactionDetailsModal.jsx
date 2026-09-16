@@ -1,4 +1,5 @@
 import { Badge, Btn, Modal } from "./Shared";
+import frostMasterLogo from "../assets/frost-master-logo.webp";
 
 const money = value => `₹${(+value || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 const date = value => value ? new Date(value).toLocaleDateString("en-IN") : "-";
@@ -18,16 +19,21 @@ function PartyCard({ title, party = {} }) {
 export default function TransactionDetailsModal({ record, type, onClose }) {
   if (!record) return null;
   const isSale = type === "sale";
-  const number = isSale ? record.invoiceNo : record.orderNo;
+  const isQuotation = type === "quotation";
+  const number = isSale ? record.invoiceNo : isQuotation ? record.quotationNo : record.orderNo;
+  const documentTitle = isSale ? "Sale" : isQuotation ? "Quotation" : "Order";
   const details = record.invoiceDetails || {};
   const partyName = record.customer?.name || record.customerName || "Walk-in";
   const payments = record.payments || [];
+  const showCompanyHeader = record.saleType === "GST Invoice";
 
-  const downloadImage = () => {
+  const downloadImage = async () => {
     const width = 1100, scale = 2, pad = 36;
+    const showCompanyHeader = record.saleType === "GST Invoice";
+    const companyHeaderHeight = showCompanyHeader ? 125 : 0;
     const itemRows = Math.max(1, (record.items || []).length);
     const paymentRows = Math.max(1, payments.length);
-    const height = 650 + itemRows * 48 + paymentRows * 38;
+    const height = 650 + companyHeaderHeight + itemRows * 48 + paymentRows * 38;
     const canvas = document.createElement("canvas");
     canvas.width = width * scale; canvas.height = height * scale;
     const ctx = canvas.getContext("2d"); ctx.scale(scale, scale);
@@ -38,10 +44,20 @@ export default function TransactionDetailsModal({ record, type, onClose }) {
       for(const word of words){const test=`${line}${line ? " " : ""}${word}`;if(ctx.measureText(test).width>maxWidth && line){text(line,x,y+lineNo*lineHeight,12,400,"#475569");line=word;if(++lineNo>=maxLines)return;}else line=test;}
       text(line,x,y+lineNo*lineHeight,12,400,"#475569");
     };
-    rect(0,0,width,height,"#f8fafc"); rect(0,0,width,100,"#134e4a");
-    text(isSale ? "SALE INVOICE" : "ORDER DETAILS",pad,38,13,800,"#99f6e4"); text(number,pad,72,27,900,"#fff");
-    text(date(record.date),width-pad,45,15,700,"#fff","right"); text(record.status || "",width-pad,70,12,800,"#d1fae5","right");
-    const top=125, cardW=(width-pad*2-16)/2;
+    rect(0,0,width,height,"#f8fafc");
+    if (showCompanyHeader) {
+      rect(0,0,width,companyHeaderHeight,"#fff","#0f172a");
+      const logo = new Image();
+      logo.src = frostMasterLogo;
+      await new Promise((resolve) => { logo.onload = resolve; logo.onerror = resolve; });
+      if (logo.complete && logo.naturalWidth) ctx.drawImage(logo,pad,24,390,75);
+      text("FROST MASTER PRIVATE LIMITED",475,52,22,900,"#111827");
+      text("GSTIN/UIN: 07AAECF4100D1ZC",475,84,17,700,"#111827");
+    }
+    rect(0,companyHeaderHeight,width,100,"#134e4a");
+    text(isSale ? "SALE INVOICE" : isQuotation ? "QUOTATION" : "ORDER DETAILS",pad,companyHeaderHeight+38,13,800,"#99f6e4"); text(number,pad,companyHeaderHeight+72,27,900,"#fff");
+    text(date(record.date),width-pad,companyHeaderHeight+45,15,700,"#fff","right"); text(record.status || "",width-pad,companyHeaderHeight+70,12,800,"#d1fae5","right");
+    const top=companyHeaderHeight+125, cardW=(width-pad*2-16)/2;
     rect(pad,top,cardW,122,"#fff","#cbd5e1"); rect(pad+cardW+16,top,cardW,122,"#fff","#cbd5e1");
     text("BUYER (BILL TO)",pad+15,top+23,10,800,"#64748b"); text(details.billTo?.name || partyName,pad+15,top+48,16,800); wrapped(details.billTo?.address || record.customer?.address,pad+15,top+70,cardW-30);
     text(`GSTIN: ${details.billTo?.gstin || record.customer?.gstin || "-"}`,pad+15,top+108,11,600,"#475569");
@@ -57,13 +73,17 @@ export default function TransactionDetailsModal({ record, type, onClose }) {
     text("Notes",pad,y+22,10,800,"#64748b");wrapped(record.notes,pad,y+45,summaryX-pad-30,18,5);
     y+=168;
     text(isSale ? "PAYMENT HISTORY" : "ADVANCE PAYMENT HISTORY",pad,y,11,800,"#334155");y+=15;(payments.length?payments:[{amount:record.amountPaid,paymentMode:record.paymentMode,date:record.date,notes:isSale?"Previously paid":"Order advance"}]).filter(p => +p.amount > 0).forEach(p=>{rect(pad,y,width-pad*2,32,"#fff","#e2e8f0");text(date(p.date),pad+10,y+21,11);text(p.paymentMode || "Cash",pad+150,y+21,11);text(p.notes || "",pad+300,y+21,10,400,"#64748b");text(money(p.amount),width-pad-10,y+21,11,800,"#15803d","right");y+=32;});
-    const link=document.createElement("a");link.download=`${safeName(number)}-${isSale?"sale":"order"}.png`;link.href=canvas.toDataURL("image/png");link.click();
+    const link=document.createElement("a");link.download=`${safeName(number)}-${isSale?"sale":isQuotation?"quotation":"order"}.png`;link.href=canvas.toDataURL("image/png");link.click();
   };
 
   const summary = [["Subtotal",record.subtotal],["Discount",record.totalDiscount],["Transport",record.transportTotal],["GST",record.totalGST],["Grand Total",record.grandTotal]];
-  return <Modal open wide title={`${isSale ? "Sale" : "Order"} Details - ${number}`} onClose={onClose}>
+  return <Modal open wide title={`${documentTitle} Details - ${number}`} onClose={onClose}>
     <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:12 }}><Btn color="teal" onClick={downloadImage}>Download as Image</Btn></div>
-    <div style={{ background:"#134e4a", color:"#fff", borderRadius:9, padding:18, display:"flex", justifyContent:"space-between", gap:12, marginBottom:14 }}><div><div style={{ color:"#99f6e4", fontSize:10, fontWeight:800 }}>{isSale ? "SALE INVOICE" : "ORDER"}</div><div style={{ fontSize:22, fontWeight:900 }}>{number}</div><div>{partyName}</div></div><div style={{ textAlign:"right" }}><div>{date(record.date)}</div><div style={{ marginTop:7 }}><Badge color={record.status === "Paid" || record.status === "Converted" ? "green" : "yellow"}>{record.status}</Badge></div></div></div>
+    {showCompanyHeader && <div style={{background:"#fff",border:"1px solid #0f172a",padding:14,display:"flex",gap:28,alignItems:"center",marginBottom:0}}>
+      <img src={frostMasterLogo} alt="Frost Master" style={{width:300,maxWidth:"48%",height:"auto"}} />
+      <div style={{color:"#111827",lineHeight:1.5}}><div style={{fontSize:18,fontWeight:900}}>FROST MASTER PRIVATE LIMITED</div><div><strong>GSTIN/UIN:</strong> 07AAECF4100D1ZC</div></div>
+    </div>}
+    <div style={{ background:"#134e4a", color:"#fff", borderRadius:9, padding:18, display:"flex", justifyContent:"space-between", gap:12, marginBottom:14 }}><div><div style={{ color:"#99f6e4", fontSize:10, fontWeight:800 }}>{isSale ? "SALE INVOICE" : isQuotation ? "QUOTATION" : "ORDER"}</div><div style={{ fontSize:22, fontWeight:900 }}>{number}</div><div>{partyName}</div></div><div style={{ textAlign:"right" }}><div>{date(record.date)}</div><div style={{ marginTop:7 }}><Badge color={record.status === "Paid" || record.status === "Converted" ? "green" : "yellow"}>{record.status}</Badge></div></div></div>
     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(270px,1fr))", gap:12, marginBottom:12 }}><PartyCard title="Buyer (Bill To)" party={{name:partyName,...details.billTo}} /><PartyCard title="Consignee (Ship To)" party={{name:partyName,...details.shipTo}} /></div>
     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:8, background:"#ecfeff", border:"1px solid #a5f3fc", padding:12, borderRadius:8, marginBottom:12 }}>{[["E-Way Bill No.",details.eWayBillNo],["Sale Made By",record.salesEmployee?.name || record.salesEmployeeName],["Incentive",isSale ? `${record.incentivePercent || 0}% (${money(record.incentiveAmount)})` : "Calculated after conversion"],["Incentive Product Value",isSale ? money(record.incentiveBaseAmount ?? (record.items || []).reduce((sum,item) => sum + ((+item.rate || 0) * (+item.qty || 0)), 0)) : "-"],["Dispatched Through",details.dispatchedThrough],["Destination",details.destination],["Motor Vehicle No.",details.motorVehicleNo],["Payment Mode",record.paymentMode],["Sale Type",record.saleType]].map(([label,value])=><div key={label}><div style={{fontSize:9,fontWeight:800,color:"#64748b",textTransform:"uppercase"}}>{label}</div><strong>{display(value)}</strong></div>)}</div>
     <div style={{ overflowX:"auto", marginBottom:14 }}><table style={{ width:"100%", minWidth:950, borderCollapse:"collapse", fontSize:11 }}><thead><tr>{["Product","HSN Code","Type","Description","Warehouse","Qty","Rate","Billing Rate","Discount","GST","Transport","Incentive","Total"].map(h=><th key={h} style={{padding:8,background:"#e2e8f0",textAlign:"left"}}>{h}</th>)}</tr></thead><tbody>{(record.items||[]).map((item,i)=>{const total=(+item.total||0)+(+item.gstAmount||0)+(+item.transportAmount||0)+(+item.transportGstAmount||0);return <tr key={item._id||i}>{[item.productName||item.product?.name||"Product",item.hsnCode||item.product?.hsnCode||"-",item.productType||"Manufacturing",item.description||"-",item.warehouse||"-",item.qty,money(item.rate),money(item.billingRate),`${item.discount||0}%`,`${item.gstRate||0}%`,money(item.transportAmount),isSale?`${item.incentivePercent||0}% (${money(item.incentiveAmount)})`:"-",money(total)].map((v,j)=><td key={j} style={{padding:8,borderBottom:"1px solid #e2e8f0"}}>{v}</td>)}</tr>})}</tbody></table></div>

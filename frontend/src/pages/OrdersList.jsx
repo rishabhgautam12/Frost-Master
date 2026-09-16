@@ -44,7 +44,7 @@ function OrderAdvanceModal({ order, onClose, onDone }) {
   </Modal>;
 }
 
-function OrderEditModal({ order, onClose, onDone }) {
+export function OrderEditModal({ order, onClose, onDone, documentName="Order", updateRecord=salesAPI.updateOrder }) {
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -99,22 +99,22 @@ function OrderEditModal({ order, onClose, onDone }) {
     try {
       if (!items.length || items.some(item => !item.product || +item.qty <= 0 || +item.rate <= 0)) throw new Error("Every item requires a product, quantity and rate.");
       if (!form.customer) throw new Error("Select a registered customer.");
-      const res = await salesAPI.updateOrder(order._id, { ...form, customer: form.customer || undefined, items: items.map(item => ({ ...item, qty:+item.qty, rate:+item.rate, billingRate:+item.billingRate, discount:+item.discount || 0, gstRate:+item.gstRate || 0, transportAmount:+item.transportAmount || 0, transportGstRate:+item.transportGstRate || 0 })) });
-      onDone(res.message || "Order updated successfully");
+      const res = await updateRecord(order._id, { ...form, customer: form.customer || undefined, items: items.map(item => ({ ...item, qty:+item.qty, rate:+item.rate, billingRate:+item.billingRate, discount:+item.discount || 0, gstRate:+item.gstRate || 0, transportAmount:+item.transportAmount || 0, transportGstRate:+item.transportGstRate || 0 })) });
+      onDone(res.message || `${documentName} updated successfully`);
     } catch (err) { setError(err.message); setSaving(false); }
   };
 
-  return <Modal open wide title={`Edit Order - ${order.orderNo}`} onClose={onClose}>
+  return <Modal open wide title={`Edit ${documentName} - ${order.orderNo || order.quotationNo}`} onClose={onClose}>
     {order.status === "Converted" && <div style={{ background:"#eff6ff", border:"1px solid #bfdbfe", color:"#1d4ed8", borderRadius:7, padding:10, marginBottom:12, fontSize:12 }}>This order has already been converted. Changes here update the original order record only; the linked sale remains unchanged.</div>}
     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:10 }}>
-      <FormGroup label="Order Date"><FormInput type="date" value={form.date} onChange={changeForm("date")} /></FormGroup>
+      <FormGroup label={`${documentName} Date`}><FormInput type="date" value={form.date} onChange={changeForm("date")} /></FormGroup>
       <FormGroup label="Sale Type"><FormSelect value={form.saleType} onChange={changeForm("saleType")}>{["GST Invoice","Cash Sale"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
       <FormGroup label="Payment Mode"><FormSelect value={form.paymentMode} onChange={changeForm("paymentMode")}>{["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
       <FormGroup label="Customer"><FormSelect value={form.customer} onChange={e => { const customer=customers.find(item=>item._id===e.target.value); const party=partyDetailsFromCustomer(customer); setForm(p => ({...p, customer:e.target.value, customerName:"", invoiceDetails:{...(p.invoiceDetails||{}),billTo:party,shipTo:{...party}}})); }}><option value="">Select customer</option>{customers.map(c => <option key={c._id} value={c._id}>{c.name} - {c.phone}</option>)}</FormSelect></FormGroup>
       <FormGroup label="Sale Made By (Employee)"><FormSelect value={form.salesEmployee} onChange={changeForm("salesEmployee")}><option value="">Select employee</option>{employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name} (M: {employee.manufacturingIncentivePercent || 0}% / I: {employee.importedIncentivePercent || 0}%)</option>)}</FormSelect></FormGroup>
       <FormGroup label="Advance Paid"><FormInput type="number" min="0" max={total || undefined} value={form.amountPaid} onChange={changeForm("amountPaid")} /></FormGroup>
     </div>
-    <label style={{ display:"flex", gap:7, alignItems:"center", marginBottom:12, fontWeight:700 }}><input type="checkbox" checked={form.isInterState} onChange={changeForm("isInterState")} /> Inter-state order</label>
+    <label style={{ display:"flex", gap:7, alignItems:"center", marginBottom:12, fontWeight:700 }}><input type="checkbox" checked={form.isInterState} onChange={changeForm("isInterState")} /> Inter-state {documentName.toLowerCase()}</label>
     <InvoiceDetailsFields value={form.invoiceDetails} onChange={invoiceDetails => setForm(prev => ({ ...prev, invoiceDetails }))} />
     <div style={{ overflowX:"auto", border:"1px solid #e2e8f0", borderRadius:8, marginBottom:14 }}>
       <div style={{ minWidth:1180 }}>
@@ -136,7 +136,7 @@ function OrderEditModal({ order, onClose, onDone }) {
       </div>
     </div>
     <FormGroup label="Notes"><textarea rows="3" value={form.notes} onChange={changeForm("notes")} style={{ width:"100%", padding:9, border:"1px solid #d1d5db", borderRadius:7, boxSizing:"border-box" }} /></FormGroup>
-    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10 }}><strong>Order Total: ₹{total.toLocaleString("en-IN", { maximumFractionDigits:2 })}</strong><div style={{ display:"flex", gap:8 }}><Btn color="cancel" onClick={onClose}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={save}>{saving ? "Saving..." : "Save Changes"}</Btn></div></div>
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10 }}><strong>{documentName} Total: ₹{total.toLocaleString("en-IN", { maximumFractionDigits:2 })}</strong><div style={{ display:"flex", gap:8 }}><Btn color="cancel" onClick={onClose}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={save}>{saving ? "Saving..." : "Save Changes"}</Btn></div></div>
     {error && <div style={{ color:"#dc2626", marginTop:10 }}>{error}</div>}
   </Modal>;
 }

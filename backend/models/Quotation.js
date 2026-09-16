@@ -1,15 +1,15 @@
 const mongoose = require("mongoose");
 
-const orderPaymentSchema = new mongoose.Schema({
+const quotationPaymentSchema = new mongoose.Schema({
   amount: { type: Number, required: true, min: 0 },
-  paymentMode: { type: String, enum: ["Cash", "UPI", "Card", "Bank Transfer", "Cheque"], default: "Cash" },
+  paymentMode: { type: String, default: "Cash" },
   date: { type: Date, default: Date.now },
   notes: { type: String, trim: true },
   recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   recordedByName: { type: String, trim: true },
 }, { _id: true });
 
-const orderItemSchema = new mongoose.Schema({
+const quotationItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
   productName: String,
   hsnCode: { type: String, trim: true },
@@ -30,18 +30,18 @@ const orderItemSchema = new mongoose.Schema({
   productType: { type: String, enum: ["Manufacturing", "Imported"], default: "Manufacturing" },
 });
 
-const orderSchema = new mongoose.Schema({
-  orderNo: { type: String, unique: true },
-  customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
+const quotationSchema = new mongoose.Schema({
+  quotationNo: { type: String, unique: true },
+  customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", required: true },
   customerName: String,
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   createdByName: String,
   salesEmployee: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
-  salesEmployeeName: { type: String, trim: true },
+  salesEmployeeName: String,
   saleType: { type: String, enum: ["GST Invoice", "Cash Sale"], default: "GST Invoice" },
   paymentMode: { type: String, default: "Credit" },
   date: { type: Date, default: Date.now },
-  items: [orderItemSchema],
+  items: [quotationItemSchema],
   subtotal: { type: Number, default: 0 },
   billingSubtotal: { type: Number, default: 0 },
   totalDiscount: { type: Number, default: 0 },
@@ -49,20 +49,19 @@ const orderSchema = new mongoose.Schema({
   totalGST: { type: Number, default: 0 },
   grandTotal: { type: Number, default: 0 },
   amountPaid: { type: Number, default: 0 },
-  payments: { type: [orderPaymentSchema], default: [] },
+  payments: { type: [quotationPaymentSchema], default: [] },
   isInterState: { type: Boolean, default: false },
   notes: String,
   invoiceDetails: { type: mongoose.Schema.Types.Mixed, default: {} },
-  status: { type: String, enum: ["Open", "Converted", "Cancelled"], default: "Open" },
-  convertedSale: { type: mongoose.Schema.Types.ObjectId, ref: "Sale" },
+  status: { type: String, enum: ["Draft", "Converted", "Cancelled"], default: "Draft" },
+  convertedOrder: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
   convertedAt: Date,
-  sourceQuotation: { type: mongoose.Schema.Types.ObjectId, ref: "Quotation" },
 }, { timestamps: true });
 
-orderSchema.pre("save", async function (next) {
-  if (!this.orderNo) {
-    const count = await mongoose.model("Order").countDocuments();
-    this.orderNo = `ORD-${new Date().getFullYear()}-${String(count + 1).padStart(4, "0")}`;
+quotationSchema.pre("save", async function(next) {
+  if (!this.quotationNo) {
+    const count = await mongoose.model("Quotation").countDocuments();
+    this.quotationNo = `QTN-${new Date().getFullYear()}-${String(count + 1).padStart(4, "0")}`;
   }
   this.subtotal = this.items.reduce((sum, item) => sum + (+item.total || 0) + (+item.discountAmount || 0), 0);
   this.billingSubtotal = this.items.reduce((sum, item) => sum + (+item.billingTotal || 0), 0);
@@ -73,4 +72,4 @@ orderSchema.pre("save", async function (next) {
   next();
 });
 
-module.exports = mongoose.model("Order", orderSchema);
+module.exports = mongoose.model("Quotation", quotationSchema);

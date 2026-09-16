@@ -21,6 +21,8 @@ import CreateSale      from "./pages/CreateSale";
 import CreateOrder     from "./pages/CreateOrder";
 import SalesList       from "./pages/SalesList";
 import OrdersList      from "./pages/OrdersList";
+import CreateQuotation from "./pages/CreateQuotation";
+import QuotationsList  from "./pages/QuotationsList";
 import Complaints      from "./pages/Complaints";
 import CreatePurchase  from "./pages/CreatePurchase";
 import PurchasesList   from "./pages/PurchasesList";
@@ -39,6 +41,7 @@ const bcNames = {
   "customer-list":   "Customers",
   "sale-create":     "Create Sale",   "sales-list":       "All Sales",
   "order-create":    "Create Order",  "orders-list":      "All Orders",
+  "quotation-create":"Create Quotation", "quotations-list":"Quotations",
   "complaints-active":"Active Complaints", "complaints-solved":"Solved Complaints",
   "purchase-create": "Create Purchase","purchases-list":  "All Purchases",
   "gst-report":      "GST Report",    "sales-report":     "Sales Report",
@@ -139,6 +142,8 @@ export default function App() {
         {customerProfileId           && <Guard perm="customers_view">  <CustomerProfile customerId={customerProfileId} navigate={setPage} /></Guard>}
 
         {/* Sales */}
+        {page === "quotation-create" && <Guard perm="sales_create">  <CreateQuotation navigate={setPage} /></Guard>}
+        {page === "quotations-list"  && <Guard perm="sales_view">    <QuotationsList  navigate={setPage} /></Guard>}
         {page === "sale-create"      && <Guard perm="sales_create">    <CreateSale     navigate={setPage} /></Guard>}
         {page === "sales-list"       && <Guard perm="sales_view">      <SalesList      navigate={setPage} /></Guard>}
         {page === "order-create"     && <Guard perm="sales_create">    <CreateOrder    navigate={setPage} /></Guard>}

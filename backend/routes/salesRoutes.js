@@ -21,6 +21,10 @@ const {
   updateOrder,
   payForOrder,
   convertOrderToSale,
+  getQuotations,
+  createQuotation,
+  updateQuotation,
+  convertQuotationToOrder,
 } = require("../controllers/salesController");
 
 // Purchases
@@ -31,6 +35,10 @@ router.delete("/purchases/:id", deletePurchase);
 router.patch("/purchases/:id/payment", updatePurchasePayment);
 
 // Sales
+router.get("/quotations/all", getQuotations);
+router.post("/quotations", createQuotation);
+router.put("/quotations/:id", updateQuotation);
+router.post("/quotations/:id/convert", convertQuotationToOrder);
 router.get("/orders/all", getOrders);
 router.post("/orders", createOrder);
 router.put("/orders/:id", updateOrder);
