@@ -7,6 +7,43 @@ import TransactionDetailsModal from "../components/TransactionDetailsModal";
 const statusColor = { Open: "yellow", Converted: "green", Cancelled: "gray" };
 const today = () => new Date().toISOString().slice(0, 10);
 
+function OrderAdvanceModal({ order, onClose, onDone }) {
+  const [form, setForm] = useState({ amount:"", method:"Cash", date:today(), notes:"" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const remaining = Math.max(0, (+order.grandTotal || 0) - (+order.amountPaid || 0));
+  const payments = [...(order.payments || [])].sort((a,b) => new Date(b.date) - new Date(a.date));
+  const submit = async () => {
+    if (!+form.amount || +form.amount <= 0) return setError("Enter a valid advance amount.");
+    if (+form.amount > remaining) return setError(`Maximum advance allowed is ₹${remaining.toLocaleString("en-IN")}.`);
+    setSaving(true); setError("");
+    try {
+      const response = await salesAPI.payForOrder(order._id, { ...form, amount:+form.amount });
+      onDone(response.message || "Advance payment added successfully");
+    } catch (err) { setError(err.message); setSaving(false); }
+  };
+  return <Modal open wide title={`Advance Payments - ${order.orderNo}`} onClose={onClose}>
+    <div style={{ display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:10, marginBottom:16 }}>
+      {[["Order Total",order.grandTotal,"#0f172a"],["Advance Paid",order.amountPaid,"#15803d"],["Remaining",remaining,"#dc2626"]].map(([label,value,color]) => <div key={label} style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8,padding:12}}><div style={{fontSize:10,fontWeight:800,color:"#64748b",textTransform:"uppercase"}}>{label}</div><div style={{fontSize:19,fontWeight:900,color,marginTop:4}}>₹{(+value||0).toLocaleString("en-IN")}</div></div>)}
+    </div>
+    <div style={{ fontWeight:800, marginBottom:8 }}>Advance Payment History</div>
+    <div style={{ maxHeight:220, overflowY:"auto", border:"1px solid #e2e8f0", borderRadius:8, marginBottom:16 }}>
+      {payments.length ? payments.map((payment,index) => <div key={payment._id||index} style={{display:"grid",gridTemplateColumns:"115px 120px 1fr 110px",gap:8,padding:10,borderBottom:"1px solid #e2e8f0",alignItems:"center"}}><span>{new Date(payment.date).toLocaleDateString("en-IN")}</span><Badge color="green">{payment.paymentMode}</Badge><span style={{color:"#64748b"}}>{payment.notes||"-"}<small style={{display:"block"}}>Recorded by {payment.recordedByName||"Staff"}</small></span><strong style={{textAlign:"right",color:"#15803d"}}>₹{(+payment.amount||0).toLocaleString("en-IN")}</strong></div>) : <div style={{padding:24,textAlign:"center",color:"#94a3b8"}}>No advance payments recorded.</div>}
+    </div>
+    {order.status === "Open" && remaining > 0 ? <div style={{background:"#f0fdf4",border:"1px solid #86efac",borderRadius:8,padding:14}}>
+      <div style={{fontWeight:800,color:"#166534",marginBottom:10}}>Add Another Advance Payment</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:10}}>
+        <FormGroup label="Amount"><FormInput type="number" min="0" max={remaining} value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))} /></FormGroup>
+        <FormGroup label="Payment Method"><FormSelect value={form.method} onChange={e=>setForm(p=>({...p,method:e.target.value}))}>{["Cash","UPI","Card","Bank Transfer","Cheque"].map(method=><option key={method}>{method}</option>)}</FormSelect></FormGroup>
+        <FormGroup label="Payment Date"><FormInput type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))} /></FormGroup>
+        <FormGroup label="Notes / Reference"><FormInput value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} /></FormGroup>
+      </div>
+      {error && <div style={{color:"#dc2626",marginBottom:10}}>{error}</div>}
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8}}><Btn color="cancel" onClick={onClose}>Close</Btn><Btn color="green" disabled={saving} onClick={submit}>{saving?"Saving...":"Add Advance Payment"}</Btn></div>
+    </div> : <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",color:"#64748b"}}><span>{order.status !== "Open" ? "This order is no longer open; new advances cannot be added." : "The complete order amount has been received."}</span><Btn color="cancel" onClick={onClose}>Close</Btn></div>}
+  </Modal>;
+}
+
 function OrderEditModal({ order, onClose, onDone }) {
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -111,6 +148,7 @@ export default function OrdersList({ navigate }) {
   const [converting, setConverting] = useState(null);
   const [editing, setEditing] = useState(null);
   const [viewing, setViewing] = useState(null);
+  const [advanceOrder, setAdvanceOrder] = useState(null);
   const [form, setForm] = useState({ date: today(), paymentMode: "Credit", amountPaid: "" });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
@@ -144,6 +182,7 @@ export default function OrdersList({ navigate }) {
     setSaving(false);
   };
   const edited = message => { setEditing(null); setToast(message); setTimeout(() => setToast(""), 3000); load(); };
+  const advanceAdded = message => { setAdvanceOrder(null); setToast(message); setTimeout(() => setToast(""), 3000); load(); };
 
   return (
     <div>
@@ -169,7 +208,7 @@ export default function OrdersList({ navigate }) {
               <Td style={{ color:"#15803d", fontWeight:800 }}>₹{(+order.amountPaid || 0).toLocaleString("en-IN")}</Td>
               <Td><Badge color={statusColor[order.status] || "gray"}>{order.status}</Badge></Td>
               <Td>{order.convertedSale ? `${order.convertedSale.invoiceNo} (${new Date(order.convertedSale.date).toLocaleDateString("en-IN")})` : "-"}</Td>
-              <Td><div style={{ display:"flex", gap:6, flexWrap:"wrap" }}><Btn sm color="teal" onClick={() => setViewing(order)}>View Details</Btn><Btn sm color="blue" onClick={() => setEditing(order)}>Edit Details</Btn>{order.status === "Open" && <Btn sm color="green" onClick={() => openConvert(order)}>Convert to Sale</Btn>}</div></Td>
+              <Td><div style={{ display:"flex", gap:6, flexWrap:"wrap" }}><Btn sm color="purple" onClick={() => setAdvanceOrder(order)}>Advances ({order.payments?.length || 0})</Btn><Btn sm color="teal" onClick={() => setViewing(order)}>View Details</Btn><Btn sm color="blue" onClick={() => setEditing(order)}>Edit Details</Btn>{order.status === "Open" && <Btn sm color="green" onClick={() => openConvert(order)}>Convert to Sale</Btn>}</div></Td>
             </tr>
           ))}</tbody>
         </table></TableWrap>
@@ -185,6 +224,7 @@ export default function OrdersList({ navigate }) {
       </Modal>
       {editing && <OrderEditModal order={editing} onClose={() => setEditing(null)} onDone={edited} />}
       {viewing && <TransactionDetailsModal record={viewing} type="order" onClose={() => setViewing(null)} />}
+      {advanceOrder && <OrderAdvanceModal order={advanceOrder} onClose={() => setAdvanceOrder(null)} onDone={advanceAdded} />}
     </div>
   );
 }

@@ -3,6 +3,25 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; min-height: 100vh; font-size: 13px; }
 
+/* Keep saved login credentials consistent with the dark login theme. */
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus,
+.login-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #f1f5f9 !important;
+  caret-color: #f1f5f9 !important;
+  -webkit-box-shadow: 0 0 0 1000px #10131a inset !important;
+  box-shadow: 0 0 0 1000px #10131a inset !important;
+  border-radius: 0;
+  transition: background-color 9999s ease-out 0s;
+}
+
+.login-input:autofill {
+  color: #f1f5f9 !important;
+  background: #10131a !important;
+  box-shadow: 0 0 0 1000px #10131a inset !important;
+}
+
 @media (max-width: 600px) {
   .sales-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;

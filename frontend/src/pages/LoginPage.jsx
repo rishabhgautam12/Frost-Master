@@ -422,6 +422,7 @@ export default function LoginPage() {
               <InputWrap focused={focused === "username"}>
                 <span style={iconWrap}><UserIcon /></span>
                 <input
+                  className="login-input"
                   type="text"
                   value={username}
                   onChange={e => setUsername(e.target.value)}
@@ -429,6 +430,7 @@ export default function LoginPage() {
                   onBlur={() => setFocused(null)}
                   onKeyDown={handleKey}
                   placeholder="e.g. admin"
+                  autoComplete="username"
                   autoFocus
                   style={inputStyle}
                 />
@@ -441,6 +443,7 @@ export default function LoginPage() {
               <InputWrap focused={focused === "password"}>
                 <span style={iconWrap}><LockIcon /></span>
                 <input
+                  className="login-input"
                   type={showPass ? "text" : "password"}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -448,6 +451,7 @@ export default function LoginPage() {
                   onBlur={() => setFocused(null)}
                   onKeyDown={handleKey}
                   placeholder="••••••••••••"
+                  autoComplete="current-password"
                   style={inputStyle}
                 />
                 <button type="button" onClick={() => setShowPass(p => !p)}

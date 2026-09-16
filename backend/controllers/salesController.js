@@ -482,6 +482,43 @@ exports.updateOrder = async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
 
+exports.payForOrder = async (req, res) => {
+  try {
+    const { amount, method, date, notes } = req.body;
+    if (!amount || +amount <= 0)
+      return res.status(400).json({ success:false, message:"Enter a valid advance amount." });
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success:false, message:"Order not found." });
+    if (order.status !== "Open")
+      return res.status(400).json({ success:false, message:"Advance payments can only be added to open orders." });
+    const remaining = Math.max(0, order.grandTotal - (+order.amountPaid || 0));
+    if (remaining <= 0)
+      return res.status(400).json({ success:false, message:"The complete order amount has already been received." });
+    if (+amount > remaining)
+      return res.status(400).json({ success:false, message:`Maximum advance allowed is ₹${remaining.toLocaleString("en-IN")}.` });
+    const paymentMethod = ["Cash", "UPI", "Card", "Bank Transfer", "Cheque"].includes(method) ? method : "Cash";
+    const paying = +amount;
+    order.payments.push({
+      amount: paying,
+      paymentMode: paymentMethod,
+      date: date || new Date(),
+      notes: notes || "",
+      recordedBy: req.user?._id,
+      recordedByName: req.user?.name || req.user?.username || "Staff",
+    });
+    order.amountPaid = Math.round(((+order.amountPaid || 0) + paying) * 100) / 100;
+    order.paymentMode = order.payments.length > 1 ? "Multiple" : paymentMethod;
+    await order.save();
+    await logActivity(req, {
+      action:"payment", entityType:"Order", entityId:order._id, entityLabel:order.orderNo,
+      summary:`Recorded advance payment of ₹${paying.toLocaleString("en-IN")} for ${order.orderNo}`,
+      changes:[{ field:"amountPaid", before:order.amountPaid - paying, after:order.amountPaid }],
+      metadata:{ amount:paying, method:paymentMethod, date, notes },
+    });
+    res.json({ success:true, data:order, message:`Advance payment of ₹${paying.toLocaleString("en-IN")} added successfully.` });
+  } catch (err) { res.status(500).json({ success:false, message:err.message }); }
+};
+
 exports.convertOrderToSale = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
