@@ -192,8 +192,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
   const handleSave = async () => {
     const validItems = items.filter(it => it.product && +it.qty > 0 && +it.rate > 0);
     if (!validItems.length) return alert("Add at least one valid item.");
-    if (!form.customer && !form.customerName && form.saleType !== "Cash Sale")
-      return alert("Select a customer or enter a name for a cash sale.");
+    if (!form.customer) return alert("Select a registered customer or add a new customer first.");
     setSaving(true);
     try {
       await (isOrder ? salesAPI.createOrder : salesAPI.create)({
@@ -257,7 +256,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
         {/* Customer section */}
         {!showAddCust ? (
           <div style={{ marginBottom:20 }}>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:12 }}>
               <FormGroup label="Customer (registered)">
                 <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                   <FormSelect style={{ flex:1 }} value={form.customer}
@@ -287,11 +286,6 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                     &nbsp;·&nbsp;<strong>{selectedCustomer.customerType}</strong>
                   </div>
                 )}
-              </FormGroup>
-              <FormGroup label="Walk-in / Cash Customer Name">
-                <FormInput placeholder="Enter name if not registered"
-                  value={form.customerName} onChange={set("customerName")}
-                />
               </FormGroup>
             </div>
           </div>

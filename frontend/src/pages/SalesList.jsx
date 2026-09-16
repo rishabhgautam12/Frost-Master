@@ -342,8 +342,7 @@ function FullEditModal({ sale, onClose, onDone }) {
     try {
       const validItems = items.filter(it => it.product && +it.qty > 0 && +it.rate >= 0);
       if (!validItems.length) throw new Error("Add at least one valid sale item.");
-      if (!form.customer && !form.customerName && form.saleType !== "Cash Sale")
-        throw new Error("Select a customer or enter a cash customer name.");
+      if (!form.customer) throw new Error("Select a registered customer.");
       await salesAPI.updateSaleDetails(sale._id, {
         ...form,
         customer: form.customer || undefined,
@@ -387,7 +386,7 @@ function FullEditModal({ sale, onClose, onDone }) {
         </FormGroup>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
         <FormGroup label="Customer">
           <FormSelect value={form.customer}
             onChange={e => {
@@ -395,13 +394,10 @@ function FullEditModal({ sale, onClose, onDone }) {
               const party = partyDetailsFromCustomer(customer);
               setForm(p => ({ ...p, customer:e.target.value, customerName:e.target.value ? "" : p.customerName, invoiceDetails:{ ...(p.invoiceDetails || {}), billTo:party, shipTo:{ ...party } } }));
             }}>
-            <option value="">Walk-in / cash customer</option>
+            <option value="">Select customer</option>
             {customers.map(c => <option key={c._id} value={c._id}>{c.name} - {c.phone}</option>)}
           </FormSelect>
           {selectedCustomer && <div style={{ marginTop: 5, fontSize: 11, color: "#64748b" }}>{selectedCustomer.name} selected</div>}
-        </FormGroup>
-        <FormGroup label="Walk-in Customer Name">
-          <FormInput placeholder="Customer name" value={form.customerName} onChange={set("customerName")} />
         </FormGroup>
       </div>
 

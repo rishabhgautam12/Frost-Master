@@ -98,6 +98,7 @@ function OrderEditModal({ order, onClose, onDone }) {
     setSaving(true); setError("");
     try {
       if (!items.length || items.some(item => !item.product || +item.qty <= 0 || +item.rate <= 0)) throw new Error("Every item requires a product, quantity and rate.");
+      if (!form.customer) throw new Error("Select a registered customer.");
       const res = await salesAPI.updateOrder(order._id, { ...form, customer: form.customer || undefined, items: items.map(item => ({ ...item, qty:+item.qty, rate:+item.rate, billingRate:+item.billingRate, discount:+item.discount || 0, gstRate:+item.gstRate || 0, transportAmount:+item.transportAmount || 0, transportGstRate:+item.transportGstRate || 0 })) });
       onDone(res.message || "Order updated successfully");
     } catch (err) { setError(err.message); setSaving(false); }
@@ -109,8 +110,7 @@ function OrderEditModal({ order, onClose, onDone }) {
       <FormGroup label="Order Date"><FormInput type="date" value={form.date} onChange={changeForm("date")} /></FormGroup>
       <FormGroup label="Sale Type"><FormSelect value={form.saleType} onChange={changeForm("saleType")}>{["GST Invoice","Cash Sale"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
       <FormGroup label="Payment Mode"><FormSelect value={form.paymentMode} onChange={changeForm("paymentMode")}>{["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
-      <FormGroup label="Customer"><FormSelect value={form.customer} onChange={e => { const customer=customers.find(item=>item._id===e.target.value); const party=partyDetailsFromCustomer(customer); setForm(p => ({...p, customer:e.target.value, customerName:e.target.value ? "" : p.customerName, invoiceDetails:{...(p.invoiceDetails||{}),billTo:party,shipTo:{...party}}})); }}><option value="">Walk-in customer</option>{customers.map(c => <option key={c._id} value={c._id}>{c.name} - {c.phone}</option>)}</FormSelect></FormGroup>
-      <FormGroup label="Walk-in Customer Name"><FormInput value={form.customerName} onChange={changeForm("customerName")} /></FormGroup>
+      <FormGroup label="Customer"><FormSelect value={form.customer} onChange={e => { const customer=customers.find(item=>item._id===e.target.value); const party=partyDetailsFromCustomer(customer); setForm(p => ({...p, customer:e.target.value, customerName:"", invoiceDetails:{...(p.invoiceDetails||{}),billTo:party,shipTo:{...party}}})); }}><option value="">Select customer</option>{customers.map(c => <option key={c._id} value={c._id}>{c.name} - {c.phone}</option>)}</FormSelect></FormGroup>
       <FormGroup label="Sale Made By (Employee)"><FormSelect value={form.salesEmployee} onChange={changeForm("salesEmployee")}><option value="">Select employee</option>{employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name} (M: {employee.manufacturingIncentivePercent || 0}% / I: {employee.importedIncentivePercent || 0}%)</option>)}</FormSelect></FormGroup>
       <FormGroup label="Advance Paid"><FormInput type="number" min="0" max={total || undefined} value={form.amountPaid} onChange={changeForm("amountPaid")} /></FormGroup>
     </div>

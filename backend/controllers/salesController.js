@@ -273,6 +273,7 @@ exports.getSaleById = async (req, res) => {
 exports.createSale = async (req, res) => {
   try {
     const { items, customer, amountPaid, ...rest } = req.body;
+    if (!customer) return res.status(400).json({ success:false, message:"A registered customer is required." });
 
     const enrichedItems = [];
     for (const item of items) {
@@ -397,6 +398,7 @@ exports.getOrders = async (req, res) => {
 exports.createOrder = async (req, res) => {
   try {
     const { items, customer, amountPaid, payments, ...rest } = req.body;
+    if (!customer) return res.status(400).json({ success:false, message:"A registered customer is required." });
     const cleanPayments = Array.isArray(payments) ? payments.filter(payment => +payment.amount > 0).map(payment => ({
       ...payment, amount: +payment.amount, recordedBy: req.user?._id,
       recordedByName: req.user?.name || req.user?.username || "Staff",
