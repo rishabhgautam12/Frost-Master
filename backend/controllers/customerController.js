@@ -2,7 +2,7 @@ const Customer = require("../models/Customer");
 const Sale = require("../models/Sale");
 const { createdChanges, logActivity, toChanges } = require("../utils/auditLogger");
 
-const customerFields = ["name", "phone", "email", "address", "city", "gstin", "customerType", "status", "totalBilled", "totalReceived"];
+const customerFields = ["name", "phone", "email", "address", "city", "gstin", "customerType", "status", "totalBilled", "totalReceived", "advanceBalance"];
 
 // GET all customers
 exports.getCustomers = async (req, res) => {
@@ -64,6 +64,7 @@ exports.getCustomerById = async (req, res) => {
           totalBilled: sales.reduce((s, o) => s + o.grandTotal, 0),
           totalReceived: sales.reduce((s, o) => s + o.amountPaid, 0),
           totalDue: sales.reduce((s, o) => s + o.amountDue, 0),
+          advanceBalance: customer.advanceBalance || 0,
         },
       },
     });
@@ -185,15 +186,16 @@ exports.payForSale = async (req, res) => {
 
     const prevPaid   = sale.amountPaid;
     const before = { amountPaid: sale.amountPaid, amountDue: sale.amountDue, status: sale.status };
-    const maxPayable = sale.grandTotal - prevPaid;
-    if (maxPayable <= 0)
-      return res.status(400).json({ success: false, message: "This invoice is already fully paid." });
-
-    const paying = Math.min(+amount, maxPayable); // cannot overpay
+    const maxPayable = Math.max(0, sale.grandTotal - prevPaid);
+    const receivedAmount = +amount;
+    const paying = Math.min(receivedAmount, maxPayable);
+    const advanceAmount = Math.max(0, receivedAmount - paying);
 
     const paymentMethod = method || "Cash";
     sale.payments.push({
-      amount: paying,
+      amount: receivedAmount,
+      appliedAmount: paying,
+      advanceAmount,
       paymentMode: paymentMethod,
       date: date || new Date(),
       notes: notes || "",
@@ -210,6 +212,7 @@ exports.payForSale = async (req, res) => {
     const customer = await Customer.findById(sale.customer);
     if (customer) {
       customer.totalReceived += paying;
+      customer.advanceBalance = (+customer.advanceBalance || 0) + advanceAmount;
       await customer.save();
     }
 
@@ -219,18 +222,22 @@ exports.payForSale = async (req, res) => {
       entityType: "Sale",
       entityId: sale._id,
       entityLabel: sale.invoiceNo || sale._id.toString(),
-      summary: `Recorded customer payment of ₹${paying.toLocaleString()} for ${sale.invoiceNo || "sale"}`,
+      summary: `Recorded customer payment of ₹${receivedAmount.toLocaleString()} for ${sale.invoiceNo || "sale"}`,
       changes: toChanges(before, sale, ["amountPaid", "amountDue", "status"]),
-      metadata: { amount: paying, method, notes, date },
+      metadata: { amount: receivedAmount, appliedAmount: paying, advanceAmount, method, notes, date },
     });
     res.json({
       success: true,
-      message: remaining === 0
-        ? `Payment of ₹${paying.toLocaleString()} recorded. Invoice fully settled.`
-        : `Payment of ₹${paying.toLocaleString()} recorded. Balance remaining: ₹${remaining.toLocaleString()}`,
+      message: advanceAmount > 0
+        ? `Payment of ₹${receivedAmount.toLocaleString()} recorded. ₹${advanceAmount.toLocaleString()} stored as customer advance.`
+        : remaining === 0
+        ? `Payment of ₹${receivedAmount.toLocaleString()} recorded. Invoice fully settled.`
+        : `Payment of ₹${receivedAmount.toLocaleString()} recorded. Balance remaining: ₹${remaining.toLocaleString()}`,
       data: {
         sale,
         paying,
+        receivedAmount,
+        advanceAmount,
         remaining,
         status: sale.status,
       },

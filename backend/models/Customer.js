@@ -30,6 +30,7 @@ const customerSchema = new mongoose.Schema(
     // Running ledger totals (auto-updated on each sale)
     totalBilled: { type: Number, default: 0 },
     totalReceived: { type: Number, default: 0 },
+    advanceBalance: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );

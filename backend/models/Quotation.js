@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 
 const quotationPaymentSchema = new mongoose.Schema({
   amount: { type: Number, required: true, min: 0 },
+  appliedAmount: { type: Number, min: 0, default: 0 },
+  advanceAmount: { type: Number, min: 0, default: 0 },
   paymentMode: { type: String, default: "Cash" },
   date: { type: Date, default: Date.now },
   notes: { type: String, trim: true },

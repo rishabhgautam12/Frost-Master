@@ -55,12 +55,11 @@ function PaymentModal({ sale, onClose, onDone }) {
   const [err,    setErr]    = useState("");
 
   if (!sale) return null;
-  const due = sale.grandTotal - sale.amountPaid;
+  const due = Math.max(0, sale.grandTotal - sale.amountPaid);
 
   const handlePay = async () => {
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) return setErr("Please enter a valid amount.");
-    if (amt > due + 0.01) return setErr(`Maximum payable: ₹${due.toLocaleString()}`);
     setSaving(true); setErr("");
     try {
       await salesAPI.payForSale(sale._id, { amount: amt, method, notes, date: paymentDate });
@@ -94,6 +93,7 @@ function PaymentModal({ sale, onClose, onDone }) {
           <Btn color="blue" onClick={() => setAmount(String(due))}>Full Due</Btn>
         </div>
       </FormGroup>
+      {+amount > due && <div style={{color:"#7c3aed",fontWeight:700,marginBottom:10}}>₹{(+amount-due).toLocaleString()} extra will be stored as customer advance.</div>}
 
       <FormGroup label="Payment Method">
         <FormSelect value={method} onChange={(e) => setMethod(e.target.value)}>
@@ -127,7 +127,7 @@ function PaymentHistoryDrawer({ sale, onClose, onAddPayment }) {
   const payments = [...(sale.payments || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
   const trackedTotal = payments.reduce((sum, payment) => sum + (+payment.amount || 0), 0);
   const legacyAmount = Math.max(0, (+sale.amountPaid || 0) - trackedTotal);
-  const canPay = sale.status !== "Paid" && sale.status !== "Cancelled" && sale.amountDue > 0;
+  const canPay = sale.status !== "Cancelled";
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 10000 }}>
@@ -166,6 +166,7 @@ function PaymentHistoryDrawer({ sale, onClose, onAddPayment }) {
               </div>
               <div style={{ marginTop: 7, color: "#475569", fontSize: 12 }}>{new Date(payment.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
               <div style={{ marginTop: 3, color: "#64748b", fontSize: 11 }}>Recorded by {payment.recordedByName || "Staff"}</div>
+              {+payment.advanceAmount > 0 && <div style={{marginTop:4,color:"#7c3aed",fontSize:11,fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString()} stored as customer advance</div>}
               {payment.notes && <div style={{ marginTop: 8, padding: "7px 9px", borderRadius: 6, background: "#f8fafc", color: "#475569", fontSize: 12 }}>{payment.notes}</div>}
             </div>
           ))}

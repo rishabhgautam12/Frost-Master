@@ -25,6 +25,8 @@ const saleItemSchema = new mongoose.Schema({
 
 const salePaymentSchema = new mongoose.Schema({
   amount: { type: Number, required: true, min: 0 },
+  appliedAmount: { type: Number, min: 0, default: 0 },
+  advanceAmount: { type: Number, min: 0, default: 0 },
   paymentMode: { type: String, enum: ["Cash", "UPI", "Card", "Bank Transfer", "Cheque"], default: "Cash" },
   date: { type: Date, default: Date.now },
   notes: { type: String, trim: true },
@@ -84,9 +86,19 @@ const saleSchema = new mongoose.Schema(
 // Auto-generate invoice number
 saleSchema.pre("save", async function (next) {
   if (!this.invoiceNo) {
-    const count = await mongoose.model("Sale").countDocuments();
     const yr = new Date().getFullYear();
-    this.invoiceNo = `INV-${yr}-${String(count + 1).padStart(4, "0")}`;
+    const prefix = `INV-${yr}-`;
+    const latest = await mongoose.model("Sale").findOne({ invoiceNo: { $regex: `^${prefix}` } })
+      .sort({ invoiceNo: -1 })
+      .select("invoiceNo")
+      .lean();
+    let sequence = latest ? (parseInt(String(latest.invoiceNo).slice(prefix.length), 10) || 0) + 1 : 1;
+    let candidate = `${prefix}${String(sequence).padStart(4, "0")}`;
+    while (await mongoose.model("Sale").exists({ invoiceNo: candidate })) {
+      sequence += 1;
+      candidate = `${prefix}${String(sequence).padStart(4, "0")}`;
+    }
+    this.invoiceNo = candidate;
   }
   // Calculate totals
   this.subtotal = this.items.reduce((s, i) => s + i.total + (i.discountAmount || 0), 0);

@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 
 const orderPaymentSchema = new mongoose.Schema({
   amount: { type: Number, required: true, min: 0 },
+  appliedAmount: { type: Number, min: 0, default: 0 },
+  advanceAmount: { type: Number, min: 0, default: 0 },
   paymentMode: { type: String, enum: ["Cash", "UPI", "Card", "Bank Transfer", "Cheque"], default: "Cash" },
   date: { type: Date, default: Date.now },
   notes: { type: String, trim: true },

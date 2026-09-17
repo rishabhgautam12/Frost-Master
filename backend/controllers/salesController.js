@@ -337,6 +337,9 @@ exports.createSale = async (req, res) => {
           recordedByName,
         }))
       : [];
+    const initiallyReceived = initialPayments.length
+      ? initialPayments.reduce((sum, payment) => sum + (+payment.amount || 0), 0)
+      : (+amountPaid || 0);
     const sale = new Sale({
       ...rest,
       customer:   customer || undefined,
@@ -347,6 +350,16 @@ exports.createSale = async (req, res) => {
       soldByName: recordedByName,
     });
     await sale.save();
+    let initialRemaining = sale.grandTotal;
+    let initialAdvance = 0;
+    sale.payments.forEach(payment => {
+      const received = +payment.amount || 0;
+      payment.appliedAmount = Math.min(received, initialRemaining);
+      payment.advanceAmount = Math.max(0, received - payment.appliedAmount);
+      initialRemaining -= payment.appliedAmount;
+      initialAdvance += payment.advanceAmount;
+    });
+    sale.amountPaid = Math.min(sale.grandTotal, initiallyReceived);
     await applySaleIncentive(sale);
     await sale.save();
 
@@ -361,7 +374,7 @@ exports.createSale = async (req, res) => {
     // Update customer ledger
     if (customer) {
       await Customer.findByIdAndUpdate(customer, {
-        $inc: { totalBilled: sale.grandTotal, totalReceived: sale.amountPaid },
+        $inc: { totalBilled: sale.grandTotal, totalReceived: sale.amountPaid, advanceBalance: initialAdvance },
       });
     }
 
@@ -515,17 +528,18 @@ exports.createOrder = async (req, res) => {
       createdBy: req.user?._id,
       createdByName: req.user?.name || req.user?.username || "Staff",
     });
-    if (order.amountPaid > order.grandTotal) {
-      let remaining = order.grandTotal;
-      order.payments = order.payments.map(payment => {
-        const kept = Math.min(+payment.amount || 0, remaining);
-        remaining -= kept;
-        payment.amount = kept;
-        return payment;
-      }).filter(payment => payment.amount > 0);
-      order.amountPaid = order.grandTotal;
-      await order.save();
-    }
+    let remainingOrderValue = order.grandTotal;
+    let orderAdvance = 0;
+    order.payments.forEach(payment => {
+      const received = +payment.amount || 0;
+      payment.appliedAmount = Math.min(received, remainingOrderValue);
+      payment.advanceAmount = Math.max(0, received - payment.appliedAmount);
+      remainingOrderValue -= payment.appliedAmount;
+      orderAdvance += payment.advanceAmount;
+    });
+    order.amountPaid = Math.min(order.grandTotal, cleanPayments.reduce((sum, payment) => sum + payment.amount, 0));
+    await order.save();
+    if (orderAdvance > 0) await Customer.findByIdAndUpdate(customer, { $inc: { advanceBalance: orderAdvance } });
     if (order.salesEmployee) {
       const employee = await Employee.findById(order.salesEmployee);
       if (!employee) return res.status(400).json({ success:false, message:"Selected sales employee was not found." });
@@ -597,30 +611,37 @@ exports.payForOrder = async (req, res) => {
     if (order.status !== "Open")
       return res.status(400).json({ success:false, message:"Advance payments can only be added to open orders." });
     const remaining = Math.max(0, order.grandTotal - (+order.amountPaid || 0));
-    if (remaining <= 0)
-      return res.status(400).json({ success:false, message:"The complete order amount has already been received." });
-    if (+amount > remaining)
-      return res.status(400).json({ success:false, message:`Maximum advance allowed is ₹${remaining.toLocaleString("en-IN")}.` });
     const paymentMethod = ["Cash", "UPI", "Card", "Bank Transfer", "Cheque"].includes(method) ? method : "Cash";
     const paying = +amount;
+    const appliedAmount = Math.min(paying, remaining);
+    const advanceAmount = Math.max(0, paying - appliedAmount);
+    const previousPaid = +order.amountPaid || 0;
     order.payments.push({
       amount: paying,
+      appliedAmount,
+      advanceAmount,
       paymentMode: paymentMethod,
       date: date || new Date(),
       notes: notes || "",
       recordedBy: req.user?._id,
       recordedByName: req.user?.name || req.user?.username || "Staff",
     });
-    order.amountPaid = Math.round(((+order.amountPaid || 0) + paying) * 100) / 100;
+    order.amountPaid = Math.round((previousPaid + appliedAmount) * 100) / 100;
     order.paymentMode = order.payments.length > 1 ? "Multiple" : paymentMethod;
     await order.save();
+    if (advanceAmount > 0 && order.customer) {
+      await Customer.findByIdAndUpdate(order.customer, { $inc: { advanceBalance: advanceAmount } });
+    }
     await logActivity(req, {
       action:"payment", entityType:"Order", entityId:order._id, entityLabel:order.orderNo,
       summary:`Recorded advance payment of ₹${paying.toLocaleString("en-IN")} for ${order.orderNo}`,
-      changes:[{ field:"amountPaid", before:order.amountPaid - paying, after:order.amountPaid }],
-      metadata:{ amount:paying, method:paymentMethod, date, notes },
+      changes:[{ field:"amountPaid", before:previousPaid, after:order.amountPaid }],
+      metadata:{ amount:paying, appliedAmount, advanceAmount, method:paymentMethod, date, notes },
     });
-    res.json({ success:true, data:order, message:`Advance payment of ₹${paying.toLocaleString("en-IN")} added successfully.` });
+    const message = advanceAmount > 0
+      ? `Payment of ₹${paying.toLocaleString("en-IN")} recorded. ₹${advanceAmount.toLocaleString("en-IN")} stored as customer advance.`
+      : `Advance payment of ₹${paying.toLocaleString("en-IN")} added successfully.`;
+    res.json({ success:true, data:order, message, appliedAmount, advanceAmount });
   } catch (err) { res.status(500).json({ success:false, message:err.message }); }
 };
 
@@ -631,7 +652,10 @@ exports.convertOrderToSale = async (req, res) => {
     if (order.status !== "Open")
       return res.status(400).json({ success: false, message: `Only open orders can be converted. Current status: ${order.status}` });
     const additionalAmountPaid = +req.body.amountPaid || 0;
-    const convertedAmountPaid = Math.min(order.grandTotal, (+order.amountPaid || 0) + additionalAmountPaid);
+    const conversionRemaining = Math.max(0, order.grandTotal - (+order.amountPaid || 0));
+    const conversionApplied = Math.min(additionalAmountPaid, conversionRemaining);
+    const conversionAdvance = Math.max(0, additionalAmountPaid - conversionApplied);
+    const convertedAmountPaid = Math.min(order.grandTotal, (+order.amountPaid || 0) + conversionApplied);
     const convertedPaymentMode = req.body.paymentMode || order.paymentMode || "Credit";
     const convertedByName = req.user?.name || req.user?.username || "Staff";
     const sale = new Sale({
@@ -640,7 +664,9 @@ exports.convertOrderToSale = async (req, res) => {
       date: req.body.date || new Date(), items: order.items.map(item => item.toObject()),
       amountPaid: convertedAmountPaid,
       payments: [ ...(order.payments || []).map(payment => payment.toObject ? payment.toObject() : payment), ...(additionalAmountPaid > 0 ? [{
-        amount: Math.min(additionalAmountPaid, Math.max(0, order.grandTotal - (+order.amountPaid || 0))),
+        amount: additionalAmountPaid,
+        appliedAmount: conversionApplied,
+        advanceAmount: conversionAdvance,
         paymentMode: convertedPaymentMode === "Credit" ? "Cash" : convertedPaymentMode,
         date: req.body.date || new Date(),
         notes: "Payment recorded during order conversion",
@@ -658,7 +684,7 @@ exports.convertOrderToSale = async (req, res) => {
     for (const item of sale.items) await deductStockFromWarehouses(item.product, item.qty, item.warehouse);
     if (sale.customer) {
       await Customer.findByIdAndUpdate(sale.customer, {
-        $inc: { totalBilled: sale.grandTotal, totalReceived: sale.amountPaid },
+        $inc: { totalBilled: sale.grandTotal, totalReceived: sale.amountPaid, advanceBalance: conversionAdvance },
       });
     }
     order.status = "Converted";
@@ -1073,13 +1099,15 @@ exports.payForSale = async (req, res) => {
     if (sale.status === "Cancelled")
       return res.status(400).json({ success:false, message:"Cannot record payment on a cancelled sale." });
     const before = { amountPaid: sale.amountPaid, amountDue: sale.amountDue, status: sale.status };
-    const maxPayable = sale.grandTotal - sale.amountPaid;
-    if (maxPayable <= 0)
-      return res.status(400).json({ success:false, message:"This invoice is already fully paid." });
-    const paying    = Math.min(+amount, maxPayable);
+    const maxPayable = Math.max(0, sale.grandTotal - sale.amountPaid);
+    const receivedAmount = +amount;
+    const paying = Math.min(receivedAmount, maxPayable);
+    const advanceAmount = Math.max(0, receivedAmount - paying);
     const paymentMethod = method || "Cash";
     sale.payments.push({
-      amount: paying,
+      amount: receivedAmount,
+      appliedAmount: paying,
+      advanceAmount,
       paymentMode: paymentMethod,
       date: date || new Date(),
       notes: notes || "",
@@ -1092,23 +1120,29 @@ exports.payForSale = async (req, res) => {
     sale.paymentMode = sale.payments.length > 1 ? "Multiple" : paymentMethod;
     await sale.save();
     const customer = await Customer.findById(sale.customer);
-    if (customer) { customer.totalReceived += paying; await customer.save(); }
+    if (customer) {
+      customer.totalReceived += paying;
+      customer.advanceBalance = (+customer.advanceBalance || 0) + advanceAmount;
+      await customer.save();
+    }
     const remaining = sale.amountDue;
     await logActivity(req, {
       action: "payment",
       entityType: "Sale",
       entityId: sale._id,
       entityLabel: sale.invoiceNo,
-      summary: `Recorded payment of ₹${paying.toLocaleString()} for sale ${sale.invoiceNo}`,
+      summary: `Recorded payment of ₹${receivedAmount.toLocaleString()} for sale ${sale.invoiceNo}`,
       changes: toChanges(before, sale, ["amountPaid", "amountDue", "status"]),
-      metadata: { amount: paying, method, notes, date },
+      metadata: { amount: receivedAmount, appliedAmount: paying, advanceAmount, method, notes, date },
     });
     res.json({
       success: true,
-      message: remaining === 0
-        ? `Payment of ₹${paying.toLocaleString()} recorded. Invoice fully settled.`
+      message: advanceAmount > 0
+        ? `Payment of ₹${receivedAmount.toLocaleString()} recorded. Invoice settled and ₹${advanceAmount.toLocaleString()} stored as customer advance.`
+        : remaining === 0
+        ? `Payment of ₹${receivedAmount.toLocaleString()} recorded. Invoice fully settled.`
         : `Payment of ₹${paying.toLocaleString()} recorded. Balance remaining: ₹${remaining.toLocaleString()}`,
-      data: { sale, paying, remaining, status: sale.status },
+      data: { sale, paying, advanceAmount, receivedAmount, remaining, status: sale.status },
     });
   } catch (err) { res.status(500).json({ success:false, message:err.message }); }
 };

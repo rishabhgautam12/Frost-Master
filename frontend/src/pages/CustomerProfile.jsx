@@ -102,14 +102,12 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
 
   const openPay = (sale) => {
     setPayModal(sale);
-    setPayForm(f => ({ ...f, amount: String(sale.amountDue), notes:"" }));
+    setPayForm(f => ({ ...f, amount: sale.amountDue > 0 ? String(sale.amountDue) : "", notes:"" }));
   };
 
   const handlePay = async () => {
     if (!payForm.amount || +payForm.amount <= 0)
       return alert("Please enter a valid amount.");
-    if (+payForm.amount > payModal.amountDue)
-      return alert(`Amount cannot exceed the balance due of ₹${payModal.amountDue.toLocaleString()}.`);
     setSaving(true);
     try {
       const res = await customerAPI.payForSale(payModal._id, {
@@ -195,7 +193,7 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
                     </Badge>
                   </TD>
                   <TD>
-                    {s.amountDue > 0 && s.status !== "Cancelled" && (
+                    {s.status !== "Cancelled" && (
                       <Btn sm color="teal" onClick={() => openPay(s)}>
                         💳 Receive
                       </Btn>
@@ -321,12 +319,8 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
                 <FormGroup label="Amount Receiving (₹) *">
                   <FormInput type="number" value={payForm.amount}
                     onChange={setPay("amount")}
-                    placeholder={`Max ₹${due.toLocaleString()}`} />
-                  {paying > due && (
-                    <div style={{ color:"#ef4444", fontSize:10, marginTop:3 }}>
-                      ⚠️ Cannot exceed balance of ₹{due.toLocaleString()}
-                    </div>
-                  )}
+                    placeholder="Enter any received amount" />
+                  {paying > due && <div style={{color:"#7c3aed",fontSize:10,fontWeight:800,marginTop:3}}>₹{(paying-due).toLocaleString()} extra will be stored as customer advance.</div>}
                 </FormGroup>
                 <FormGroup label="Payment Mode">
                   <FormSelect value={payForm.method} onChange={setPay("method")}>
@@ -683,6 +677,7 @@ export default function CustomerProfile({ customerId, navigate }) {
             { label:"Total Billed",    value:`₹${stats.totalBilled.toLocaleString()}`,         bg:"rgba(139,92,246,0.2)",  border:"#8b5cf6" },
             { label:"Amount Received", value:`₹${stats.totalReceived.toLocaleString()}`,       bg:"rgba(22,163,74,0.2)",   border:"#16a34a" },
             { label:"Amount Due",      value:`₹${stats.totalDue.toLocaleString()}`,            bg:"rgba(239,68,68,0.2)",   border:"#ef4444" },
+            { label:"Advance Balance", value:`₹${(stats.advanceBalance||0).toLocaleString()}`, bg:"rgba(124,58,237,0.2)", border:"#7c3aed" },
             { label:"Credit Limit",    value:`₹${(customer.creditLimit||0).toLocaleString()}`, bg:"rgba(245,158,11,0.2)",  border:"#f59e0b" },
           ].map((c,i) => (
             <div key={i} style={{ background:c.bg, borderRadius:8, padding:"12px 14px",
