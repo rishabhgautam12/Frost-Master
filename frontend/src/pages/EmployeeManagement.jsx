@@ -3,7 +3,8 @@ import {
   Btn, Badge, Modal, FormGroup, FormInput, FormSelect,
   LoadingSpinner, ErrorMsg, EmptyState, SuccessToast,
 } from "../components/Shared";
-import { employeeAPI } from "../services/api";
+import { employeeAPI, salesAPI } from "../services/api";
+import TransactionDetailsModal from "../components/TransactionDetailsModal";
 
 const STATUSES = [
   { key: "Present", label: "Present", bg: "#a7f3d0", border: "#059669", color: "#064e3b" },
@@ -102,6 +103,9 @@ export default function EmployeeManagement({ user }) {
   const [salaryChangeForm, setSalaryChangeForm] = useState({
     effectiveFrom: "", monthlySalary: "", manufacturingIncentivePercent: "0", importedIncentivePercent: "0", note: "",
   });
+  const [incentiveModalOpen, setIncentiveModalOpen] = useState(false);
+  const [saleDetail, setSaleDetail] = useState(null);
+  const [saleDetailLoading, setSaleDetailLoading] = useState(false);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -607,6 +611,101 @@ export default function EmployeeManagement({ user }) {
     a.click();
   };
 
+  const openSaleDetail = async (saleId) => {
+    if (!saleId || saleDetailLoading) return;
+    setSaleDetailLoading(true);
+    try {
+      const res = await salesAPI.getById(saleId);
+      setSaleDetail(res.data);
+    } catch (err) { alert(err.message); }
+    setSaleDetailLoading(false);
+  };
+
+  const downloadIncentiveImage = () => {
+    if (!detail?.employee || !salary) return;
+    const rows = salary.incentiveSales || [];
+    const scale = 2;
+    const width = 1060;
+    const padding = 24;
+    const headerH = 92;
+    const rowH = 40;
+    const headRowH = 30;
+    const tableTop = headerH + 20;
+    const height = tableTop + headRowH + Math.max(rows.length, 1) * rowH + 70;
+    const canvas = document.createElement("canvas");
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(scale, scale);
+
+    const rect = (x, y, w, h, fill) => { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); };
+    const text = (value, x, y, opts = {}) => {
+      ctx.fillStyle = opts.color || "#0f172a";
+      ctx.font = `${opts.weight || 400} ${opts.size || 13}px Segoe UI, Arial`;
+      ctx.textAlign = opts.align || "left";
+      ctx.fillText(String(value), x, y);
+    };
+    const truncate = (value, maxWidth, size = 12) => {
+      ctx.font = `400 ${size}px Segoe UI, Arial`;
+      let str = String(value || "-");
+      if (ctx.measureText(str).width <= maxWidth) return str;
+      while (str.length > 1 && ctx.measureText(`${str}…`).width > maxWidth) str = str.slice(0, -1);
+      return `${str}…`;
+    };
+
+    rect(0, 0, width, height, "#f8fafc");
+    rect(0, 0, width, headerH, "#134e4a");
+    text(detail.employee.name, padding, 34, { color: "#fff", size: 20, weight: 800 });
+    text(`${detail.employee.role || "Employee"} - Incentive Sales - ${monthLabel(month)}`, padding, 58, { color: "#d1fae5", size: 12, weight: 600 });
+    text(`Total Incentive: ${money(salary.incentiveEarned || 0)}`, padding, 80, { color: "#a7f3d0", size: 13, weight: 800 });
+
+    const cols = [
+      { key: "invoice", label: "Invoice", x: padding, w: 110 },
+      { key: "date", label: "Date", x: padding + 110, w: 80 },
+      { key: "customer", label: "Customer", x: padding + 190, w: 140 },
+      { key: "products", label: "Products", x: padding + 330, w: 230 },
+      { key: "payment", label: "Payment", x: padding + 560, w: 80 },
+      { key: "base", label: "Base Amount", x: padding + 640, w: 130, align: "right" },
+      { key: "pct", label: "Incentive %", x: padding + 770, w: 80, align: "right" },
+      { key: "incentive", label: "Incentive", x: padding + 850, w: 130, align: "right" },
+    ];
+    let y = tableTop;
+    rect(padding, y, width - padding * 2, headRowH, "#e2e8f0");
+    cols.forEach((c) => text(c.label, c.align === "right" ? c.x + c.w - 8 : c.x + 8, y + 20, { size: 11, weight: 800, align: c.align || "left" }));
+    y += headRowH;
+
+    const byKey = (key) => cols.find((c) => c.key === key);
+    if (!rows.length) {
+      text("No incentive-earning sales this month.", padding + 8, y + 24, { size: 12, color: "#64748b" });
+      y += rowH;
+    } else {
+      rows.forEach((sale, idx) => {
+        const pct = sale.incentiveBaseAmount ? ((sale.incentiveAmount / sale.incentiveBaseAmount) * 100).toFixed(2) : "0.00";
+        const productsLabel = (sale.items || []).map((i) => `${i.productName || "Item"} x${i.qty}`).join(", ") || "-";
+        rect(padding, y, width - padding * 2, rowH, idx % 2 ? "#fff" : "#f1f5f9");
+        text(sale.invoiceNo || "-", byKey("invoice").x + 8, y + 25, { size: 12 });
+        text(sale.date ? new Date(sale.date).toLocaleDateString("en-IN") : "-", byKey("date").x + 8, y + 25, { size: 12 });
+        text(truncate(sale.customer?.name || sale.customerName || "Walk-in", byKey("customer").w - 16), byKey("customer").x + 8, y + 25, { size: 12 });
+        text(truncate(productsLabel, byKey("products").w - 16), byKey("products").x + 8, y + 25, { size: 11 });
+        text(sale.status || "-", byKey("payment").x + 8, y + 25, { size: 11, weight: 700, color: sale.status === "Paid" ? "#15803d" : sale.status === "Partial" ? "#b45309" : "#dc2626" });
+        text(money(sale.incentiveBaseAmount), byKey("base").x + byKey("base").w - 8, y + 25, { size: 12, align: "right" });
+        text(`${pct}%`, byKey("pct").x + byKey("pct").w - 8, y + 25, { size: 12, align: "right" });
+        text(money(sale.incentiveAmount), byKey("incentive").x + byKey("incentive").w - 8, y + 25, { size: 12, weight: 800, color: "#15803d", align: "right" });
+        y += rowH;
+      });
+    }
+
+    rect(padding, y, width - padding * 2, 1, "#94a3b8");
+    y += 32;
+    text("Total Incentive", byKey("pct").x + byKey("pct").w - 8, y, { size: 13, weight: 900, align: "right" });
+    text(money(salary.incentiveEarned || 0), byKey("incentive").x + byKey("incentive").w - 8, y, { size: 15, weight: 900, color: "#15803d", align: "right" });
+
+    const a = document.createElement("a");
+    a.download = `${safeFileName(detail.employee.name)}-${month}-incentive.png`;
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+  };
+
   const employeeCard = (emp) => (
     <div
       key={emp._id}
@@ -783,7 +882,8 @@ export default function EmployeeManagement({ user }) {
                     label="Monthly Incentive"
                     value={money(salary.incentiveEarned || 0)}
                     valueColor="#15803d"
-                    sub={`${(salary.incentiveSales || []).length} sale${(salary.incentiveSales || []).length === 1 ? "" : "s"} · Total earnings ${money(salary.totalEarnings ?? salary.salaryEarned)}`}
+                    sub={`${(salary.incentiveSales || []).length} sale${(salary.incentiveSales || []).length === 1 ? "" : "s"} · Total earnings ${money(salary.totalEarnings ?? salary.salaryEarned)} · tap to view`}
+                    onClick={() => setIncentiveModalOpen(true)}
                   />
                 </div>
 
@@ -1092,6 +1192,71 @@ export default function EmployeeManagement({ user }) {
         </div>
       </Modal>
 
+      <Modal open={incentiveModalOpen} onClose={() => setIncentiveModalOpen(false)} wide
+        title={`Incentive Sales - ${detail?.employee?.name || ""} (${monthLabel(month)})`}>
+        {!salary?.incentiveSales?.length ? (
+          <EmptyState text="No incentive-earning sales this month." />
+        ) : (
+          <>
+            <div style={{ maxHeight: 440, overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 8 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                <thead>
+                  <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
+                    <th style={thStyle}>Invoice</th>
+                    <th style={thStyle}>Date</th>
+                    <th style={thStyle}>Customer</th>
+                    <th style={thStyle}>Products</th>
+                    <th style={thStyle}>Payment</th>
+                    <th style={{ ...thStyle, textAlign: "right" }}>Base Amount</th>
+                    <th style={{ ...thStyle, textAlign: "right" }}>Incentive %</th>
+                    <th style={{ ...thStyle, textAlign: "right" }}>Incentive</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {salary.incentiveSales.map((sale) => {
+                    const pct = sale.incentiveBaseAmount ? ((sale.incentiveAmount / sale.incentiveBaseAmount) * 100).toFixed(2) : "0.00";
+                    const productsLabel = (sale.items || []).map((i) => `${i.productName || "Item"} x${i.qty}`).join(", ") || "-";
+                    return (
+                      <tr key={sale._id} style={{ borderTop: "1px solid #e2e8f0" }}>
+                        <td style={tdStyle}>
+                          <button
+                            type="button"
+                            onClick={() => openSaleDetail(sale._id)}
+                            disabled={saleDetailLoading}
+                            style={{ border: "none", background: "none", color: "#0ea5e9", fontWeight: 700, cursor: saleDetailLoading ? "wait" : "pointer", padding: 0, fontSize: "inherit" }}
+                          >
+                            {sale.invoiceNo || "-"}
+                          </button>
+                        </td>
+                        <td style={tdStyle}>{sale.date ? new Date(sale.date).toLocaleDateString("en-IN") : "-"}</td>
+                        <td style={tdStyle}>{sale.customer?.name || sale.customerName || "Walk-in"}</td>
+                        <td style={{ ...tdStyle, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={productsLabel}>{productsLabel}</td>
+                        <td style={tdStyle}><Badge color={saleStatusColor[sale.status] || "gray"}>{sale.status || "-"}</Badge></td>
+                        <td style={{ ...tdStyle, textAlign: "right" }}>{money(sale.incentiveBaseAmount)}</td>
+                        <td style={{ ...tdStyle, textAlign: "right" }}>{pct}%</td>
+                        <td style={{ ...tdStyle, textAlign: "right", color: "#15803d", fontWeight: 800 }}>{money(sale.incentiveAmount)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ borderTop: "2px solid #cbd5e1" }}>
+                    <td style={{ ...tdStyle, fontWeight: 900 }} colSpan={7}>Total Incentive</td>
+                    <td style={{ ...tdStyle, textAlign: "right", color: "#15803d", fontWeight: 900 }}>{money(salary.incentiveEarned || 0)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
+              <Btn color="cancel" onClick={() => setIncentiveModalOpen(false)}>Close</Btn>
+              <Btn color="green" onClick={downloadIncentiveImage}>Download Image</Btn>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      {saleDetail && <TransactionDetailsModal record={saleDetail} type="sale" onClose={() => setSaleDetail(null)} />}
+
       <Modal open={paymentOpen} onClose={() => { if (!paymentSaving) { setPaymentOpen(false); setEditingPayment(null); } }}
         title={`${editingPayment ? "Edit" : "Add"} Payment - ${selectedEmployee?.name || ""}`}>
         <FormGroup label="Amount"><FormInput type="number" value={paymentForm.amount} onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))} /></FormGroup>
@@ -1119,12 +1284,16 @@ export default function EmployeeManagement({ user }) {
   );
 }
 
-function StatCard({ label, value, valueColor, sub, accent }) {
+function StatCard({ label, value, valueColor, sub, accent, onClick }) {
   return (
-    <div style={{
-      background: "#fff", border: "1px solid #e2e8f0", borderTop: `3px solid ${accent}`,
-      borderRadius: 8, padding: 16, boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
-    }}>
+    <div
+      onClick={onClick}
+      style={{
+        background: "#fff", border: "1px solid #e2e8f0", borderTop: `3px solid ${accent}`,
+        borderRadius: 8, padding: 16, boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
+        cursor: onClick ? "pointer" : "default",
+      }}
+    >
       <div style={{ color: "#64748b", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
         {label}
       </div>
@@ -1185,3 +1354,7 @@ const navBtn = {
   cursor: "pointer",
   lineHeight: 1,
 };
+
+const thStyle = { padding: "9px 10px", fontSize: 11, fontWeight: 800, color: "#334155", textTransform: "uppercase", letterSpacing: 0.3 };
+const tdStyle = { padding: "8px 10px", color: "#1e293b" };
+const saleStatusColor = { Paid: "green", Partial: "yellow", Pending: "red", Cancelled: "gray" };

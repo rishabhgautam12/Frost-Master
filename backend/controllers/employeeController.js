@@ -139,7 +139,10 @@ async function earnedForMonth(employee, month) {
     salesEmployee: employee._id,
     status: { $ne: "Cancelled" },
     date: { $gte: monthStart, $lt: nextMonth },
-  }).select("invoiceNo date items.rate items.qty items.productType items.incentivePercent items.incentiveAmount incentiveBaseAmount incentiveAmount").lean();
+  })
+    .select("invoiceNo date customer customerName status grandTotal items.productName items.rate items.qty items.productType items.incentivePercent items.incentiveAmount incentiveBaseAmount incentiveAmount")
+    .populate("customer", "name")
+    .lean();
   const calculatedIncentiveSales = incentiveSales.map((sale) => {
     const incentiveBaseAmount = Math.round((sale.items || []).reduce(
       (sum, item) => sum + ((+item.rate || 0) * (+item.qty || 0)), 0
