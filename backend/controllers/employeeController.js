@@ -10,6 +10,13 @@ const { createdChanges, logActivity, toChanges } = require("../utils/auditLogger
 
 const warehouseFields = ["name", "location", "notes", "isActive"];
 const employeeFields = ["name", "phone", "role", "warehouse", "monthlySalary", "manufacturingIncentivePercent", "importedIncentivePercent", "joiningDate", "status", "notes"];
+// monthlySalary is excluded here — it can only change through the
+// salary-history endpoint (addSalaryChange), which records the month a new
+// rate starts applying from, because past months' earnings are recalculated
+// from it via attendance. Incentive % has no such retroactive effect (each
+// sale freezes its own incentive rate when it's created), so it can still be
+// edited directly here for an immediate change with no effective month.
+const employeeEditFields = ["name", "phone", "role", "warehouse", "manufacturingIncentivePercent", "importedIncentivePercent", "joiningDate", "status", "notes"];
 
 function requireAdmin(req, res) {
   if (req.user.role !== "admin") {
@@ -72,6 +79,32 @@ function firstSalaryMonth(employee) {
   return monthKeyFromDate(employee.joiningDate || employee.createdAt || new Date());
 }
 
+// Resolves the salary/incentive rates that applied in a given month: the
+// most recent salaryHistory row with effectiveFrom <= month. Falls back to
+// the employee's flat top-level fields for employees with no history rows
+// yet (pre-existing data), preserving prior behavior for them.
+function salaryForMonth(employee, month) {
+  const history = Array.isArray(employee.salaryHistory) ? employee.salaryHistory : [];
+  let applicable = null;
+  for (const row of history) {
+    if (row.effectiveFrom <= month && (!applicable || row.effectiveFrom > applicable.effectiveFrom)) {
+      applicable = row;
+    }
+  }
+  if (applicable) {
+    return {
+      monthlySalary: +applicable.monthlySalary || 0,
+      manufacturingIncentivePercent: +applicable.manufacturingIncentivePercent || 0,
+      importedIncentivePercent: +applicable.importedIncentivePercent || 0,
+    };
+  }
+  return {
+    monthlySalary: +employee.monthlySalary || 0,
+    manufacturingIncentivePercent: +employee.manufacturingIncentivePercent || 0,
+    importedIncentivePercent: +employee.importedIncentivePercent || 0,
+  };
+}
+
 async function earnedForMonth(employee, month) {
   const dates = monthDates(month);
   const attendanceRows = await Attendance.find({ employee: employee._id, month }).lean();
@@ -96,7 +129,8 @@ async function earnedForMonth(employee, month) {
   const halfDay = days.filter((d) => d.status === "Half Day").length;
   const paidLeave = days.filter((d) => d.status === "Paid Leave").length;
   const payableUnits = days.reduce((sum, d) => sum + paidUnits(d.status), 0);
-  const dailyRate = dates.length ? ((+employee.monthlySalary || 0) / dates.length) : 0;
+  const { monthlySalary: monthlySalaryForMonth } = salaryForMonth(employee, month);
+  const dailyRate = dates.length ? (monthlySalaryForMonth / dates.length) : 0;
   const salaryEarned = Math.round(payableUnits * dailyRate * 100) / 100;
   const { year, monthIndex } = parseMonth(month);
   const monthStart = new Date(year, monthIndex, 1);
@@ -316,6 +350,15 @@ exports.createEmployee = async (req, res) => {
   try {
     if (!requireAdmin(req, res)) return;
     const employee = await Employee.create(req.body);
+    employee.salaryHistory = [{
+      effectiveFrom: monthKeyFromDate(employee.joiningDate || employee.createdAt || new Date()),
+      monthlySalary: employee.monthlySalary,
+      manufacturingIncentivePercent: employee.manufacturingIncentivePercent,
+      importedIncentivePercent: employee.importedIncentivePercent,
+      note: "Initial salary",
+      setBy: req.user?._id,
+    }];
+    await employee.save();
     await employee.populate("warehouse", "name location");
     await logActivity(req, {
       action: "created",
@@ -334,9 +377,28 @@ exports.updateEmployee = async (req, res) => {
     if (!requireAdmin(req, res)) return;
     const before = await Employee.findById(req.params.id);
     if (!before) return res.status(404).json({ success: false, message: "Employee not found" });
-    const employee = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
+    const body = { ...req.body };
+    // Monthly salary must go through addSalaryChange so past months keep
+    // using the rate that actually applied to them.
+    delete body.monthlySalary;
+    delete body.incentivePercent;
+    delete body.salaryHistory;
+    if (body.manufacturingIncentivePercent !== undefined) body.manufacturingIncentivePercent = Math.min(100, Math.max(0, +body.manufacturingIncentivePercent || 0));
+    if (body.importedIncentivePercent !== undefined) body.importedIncentivePercent = Math.min(100, Math.max(0, +body.importedIncentivePercent || 0));
+    const employee = await Employee.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true })
       .populate("warehouse", "name location");
-    const changes = toChanges(before, employee, employeeFields);
+
+    // Keep the latest salary-history row's incentive % in sync with the
+    // "current" fields, so Change Salary's prefill and the history list
+    // don't show a stale incentive rate after a direct quick edit.
+    if ((body.manufacturingIncentivePercent !== undefined || body.importedIncentivePercent !== undefined) && employee.salaryHistory.length) {
+      const latest = employee.salaryHistory[employee.salaryHistory.length - 1];
+      latest.manufacturingIncentivePercent = employee.manufacturingIncentivePercent;
+      latest.importedIncentivePercent = employee.importedIncentivePercent;
+      await employee.save();
+    }
+
+    const changes = toChanges(before, employee, employeeEditFields);
     if (changes.length) {
       await logActivity(req, {
         action: "updated",
@@ -380,6 +442,124 @@ exports.getEmployeeById = async (req, res) => {
     if (!employee) return res.status(404).json({ success: false, message: "Employee not found" });
     const salary = await getSalarySummary(employee, month);
     res.json({ success: true, data: { employee, salary } });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+};
+
+exports.addSalaryChange = async (req, res) => {
+  try {
+    if (!requireAdmin(req, res)) return;
+    const employee = await Employee.findById(req.params.id);
+    if (!employee) return res.status(404).json({ success: false, message: "Employee not found" });
+
+    const { effectiveFrom, monthlySalary, manufacturingIncentivePercent, importedIncentivePercent, note } = req.body;
+    const parsed = String(effectiveFrom || "");
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(parsed)) {
+      return res.status(400).json({ success: false, message: "Valid effective month (YYYY-MM) is required." });
+    }
+    if (await isSalaryMonthLocked(employee._id, parsed)) {
+      return res.status(400).json({ success: false, message: "This month is locked. Unlock it before changing salary." });
+    }
+    const salary = Math.max(0, +monthlySalary || 0);
+    if (!monthlySalary || salary <= 0) {
+      return res.status(400).json({ success: false, message: "Valid monthly salary is required." });
+    }
+    const mfgPct = Math.min(100, Math.max(0, +manufacturingIncentivePercent || 0));
+    const impPct = Math.min(100, Math.max(0, +importedIncentivePercent || 0));
+
+    // Legacy employees (created before salary history existed) have no rows
+    // yet. Record their old flat salary as a baseline first, so past months
+    // keep resolving to it instead of falling through to the top-level
+    // fields once those get overwritten by the new rate below.
+    if (employee.salaryHistory.length === 0) {
+      const baselineMonth = firstSalaryMonth(employee);
+      if (baselineMonth < parsed) {
+        employee.salaryHistory.push({
+          effectiveFrom: baselineMonth,
+          monthlySalary: employee.monthlySalary,
+          manufacturingIncentivePercent: employee.manufacturingIncentivePercent,
+          importedIncentivePercent: employee.importedIncentivePercent,
+          note: "Baseline (auto-recorded from prior salary)",
+        });
+      }
+    }
+
+    const entry = {
+      effectiveFrom: parsed,
+      monthlySalary: salary,
+      manufacturingIncentivePercent: mfgPct,
+      importedIncentivePercent: impPct,
+      note: note || "",
+      setBy: req.user?._id,
+    };
+
+    // Replace a row already set for this month instead of duplicating it.
+    const existingIdx = employee.salaryHistory.findIndex((row) => row.effectiveFrom === parsed);
+    if (existingIdx >= 0) employee.salaryHistory[existingIdx].set(entry);
+    else employee.salaryHistory.push(entry);
+    employee.salaryHistory.sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
+
+    // Mirror onto the top-level "current" fields only if this row is now
+    // the most recent one — those fields drive employee lists/quick views.
+    const latest = employee.salaryHistory[employee.salaryHistory.length - 1];
+    if (latest.effectiveFrom === parsed) {
+      employee.monthlySalary = salary;
+      employee.manufacturingIncentivePercent = mfgPct;
+      employee.importedIncentivePercent = impPct;
+    }
+
+    await employee.save();
+    await employee.populate("warehouse", "name location");
+
+    await logActivity(req, {
+      action: "updated",
+      entityType: "Employee",
+      entityId: employee._id,
+      entityLabel: employee.name,
+      summary: `Salary change for ${employee.name} effective ${parsed}: Rs.${salary.toLocaleString("en-IN")}/month`,
+      changes: [{ field: "salaryHistory", before: null, after: `${parsed}: Rs.${salary}` }],
+      metadata: { effectiveFrom: parsed, monthlySalary: salary },
+    });
+
+    res.status(201).json({ success: true, data: employee, message: "Salary change saved" });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+};
+
+exports.deleteSalaryChange = async (req, res) => {
+  try {
+    if (!requireAdmin(req, res)) return;
+    const employee = await Employee.findById(req.params.id);
+    if (!employee) return res.status(404).json({ success: false, message: "Employee not found" });
+    const entry = employee.salaryHistory.id(req.params.entryId);
+    if (!entry) return res.status(404).json({ success: false, message: "Salary history entry not found" });
+    if (await isSalaryMonthLocked(employee._id, entry.effectiveFrom)) {
+      return res.status(400).json({ success: false, message: "This month is locked. Unlock it before removing this salary change." });
+    }
+    if (employee.salaryHistory.length <= 1) {
+      return res.status(400).json({ success: false, message: "An employee must keep at least one salary record." });
+    }
+    const removedMonth = entry.effectiveFrom;
+    entry.deleteOne();
+
+    const latest = employee.salaryHistory[employee.salaryHistory.length - 1];
+    if (latest) {
+      employee.monthlySalary = latest.monthlySalary;
+      employee.manufacturingIncentivePercent = latest.manufacturingIncentivePercent;
+      employee.importedIncentivePercent = latest.importedIncentivePercent;
+    }
+
+    await employee.save();
+    await employee.populate("warehouse", "name location");
+
+    await logActivity(req, {
+      action: "deleted",
+      entityType: "Employee",
+      entityId: employee._id,
+      entityLabel: employee.name,
+      summary: `Removed salary change for ${employee.name} effective ${removedMonth}`,
+      changes: [{ field: "salaryHistory", before: removedMonth, after: null }],
+    });
+
+    res.json({ success: true, data: employee, message: "Salary change removed" });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
 
