@@ -340,7 +340,7 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
               <div style={{ display:"flex", gap:10, marginTop:16 }}>
                 <Btn color="cancel" onClick={() => setPayModal(null)}>Cancel</Btn>
                 <Btn color="teal" onClick={handlePay}
-                  disabled={saving || !payForm.amount || +payForm.amount<=0 || +payForm.amount>due}>
+                  disabled={saving || !payForm.amount || +payForm.amount<=0}>
                   {saving ? "Processing..." : `✅ Receive ₹${paying.toLocaleString()}`}
                 </Btn>
               </div>

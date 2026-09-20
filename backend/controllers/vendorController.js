@@ -194,6 +194,7 @@ exports.payLedgerEntry = async (req, res) => {
       amount:    paying,
       paid:      paying,
       notes:     `Payment via ${method || "NEFT"} against ${entry.invoiceNo || entry._id}${notes ? " — " + notes : ""}`,
+      againstEntry: entry._id,
     });
     await paymentEntry.save();
 
@@ -228,4 +229,35 @@ exports.payLedgerEntry = async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
+};
+
+exports.updateVendorPayment = async (req, res) => {
+  try {
+    if (req.user?.role !== "admin") return res.status(403).json({ success:false, message:"Only an admin can edit vendor payments." });
+    const payment = await VendorLedger.findById(req.params.id);
+    if (!payment || payment.type !== "Payment") return res.status(404).json({ success:false, message:"Vendor payment record not found." });
+    const amount = +req.body.amount;
+    if (!Number.isFinite(amount) || amount <= 0) return res.status(400).json({ success:false, message:"Enter a valid payment amount." });
+    let purchase = payment.againstEntry ? await VendorLedger.findById(payment.againstEntry) : null;
+    if (!purchase) {
+      const match = String(payment.notes || "").match(/against\s+(.+?)(?:\s+—|$)/i);
+      if (match) purchase = await VendorLedger.findOne({ vendor:payment.vendor, type:"Purchase", invoiceNo:match[1].trim() });
+    }
+    const previousAmount = +payment.amount || 0;
+    const diff = amount - previousAmount;
+    const nextPaid = purchase ? (+purchase.paid || 0) + diff : null;
+    if (purchase && (nextPaid < 0 || nextPaid > purchase.amount)) return res.status(400).json({ success:false, message:`Payment must keep the purchase paid amount between ₹0 and ₹${purchase.amount.toLocaleString("en-IN")}.` });
+    const before = payment.toObject();
+    payment.amount = amount;
+    payment.paid = amount;
+    if (purchase) payment.againstEntry = purchase._id;
+    if (req.body.date) payment.date = new Date(req.body.date);
+    if (req.body.ref) payment.invoiceNo = req.body.ref;
+    if (req.body.notes !== undefined) payment.notes = req.body.notes;
+    if (purchase) { purchase.paid = nextPaid; await purchase.save(); }
+    await payment.save();
+    await Vendor.findByIdAndUpdate(payment.vendor, { $inc:{ totalPaid:diff } });
+    await logActivity(req, { action:"payment", entityType:"Vendor Ledger", entityId:payment._id, entityLabel:payment.invoiceNo, summary:`Edited vendor payment ${payment.invoiceNo || payment._id}`, changes:toChanges(before,payment,["amount","date","invoiceNo","notes"]), metadata:{linkedPurchase:purchase?._id,diff} });
+    res.json({ success:true, data:payment, message:"Vendor payment updated successfully." });
+  } catch (err) { res.status(500).json({ success:false, message:err.message }); }
 };

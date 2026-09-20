@@ -13,6 +13,7 @@ const vendorLedgerSchema = new mongoose.Schema(
     amount: { type: Number, required: true, min: 0 },
     paid: { type: Number, default: 0, min: 0 },
     notes: { type: String },
+    againstEntry: { type: mongoose.Schema.Types.ObjectId, ref: "VendorLedger" },
     products: [
       {
         product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },

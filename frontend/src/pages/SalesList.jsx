@@ -122,7 +122,7 @@ function PaymentModal({ sale, onClose, onDone }) {
 }
 
 // ── Edit Modal ─────────────────────────────────────────────────────────────────
-function PaymentHistoryDrawer({ sale, onClose, onAddPayment }) {
+function PaymentHistoryDrawer({ sale, onClose, onAddPayment, isAdmin, onEditPayment }) {
   if (!sale) return null;
   const payments = [...(sale.payments || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
   const trackedTotal = payments.reduce((sum, payment) => sum + (+payment.amount || 0), 0);
@@ -168,6 +168,7 @@ function PaymentHistoryDrawer({ sale, onClose, onAddPayment }) {
               <div style={{ marginTop: 3, color: "#64748b", fontSize: 11 }}>Recorded by {payment.recordedByName || "Staff"}</div>
               {+payment.advanceAmount > 0 && <div style={{marginTop:4,color:"#7c3aed",fontSize:11,fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString()} stored as customer advance</div>}
               {payment.notes && <div style={{ marginTop: 8, padding: "7px 9px", borderRadius: 6, background: "#f8fafc", color: "#475569", fontSize: 12 }}>{payment.notes}</div>}
+              {isAdmin && payment._id && <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}><Btn sm color="blue" onClick={()=>onEditPayment(payment)}>Edit Payment</Btn></div>}
             </div>
           ))}
         </div>
@@ -178,6 +179,18 @@ function PaymentHistoryDrawer({ sale, onClose, onAddPayment }) {
       </aside>
     </div>
   );
+}
+
+function PaymentEditModal({ title, payment, onClose, onSave }) {
+  const [form,setForm] = useState({amount:String(payment.amount||""),method:payment.paymentMode||"Cash",date:payment.date?new Date(payment.date).toISOString().slice(0,10):new Date().toISOString().slice(0,10),notes:payment.notes||""});
+  const [saving,setSaving] = useState(false);
+  const [error,setError] = useState("");
+  const save = async () => {
+    if (!(+form.amount>0)) return setError("Enter a valid payment amount.");
+    setSaving(true);setError("");
+    try { await onSave({...form,amount:+form.amount}); } catch(err) { setError(err.message);setSaving(false); }
+  };
+  return <Modal open title={title} onClose={onClose}><FormGroup label="Amount"><FormInput type="number" min="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))} /></FormGroup><FormGroup label="Payment Method"><FormSelect value={form.method} onChange={e=>setForm(p=>({...p,method:e.target.value}))}>{["Cash","UPI","Card","Bank Transfer","Cheque"].map(method=><option key={method}>{method}</option>)}</FormSelect></FormGroup><FormGroup label="Payment Date"><FormInput type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))} /></FormGroup><FormGroup label="Notes / Reference"><FormInput value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} /></FormGroup>{error&&<div style={{color:"#dc2626",marginBottom:10}}>{error}</div>}<div style={{display:"flex",justifyContent:"flex-end",gap:8}}><Btn color="cancel" onClick={onClose}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={save}>{saving?"Saving...":"Save Payment"}</Btn></div></Modal>;
 }
 
 function EditModal({ sale, onClose, onDone }) {
@@ -597,6 +610,7 @@ export default function SalesList({ navigate }) {
   const [toast,    setToast]    = useState(null);
   const [payModal, setPayModal] = useState(null);
   const [paymentDrawer, setPaymentDrawer] = useState(null);
+  const [editingPayment, setEditingPayment] = useState(null);
   const [detailModal, setDetailModal] = useState(null);
   const [editModal,setEditModal]= useState(null);
   const isAdmin = currentUser()?.role === "admin";
@@ -822,7 +836,10 @@ export default function SalesList({ navigate }) {
         sale={paymentDrawer}
         onClose={() => setPaymentDrawer(null)}
         onAddPayment={() => { setPaymentDrawer(null); setPayModal(paymentDrawer); }}
+        isAdmin={isAdmin}
+        onEditPayment={payment => setEditingPayment({sale:paymentDrawer,payment})}
       />}
+      {editingPayment && <PaymentEditModal title={`Edit Payment - ${editingPayment.sale.invoiceNo}`} payment={editingPayment.payment} onClose={()=>setEditingPayment(null)} onSave={async body=>{const response=await salesAPI.updateSalePayment(editingPayment.sale._id,editingPayment.payment._id,body);setEditingPayment(null);setPaymentDrawer(response.data);showToast(response.message);load();}} />}
       {editModal && <FullEditModal sale={editModal} onClose={() => setEditModal(null)} onDone={afterEdit} />}
     </div>
   );

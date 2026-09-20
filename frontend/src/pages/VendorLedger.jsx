@@ -12,6 +12,7 @@ const typColor = {
   Purchase:"blue", Payment:"green",
   "Debit Note":"yellow", "Credit Note":"gray", Return:"purple"
 };
+const currentUser = () => { try { return JSON.parse(localStorage.getItem("ht_user") || "null"); } catch { return null; } };
 
 // Safe balance for a single entry
 function entryBalance(r) {
@@ -31,6 +32,9 @@ export default function VendorLedger({ navigate }) {
   const [from,      setFrom]      = useState("");
   const [to,        setTo]        = useState("");
   const [addModal,  setAddModal]  = useState(false);
+  const [editPayment,setEditPayment] = useState(null);
+  const [paymentForm,setPaymentForm] = useState({amount:"",date:"",ref:"",notes:""});
+  const isAdmin = currentUser()?.role === "admin";
   const [form, setForm] = useState({
     vendor:"", type:"Purchase", invoiceNo:"",
     date:new Date().toISOString().split("T")[0],
@@ -59,6 +63,8 @@ export default function VendorLedger({ navigate }) {
   useEffect(() => { load(); }, []);
 
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+  const openPaymentEdit = payment => { setEditPayment(payment); setPaymentForm({amount:String(payment.amount||""),date:payment.date?new Date(payment.date).toISOString().slice(0,10):new Date().toISOString().slice(0,10),ref:payment.invoiceNo||"",notes:payment.notes||""}); };
+  const savePaymentEdit = async () => { if (!(+paymentForm.amount>0)) return alert("Enter a valid payment amount."); setSaving(true); try { const response=await vendorAPI.updatePayment(editPayment._id,{...paymentForm,amount:+paymentForm.amount}); setEditPayment(null); setToast(response.message); load(); } catch(err) { alert(err.message); } setSaving(false); };
 
   const handleAdd = async () => {
     if (!form.vendor || !form.amount)
@@ -284,6 +290,7 @@ export default function VendorLedger({ navigate }) {
                           💳 Pay
                         </Btn>
                       )}
+                      {isPayment && isAdmin && <Btn sm color="blue" onClick={()=>openPaymentEdit(r)}>Edit Payment</Btn>}
                     </Td>
                   </tr>
                 );
@@ -368,6 +375,13 @@ export default function VendorLedger({ navigate }) {
             {saving ? "Saving..." : "💾 Save Entry"}
           </Btn>
         </div>
+      </Modal>
+      <Modal open={!!editPayment} onClose={()=>setEditPayment(null)} title="Edit Vendor Payment">
+        <FormGroup label="Amount"><FormInput type="number" min="0.01" value={paymentForm.amount} onChange={e=>setPaymentForm(p=>({...p,amount:e.target.value}))} /></FormGroup>
+        <FormGroup label="Date"><FormInput type="date" value={paymentForm.date} onChange={e=>setPaymentForm(p=>({...p,date:e.target.value}))} /></FormGroup>
+        <FormGroup label="Reference"><FormInput value={paymentForm.ref} onChange={e=>setPaymentForm(p=>({...p,ref:e.target.value}))} /></FormGroup>
+        <FormGroup label="Notes"><FormInput value={paymentForm.notes} onChange={e=>setPaymentForm(p=>({...p,notes:e.target.value}))} /></FormGroup>
+        <div style={{display:"flex",justifyContent:"flex-end",gap:8}}><Btn color="cancel" onClick={()=>setEditPayment(null)}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={savePaymentEdit}>{saving?"Saving...":"Save Payment"}</Btn></div>
       </Modal>
     </div>
   );

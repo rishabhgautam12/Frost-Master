@@ -6,8 +6,9 @@ import TransactionDetailsModal from "../components/TransactionDetailsModal";
 
 const statusColor = { Open: "yellow", Converted: "green", Cancelled: "gray" };
 const today = () => new Date().toISOString().slice(0, 10);
+const currentUser = () => { try { return JSON.parse(localStorage.getItem("ht_user") || "null"); } catch { return null; } };
 
-function OrderAdvanceModal({ order, onClose, onDone }) {
+function OrderAdvanceModal({ order, onClose, onDone, isAdmin, onEditPayment }) {
   const [form, setForm] = useState({ amount:"", method:"Cash", date:today(), notes:"" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -28,7 +29,7 @@ function OrderAdvanceModal({ order, onClose, onDone }) {
     </div>
     <div style={{ fontWeight:800, marginBottom:8 }}>Advance Payment History</div>
     <div style={{ maxHeight:220, overflowY:"auto", border:"1px solid #e2e8f0", borderRadius:8, marginBottom:16 }}>
-      {payments.length ? payments.map((payment,index) => <div key={payment._id||index} style={{display:"grid",gridTemplateColumns:"115px 120px 1fr 120px",gap:8,padding:10,borderBottom:"1px solid #e2e8f0",alignItems:"center"}}><span>{new Date(payment.date).toLocaleDateString("en-IN")}</span><Badge color="green">{payment.paymentMode}</Badge><span style={{color:"#64748b"}}>{payment.notes||"-"}<small style={{display:"block"}}>Recorded by {payment.recordedByName||"Staff"}</small>{+payment.advanceAmount>0&&<small style={{display:"block",color:"#7c3aed",fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString("en-IN")} moved to advance</small>}</span><strong style={{textAlign:"right",color:"#15803d"}}>₹{(+payment.amount||0).toLocaleString("en-IN")}</strong></div>) : <div style={{padding:24,textAlign:"center",color:"#94a3b8"}}>No advance payments recorded.</div>}
+      {payments.length ? payments.map((payment,index) => <div key={payment._id||index} style={{display:"grid",gridTemplateColumns:"115px 120px 1fr 120px",gap:8,padding:10,borderBottom:"1px solid #e2e8f0",alignItems:"center"}}><span>{new Date(payment.date).toLocaleDateString("en-IN")}</span><Badge color="green">{payment.paymentMode}</Badge><span style={{color:"#64748b"}}>{payment.notes||"-"}<small style={{display:"block"}}>Recorded by {payment.recordedByName||"Staff"}</small>{+payment.advanceAmount>0&&<small style={{display:"block",color:"#7c3aed",fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString("en-IN")} moved to advance</small>}{isAdmin&&payment._id&&<span style={{display:"block",marginTop:5}}><Btn sm color="blue" onClick={()=>onEditPayment(payment)}>Edit Payment</Btn></span>}</span><strong style={{textAlign:"right",color:"#15803d"}}>₹{(+payment.amount||0).toLocaleString("en-IN")}</strong></div>) : <div style={{padding:24,textAlign:"center",color:"#94a3b8"}}>No advance payments recorded.</div>}
     </div>
     {order.status === "Open" ? <div style={{background:"#f0fdf4",border:"1px solid #86efac",borderRadius:8,padding:14}}>
       <div style={{fontWeight:800,color:"#166534",marginBottom:10}}>Add Another Advance Payment</div>
@@ -43,6 +44,13 @@ function OrderAdvanceModal({ order, onClose, onDone }) {
       <div style={{display:"flex",justifyContent:"flex-end",gap:8}}><Btn color="cancel" onClick={onClose}>Close</Btn><Btn color="green" disabled={saving} onClick={submit}>{saving?"Saving...":"Add Advance Payment"}</Btn></div>
     </div> : <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",color:"#64748b"}}><span>This order is no longer open; new advances cannot be added.</span><Btn color="cancel" onClick={onClose}>Close</Btn></div>}
   </Modal>;
+}
+
+function OrderPaymentEditModal({ order, payment, onClose, onDone }) {
+  const [form,setForm]=useState({amount:String(payment.amount||""),method:payment.paymentMode||"Cash",date:payment.date?new Date(payment.date).toISOString().slice(0,10):today(),notes:payment.notes||""});
+  const [saving,setSaving]=useState(false);const [error,setError]=useState("");
+  const save=async()=>{if(!(+form.amount>0))return setError("Enter a valid payment amount.");setSaving(true);setError("");try{const response=await salesAPI.updateOrderPayment(order._id,payment._id,{...form,amount:+form.amount});onDone(response);}catch(err){setError(err.message);setSaving(false);}};
+  return <Modal open title={`Edit Advance - ${order.orderNo}`} onClose={onClose}><FormGroup label="Amount"><FormInput type="number" min="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))}/></FormGroup><FormGroup label="Payment Method"><FormSelect value={form.method} onChange={e=>setForm(p=>({...p,method:e.target.value}))}>{["Cash","UPI","Card","Bank Transfer","Cheque"].map(method=><option key={method}>{method}</option>)}</FormSelect></FormGroup><FormGroup label="Date"><FormInput type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></FormGroup><FormGroup label="Notes / Reference"><FormInput value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}/></FormGroup>{error&&<div style={{color:"#dc2626",marginBottom:10}}>{error}</div>}<div style={{display:"flex",justifyContent:"flex-end",gap:8}}><Btn color="cancel" onClick={onClose}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={save}>{saving?"Saving...":"Save Payment"}</Btn></div></Modal>;
 }
 
 export function OrderEditModal({ order, onClose, onDone, documentName="Order", updateRecord=salesAPI.updateOrder }) {
@@ -150,6 +158,8 @@ export default function OrdersList({ navigate }) {
   const [editing, setEditing] = useState(null);
   const [viewing, setViewing] = useState(null);
   const [advanceOrder, setAdvanceOrder] = useState(null);
+  const [editingPayment, setEditingPayment] = useState(null);
+  const isAdmin = currentUser()?.role === "admin";
   const [form, setForm] = useState({ date: today(), paymentMode: "Credit", amountPaid: "" });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
@@ -229,7 +239,8 @@ export default function OrdersList({ navigate }) {
       </Modal>
       {editing && <OrderEditModal order={editing} onClose={() => setEditing(null)} onDone={edited} />}
       {viewing && <TransactionDetailsModal record={viewing} type="order" onClose={() => setViewing(null)} />}
-      {advanceOrder && <OrderAdvanceModal order={advanceOrder} onClose={() => setAdvanceOrder(null)} onDone={advanceAdded} />}
+      {advanceOrder && <OrderAdvanceModal order={advanceOrder} isAdmin={isAdmin} onEditPayment={payment=>setEditingPayment({order:advanceOrder,payment})} onClose={() => setAdvanceOrder(null)} onDone={advanceAdded} />}
+      {editingPayment && <OrderPaymentEditModal order={editingPayment.order} payment={editingPayment.payment} onClose={()=>setEditingPayment(null)} onDone={response=>{setEditingPayment(null);setAdvanceOrder(response.data);setToast(response.message);setTimeout(()=>setToast(""),3000);load();}} />}
     </div>
   );
 }

@@ -48,6 +48,7 @@ export const vendorAPI = {
   getLedger:     (params = {}) => request(`/vendors/ledger?${new URLSearchParams(params)}`),
   addLedgerEntry:(body)        => request("/vendors/ledger", { method: "POST",   body: JSON.stringify(body) }),
   payLedgerEntry:(id, body)    => request(`/vendors/ledger/${id}/pay`, { method: "PATCH", body: JSON.stringify(body) }),
+  updatePayment: (id, body)    => request(`/vendors/ledger/payments/${id}`, { method: "PUT", body: JSON.stringify(body) }),
 };
 
 // Products
@@ -84,9 +85,11 @@ export const salesAPI = {
   convertQuotation:        (id, body)    => request(`/sales/quotations/${id}/convert`, { method: "POST", body: JSON.stringify(body) }),
   updateOrder:             (id, body)    => request(`/sales/orders/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   payForOrder:             (id, body)    => request(`/sales/orders/${id}/pay`, { method: "PATCH", body: JSON.stringify(body) }),
+  updateOrderPayment:      (id, paymentId, body) => request(`/sales/orders/${id}/payments/${paymentId}`, { method: "PUT", body: JSON.stringify(body) }),
   convertOrder:            (id, body)    => request(`/sales/orders/${id}/convert`, { method: "POST", body: JSON.stringify(body) }),
   updatePayment:           (id, body)    => request(`/sales/${id}/payment`,{ method: "PATCH", body: JSON.stringify(body) }),
   payForSale:              (id, body)    => request(`/sales/${id}/pay`,   { method: "PATCH", body: JSON.stringify(body) }),
+  updateSalePayment:       (id, paymentId, body) => request(`/sales/${id}/payments/${paymentId}`, { method: "PUT", body: JSON.stringify(body) }),
   updateSaleDetails:       (id, body)    => request(`/sales/${id}/details`,{ method: "PUT",  body: JSON.stringify(body) }),
   cancel:                  (id)          => request(`/sales/${id}/cancel`,  { method: "PATCH" }),
   deleteSale:              (id)          => request(`/sales/${id}`, { method: "DELETE" }),
