@@ -125,6 +125,8 @@ export const employeeAPI = {
   update:         (id, body) => request(`/employees/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   delete:         (id)       => request(`/employees/${id}`, { method: "DELETE" }),
   getById:        (id, params = {}) => request(`/employees/${id}?${new URLSearchParams(params)}`),
+  addSalaryChange:   (id, body) => request(`/employees/${id}/salary-history`, { method: "POST", body: JSON.stringify(body) }),
+  deleteSalaryChange:(id, entryId) => request(`/employees/${id}/salary-history/${entryId}`, { method: "DELETE" }),
   saveAttendance: (id, body) => request(`/employees/${id}/attendance`, { method: "PUT", body: JSON.stringify(body) }),
   setSalaryLock:  (id, body) => request(`/employees/${id}/salary-lock`, { method: "PUT", body: JSON.stringify(body) }),
   addPayment:     (id, body) => request(`/employees/${id}/payments`, { method: "POST", body: JSON.stringify(body) }),

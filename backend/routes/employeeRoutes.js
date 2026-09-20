@@ -10,6 +10,8 @@ const {
   updateEmployee,
   deleteEmployee,
   getEmployeeById,
+  addSalaryChange,
+  deleteSalaryChange,
   saveAttendance,
   addSalaryPayment,
   updateSalaryPayment,
@@ -27,6 +29,8 @@ router.post("/", createEmployee);
 router.get("/:id", getEmployeeById);
 router.put("/:id", updateEmployee);
 router.delete("/:id", deleteEmployee);
+router.post("/:id/salary-history", addSalaryChange);
+router.delete("/:id/salary-history/:entryId", deleteSalaryChange);
 router.put("/:id/attendance", saveAttendance);
 router.put("/:id/salary-lock", setSalaryLock);
 router.post("/:id/payments", addSalaryPayment);
