@@ -122,7 +122,7 @@ function PaymentModal({ sale, onClose, onDone }) {
 }
 
 // ── Edit Modal ─────────────────────────────────────────────────────────────────
-function PaymentHistoryDrawer({ sale, onClose, onAddPayment, isAdmin, onEditPayment }) {
+function PaymentHistoryDrawer({ sale, onClose, onAddPayment, isAdmin, onEditPayment, onDeletePayment }) {
   if (!sale) return null;
   const payments = [...(sale.payments || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
   const trackedTotal = payments.reduce((sum, payment) => sum + (+payment.amount || 0), 0);
@@ -168,7 +168,7 @@ function PaymentHistoryDrawer({ sale, onClose, onAddPayment, isAdmin, onEditPaym
               <div style={{ marginTop: 3, color: "#64748b", fontSize: 11 }}>Recorded by {payment.recordedByName || "Staff"}</div>
               {+payment.advanceAmount > 0 && <div style={{marginTop:4,color:"#7c3aed",fontSize:11,fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString()} stored as customer advance</div>}
               {payment.notes && <div style={{ marginTop: 8, padding: "7px 9px", borderRadius: 6, background: "#f8fafc", color: "#475569", fontSize: 12 }}>{payment.notes}</div>}
-              {isAdmin && payment._id && <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}><Btn sm color="blue" onClick={()=>onEditPayment(payment)}>Edit Payment</Btn></div>}
+              {isAdmin && payment._id && <div style={{display:"flex",justifyContent:"flex-end",gap:6,marginTop:8}}><Btn sm color="blue" onClick={()=>onEditPayment(payment)}>Edit Payment</Btn><Btn sm color="red" onClick={()=>onDeletePayment(payment)}>Delete</Btn></div>}
             </div>
           ))}
         </div>
@@ -839,6 +839,7 @@ export default function SalesList({ navigate }) {
         onAddPayment={() => { setPaymentDrawer(null); setPayModal(paymentDrawer); }}
         isAdmin={isAdmin}
         onEditPayment={payment => setEditingPayment({sale:paymentDrawer,payment})}
+        onDeletePayment={async payment=>{if(!confirm(`Delete payment ₹${(+payment.amount||0).toLocaleString("en-IN")}? Customer paid and advance balances will be recalculated.`))return;try{const response=await salesAPI.deleteSalePayment(paymentDrawer._id,payment._id);setPaymentDrawer(response.data);showToast(response.message);load();}catch(err){alert(err.message);}}}
       />}
       {editingPayment && <PaymentEditModal title={`Edit Payment - ${editingPayment.sale.invoiceNo}`} payment={editingPayment.payment} onClose={()=>setEditingPayment(null)} onSave={async body=>{const response=await salesAPI.updateSalePayment(editingPayment.sale._id,editingPayment.payment._id,body);setEditingPayment(null);setPaymentDrawer(response.data);showToast(response.message);load();}} />}
       {editModal && <FullEditModal sale={editModal} onClose={() => setEditModal(null)} onDone={afterEdit} />}

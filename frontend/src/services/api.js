@@ -49,6 +49,7 @@ export const vendorAPI = {
   addLedgerEntry:(body)        => request("/vendors/ledger", { method: "POST",   body: JSON.stringify(body) }),
   payLedgerEntry:(id, body)    => request(`/vendors/ledger/${id}/pay`, { method: "PATCH", body: JSON.stringify(body) }),
   updatePayment: (id, body)    => request(`/vendors/ledger/payments/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deletePayment: (id)          => request(`/vendors/ledger/payments/${id}`, { method: "DELETE" }),
 };
 
 // Products
@@ -86,10 +87,12 @@ export const salesAPI = {
   updateOrder:             (id, body)    => request(`/sales/orders/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   payForOrder:             (id, body)    => request(`/sales/orders/${id}/pay`, { method: "PATCH", body: JSON.stringify(body) }),
   updateOrderPayment:      (id, paymentId, body) => request(`/sales/orders/${id}/payments/${paymentId}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteOrderPayment:      (id, paymentId) => request(`/sales/orders/${id}/payments/${paymentId}`, { method: "DELETE" }),
   convertOrder:            (id, body)    => request(`/sales/orders/${id}/convert`, { method: "POST", body: JSON.stringify(body) }),
   updatePayment:           (id, body)    => request(`/sales/${id}/payment`,{ method: "PATCH", body: JSON.stringify(body) }),
   payForSale:              (id, body)    => request(`/sales/${id}/pay`,   { method: "PATCH", body: JSON.stringify(body) }),
   updateSalePayment:       (id, paymentId, body) => request(`/sales/${id}/payments/${paymentId}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteSalePayment:       (id, paymentId) => request(`/sales/${id}/payments/${paymentId}`, { method: "DELETE" }),
   updateSaleDetails:       (id, body)    => request(`/sales/${id}/details`,{ method: "PUT",  body: JSON.stringify(body) }),
   cancel:                  (id)          => request(`/sales/${id}/cancel`,  { method: "PATCH" }),
   deleteSale:              (id)          => request(`/sales/${id}`, { method: "DELETE" }),

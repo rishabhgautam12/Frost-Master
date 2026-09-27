@@ -65,6 +65,7 @@ export default function VendorLedger({ navigate }) {
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
   const openPaymentEdit = payment => { setEditPayment(payment); setPaymentForm({amount:String(payment.amount||""),date:payment.date?new Date(payment.date).toISOString().slice(0,10):new Date().toISOString().slice(0,10),ref:payment.invoiceNo||"",notes:payment.notes||""}); };
   const savePaymentEdit = async () => { if (!(+paymentForm.amount>0)) return alert("Enter a valid payment amount."); setSaving(true); try { const response=await vendorAPI.updatePayment(editPayment._id,{...paymentForm,amount:+paymentForm.amount}); setEditPayment(null); setToast(response.message); load(); } catch(err) { alert(err.message); } setSaving(false); };
+  const deletePayment = async payment => { if (!confirm(`Delete vendor payment ₹${(+payment.amount||0).toLocaleString("en-IN")}? The linked purchase balance will be recalculated.`)) return; try { const response=await vendorAPI.deletePayment(payment._id); setToast(response.message); load(); } catch(err) { alert(err.message); } };
 
   const handleAdd = async () => {
     if (!form.vendor || !form.amount)
@@ -290,7 +291,7 @@ export default function VendorLedger({ navigate }) {
                           💳 Pay
                         </Btn>
                       )}
-                      {isPayment && isAdmin && <Btn sm color="blue" onClick={()=>openPaymentEdit(r)}>Edit Payment</Btn>}
+                      {isPayment && isAdmin && <span style={{display:"flex",gap:6,flexWrap:"wrap"}}><Btn sm color="blue" onClick={()=>openPaymentEdit(r)}>Edit Payment</Btn><Btn sm color="red" onClick={()=>deletePayment(r)}>Delete</Btn></span>}
                     </Td>
                   </tr>
                 );

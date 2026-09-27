@@ -8,7 +8,7 @@ const statusColor = { Open: "yellow", Converted: "green", Cancelled: "gray" };
 const today = () => new Date().toISOString().slice(0, 10);
 const currentUser = () => { try { return JSON.parse(localStorage.getItem("ht_user") || "null"); } catch { return null; } };
 
-function OrderAdvanceModal({ order, onClose, onDone, isAdmin, onEditPayment }) {
+function OrderAdvanceModal({ order, onClose, onDone, isAdmin, onEditPayment, onDeletePayment }) {
   const [form, setForm] = useState({ amount:"", method:"Cash", date:today(), notes:"" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -29,7 +29,7 @@ function OrderAdvanceModal({ order, onClose, onDone, isAdmin, onEditPayment }) {
     </div>
     <div style={{ fontWeight:800, marginBottom:8 }}>Advance Payment History</div>
     <div style={{ maxHeight:220, overflowY:"auto", border:"1px solid #e2e8f0", borderRadius:8, marginBottom:16 }}>
-      {payments.length ? payments.map((payment,index) => <div key={payment._id||index} style={{display:"grid",gridTemplateColumns:"115px 120px 1fr 120px",gap:8,padding:10,borderBottom:"1px solid #e2e8f0",alignItems:"center"}}><span>{new Date(payment.date).toLocaleDateString("en-IN")}</span><Badge color="green">{payment.paymentMode}</Badge><span style={{color:"#64748b"}}>{payment.notes||"-"}<small style={{display:"block"}}>Recorded by {payment.recordedByName||"Staff"}</small>{+payment.advanceAmount>0&&<small style={{display:"block",color:"#7c3aed",fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString("en-IN")} moved to advance</small>}{isAdmin&&payment._id&&<span style={{display:"block",marginTop:5}}><Btn sm color="blue" onClick={()=>onEditPayment(payment)}>Edit Payment</Btn></span>}</span><strong style={{textAlign:"right",color:"#15803d"}}>₹{(+payment.amount||0).toLocaleString("en-IN")}</strong></div>) : <div style={{padding:24,textAlign:"center",color:"#94a3b8"}}>No advance payments recorded.</div>}
+      {payments.length ? payments.map((payment,index) => <div key={payment._id||index} style={{display:"grid",gridTemplateColumns:"115px 120px 1fr 120px",gap:8,padding:10,borderBottom:"1px solid #e2e8f0",alignItems:"center"}}><span>{new Date(payment.date).toLocaleDateString("en-IN")}</span><Badge color="green">{payment.paymentMode}</Badge><span style={{color:"#64748b"}}>{payment.notes||"-"}<small style={{display:"block"}}>Recorded by {payment.recordedByName||"Staff"}</small>{+payment.advanceAmount>0&&<small style={{display:"block",color:"#7c3aed",fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString("en-IN")} moved to advance</small>}{isAdmin&&payment._id&&<span style={{display:"flex",gap:6,marginTop:5}}><Btn sm color="blue" onClick={()=>onEditPayment(payment)}>Edit Payment</Btn><Btn sm color="red" onClick={()=>onDeletePayment(payment)}>Delete</Btn></span>}</span><strong style={{textAlign:"right",color:"#15803d"}}>₹{(+payment.amount||0).toLocaleString("en-IN")}</strong></div>) : <div style={{padding:24,textAlign:"center",color:"#94a3b8"}}>No advance payments recorded.</div>}
     </div>
     {order.status === "Open" ? <div style={{background:"#f0fdf4",border:"1px solid #86efac",borderRadius:8,padding:14}}>
       <div style={{fontWeight:800,color:"#166534",marginBottom:10}}>Add Another Advance Payment</div>
@@ -63,7 +63,8 @@ export function OrderEditModal({ order, onClose, onDone, documentName="Order", u
     customer: order.customer?._id || order.customer || "", customerName: order.customerName || "",
     saleType: order.saleType || "GST Invoice", paymentMode: order.paymentMode || "Credit",
     date: new Date(order.date).toISOString().slice(0, 10), isInterState: !!order.isInterState, notes: order.notes || "",
-    invoiceDetails: order.invoiceDetails || { billTo:{}, shipTo:{} }, salesEmployee: order.salesEmployee?._id || order.salesEmployee || "", amountPaid: order.amountPaid || 0,
+    invoiceDetails: order.invoiceDetails || { billTo:{}, shipTo:{} }, salesEmployee: order.salesEmployee?._id || order.salesEmployee || "",
+    ...(documentName === "Quotation" ? { amountPaid:order.amountPaid || 0 } : {}),
   });
   const [items, setItems] = useState((order.items || []).map(item => ({
     product: item.product?._id || item.product || "", description: item.description || "", warehouse: item.warehouse || "Main Warehouse",
@@ -118,10 +119,10 @@ export function OrderEditModal({ order, onClose, onDone, documentName="Order", u
     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:10 }}>
       <FormGroup label={`${documentName} Date`}><FormInput type="date" value={form.date} onChange={changeForm("date")} /></FormGroup>
       <FormGroup label="Sale Type"><FormSelect value={form.saleType} onChange={changeForm("saleType")}>{["GST Invoice","Cash Sale"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
-      <FormGroup label="Payment Mode"><FormSelect value={form.paymentMode} onChange={changeForm("paymentMode")}>{["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
+      {documentName === "Quotation" && <FormGroup label="Payment Mode"><FormSelect value={form.paymentMode} onChange={changeForm("paymentMode")}>{["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>}
       <FormGroup label="Customer"><FormSelect value={form.customer} onChange={e => { const customer=customers.find(item=>item._id===e.target.value); const party=partyDetailsFromCustomer(customer); setForm(p => ({...p, customer:e.target.value, customerName:"", invoiceDetails:{...(p.invoiceDetails||{}),billTo:party,shipTo:{...party}}})); }}><option value="">Select customer</option>{customers.map(c => <option key={c._id} value={c._id}>{c.name} - {c.phone}</option>)}</FormSelect></FormGroup>
       <FormGroup label="Sale Made By (Employee)"><FormSelect value={form.salesEmployee} onChange={changeForm("salesEmployee")}><option value="">Select employee</option>{employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name} (M: {employee.manufacturingIncentivePercent || 0}% / I: {employee.importedIncentivePercent || 0}%)</option>)}</FormSelect></FormGroup>
-      <FormGroup label="Advance Paid"><FormInput type="number" min="0" max={total || undefined} value={form.amountPaid} onChange={changeForm("amountPaid")} /></FormGroup>
+      {documentName === "Quotation" ? <FormGroup label="Advance Paid"><FormInput type="number" min="0" max={total || undefined} value={form.amountPaid} onChange={changeForm("amountPaid")} /></FormGroup> : <FormGroup label="Advance payments (read-only)"><div style={{padding:10,background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:7}}><strong>₹{(order.payments?.length ? order.payments.reduce((sum,p)=>sum+(+p.amount||0),0) : (+order.amountPaid||0)).toLocaleString("en-IN")}</strong><div style={{fontSize:11,color:"#475569",marginTop:5}}>Use Advances to add payments. Admins can edit or delete individual payments there.</div></div></FormGroup>}
     </div>
     <label style={{ display:"flex", gap:7, alignItems:"center", marginBottom:12, fontWeight:700 }}><input type="checkbox" checked={form.isInterState} onChange={changeForm("isInterState")} /> Inter-state {documentName.toLowerCase()}</label>
     <InvoiceDetailsFields value={form.invoiceDetails} onChange={invoiceDetails => setForm(prev => ({ ...prev, invoiceDetails }))} />
@@ -239,7 +240,7 @@ export default function OrdersList({ navigate }) {
       </Modal>
       {editing && <OrderEditModal order={editing} onClose={() => setEditing(null)} onDone={edited} />}
       {viewing && <TransactionDetailsModal record={viewing} type="order" onClose={() => setViewing(null)} />}
-      {advanceOrder && <OrderAdvanceModal order={advanceOrder} isAdmin={isAdmin} onEditPayment={payment=>setEditingPayment({order:advanceOrder,payment})} onClose={() => setAdvanceOrder(null)} onDone={advanceAdded} />}
+      {advanceOrder && <OrderAdvanceModal order={advanceOrder} isAdmin={isAdmin} onEditPayment={payment=>setEditingPayment({order:advanceOrder,payment})} onDeletePayment={async payment=>{if(!confirm(`Delete payment ₹${(+payment.amount||0).toLocaleString("en-IN")}? This will recalculate the order, linked sale and customer advance.`))return;try{const response=await salesAPI.deleteOrderPayment(advanceOrder._id,payment._id);setAdvanceOrder(response.data);setToast(response.message);setTimeout(()=>setToast(""),3000);load();}catch(err){alert(err.message);}}} onClose={() => setAdvanceOrder(null)} onDone={advanceAdded} />}
       {editingPayment && <OrderPaymentEditModal order={editingPayment.order} payment={editingPayment.payment} onClose={()=>setEditingPayment(null)} onDone={response=>{setEditingPayment(null);setAdvanceOrder(response.data);setToast(response.message);setTimeout(()=>setToast(""),3000);load();}} />}
     </div>
   );

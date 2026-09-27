@@ -577,6 +577,14 @@ exports.updateOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    if (req.body.payments !== undefined || (req.body.amountPaid !== undefined && Number(req.body.amountPaid) !== Number(order.amountPaid))) {
+      return res.status(400).json({ success:false, message:"Manage advance payments from Advances. Edit Details cannot change payment amounts or history." });
+    }
+    const previousCustomer = String(order.customer || "");
+    const previousAdvance = order.payments.reduce((sum,p) => sum + (+p.advanceAmount || 0), 0);
+    if (req.body.customer !== undefined && String(req.body.customer || "") !== previousCustomer && (order.payments.length || order.amountPaid > 0)) {
+      return res.status(400).json({ success:false, message:"This order has recorded payments. Remove or correct those payments through Advances before changing the customer." });
+    }
     const before = order.toObject();
     const { items, customer, customerName, saleType, paymentMode, date, isInterState, notes, invoiceDetails, salesEmployee, amountPaid } = req.body;
     if (Array.isArray(items)) {
@@ -586,7 +594,7 @@ exports.updateOrder = async (req, res) => {
     if (customer !== undefined) order.customer = customer || undefined;
     if (customerName !== undefined) order.customerName = customerName;
     if (saleType) order.saleType = saleType;
-    if (paymentMode) order.paymentMode = paymentMode;
+    // Payment mode and receipts are managed only through the payment history.
     if (date) order.date = new Date(date);
     if (isInterState !== undefined) order.isInterState = !!isInterState;
     if (notes !== undefined) order.notes = notes;
@@ -599,12 +607,12 @@ exports.updateOrder = async (req, res) => {
     }
 
     await order.save();
-    if (amountPaid !== undefined) {
-      const nextAdvance = Math.min(order.grandTotal, Math.max(0, +amountPaid || 0));
-      if (nextAdvance !== order.amountPaid) {
-        order.amountPaid = nextAdvance;
-        order.payments = nextAdvance > 0 ? [{ amount:nextAdvance, paymentMode:paymentMode === "Credit" ? "Cash" : (paymentMode || "Cash"), date:date || new Date(), notes:"Order advance updated", recordedBy:req.user?._id, recordedByName:req.user?.name || req.user?.username || "Staff" }] : [];
-        await order.save();
+    if (order.status === "Open" && order.payments.length && order.grandTotal !== before.grandTotal) {
+      const allocation = allocatePayments(order.payments, order.grandTotal);
+      order.amountPaid = allocation.appliedTotal;
+      await order.save();
+      if (order.customer && allocation.advanceTotal !== previousAdvance) {
+        await Customer.findByIdAndUpdate(order.customer, { $inc:{ advanceBalance:allocation.advanceTotal-previousAdvance } });
       }
     }
     await order.populate("customer", "name phone");
@@ -671,6 +679,10 @@ exports.updateOrderPaymentRecord = async (req, res) => {
     if (!payment) return res.status(404).json({ success:false, message:"Payment record not found." });
     const amount = +req.body.amount;
     if (!Number.isFinite(amount) || amount <= 0) return res.status(400).json({ success:false, message:"Enter a valid payment amount." });
+    const linkedSale = order.convertedSale ? await Sale.findById(order.convertedSale) : null;
+    const linkedPayment = linkedSale?.payments?.id(req.params.paymentId);
+    const previousSalePaid = +linkedSale?.amountPaid || 0;
+    const previousSaleAdvance = linkedSale?.payments?.reduce((sum,row) => sum + (+row.advanceAmount || 0), 0) || 0;
     const previousPaid = +order.amountPaid || 0;
     const previousAdvance = order.payments.reduce((sum,row) => sum + (+row.advanceAmount || 0), 0);
     const before = payment.toObject();
@@ -678,15 +690,60 @@ exports.updateOrderPaymentRecord = async (req, res) => {
     if (req.body.method) payment.paymentMode = req.body.method;
     if (req.body.date) payment.date = new Date(req.body.date);
     if (req.body.notes !== undefined) payment.notes = req.body.notes;
+    if (linkedPayment) {
+      linkedPayment.amount = amount;
+      if (req.body.method) linkedPayment.paymentMode = req.body.method;
+      if (req.body.date) linkedPayment.date = new Date(req.body.date);
+      if (req.body.notes !== undefined) linkedPayment.notes = req.body.notes;
+    }
     const allocation = allocatePayments(order.payments, order.grandTotal);
     order.amountPaid = allocation.appliedTotal;
     order.paymentMode = order.payments.length > 1 ? "Multiple" : payment.paymentMode;
     await order.save();
-    if (order.customer) {
+    if (linkedPayment) {
+      const saleAllocation = allocatePayments(linkedSale.payments, linkedSale.grandTotal);
+      linkedSale.amountPaid = saleAllocation.appliedTotal;
+      linkedSale.paymentMode = linkedSale.payments.length > 1 ? "Multiple" : linkedPayment.paymentMode;
+      await linkedSale.save();
+      if (order.customer) await Customer.findByIdAndUpdate(order.customer, { $inc:{ totalReceived:linkedSale.amountPaid-previousSalePaid, advanceBalance:saleAllocation.advanceTotal-previousSaleAdvance } });
+    } else if (order.customer) {
       await Customer.findByIdAndUpdate(order.customer, { $inc: { advanceBalance: allocation.advanceTotal - previousAdvance } });
     }
     await logActivity(req, { action:"payment", entityType:"Order", entityId:order._id, entityLabel:order.orderNo, summary:`Edited payment for ${order.orderNo}`, changes:toChanges(before, payment, ["amount","paymentMode","date","notes","appliedAmount","advanceAmount"]), metadata:{ previousPaid, newPaid:order.amountPaid } });
     res.json({ success:true, data:order, message:"Order payment updated successfully." });
+  } catch (err) { res.status(500).json({ success:false, message:err.message }); }
+};
+
+exports.deleteOrderPaymentRecord = async (req, res) => {
+  try {
+    if (req.user?.role !== "admin") return res.status(403).json({ success:false, message:"Only an admin can delete order payments." });
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success:false, message:"Order not found." });
+    const payment = order.payments.id(req.params.paymentId);
+    if (!payment) return res.status(404).json({ success:false, message:"Payment record not found." });
+    const deleted = payment.toObject();
+    const previousAdvance = order.payments.reduce((sum,row) => sum + (+row.advanceAmount || 0), 0);
+    const linkedSale = order.convertedSale ? await Sale.findById(order.convertedSale) : null;
+    const linkedPayment = linkedSale?.payments?.id(req.params.paymentId);
+    const previousSalePaid = +linkedSale?.amountPaid || 0;
+    const previousSaleAdvance = linkedSale?.payments?.reduce((sum,row) => sum + (+row.advanceAmount || 0), 0) || 0;
+    order.payments.pull(req.params.paymentId);
+    const allocation = allocatePayments(order.payments, order.grandTotal);
+    order.amountPaid = allocation.appliedTotal;
+    order.paymentMode = order.payments.length > 1 ? "Multiple" : (order.payments[0]?.paymentMode || "Credit");
+    await order.save();
+    if (linkedPayment) {
+      linkedSale.payments.pull(req.params.paymentId);
+      const saleAllocation = allocatePayments(linkedSale.payments, linkedSale.grandTotal);
+      linkedSale.amountPaid = saleAllocation.appliedTotal;
+      linkedSale.paymentMode = linkedSale.payments.length > 1 ? "Multiple" : (linkedSale.payments[0]?.paymentMode || "Credit");
+      await linkedSale.save();
+      if (order.customer) await Customer.findByIdAndUpdate(order.customer, { $inc:{ totalReceived:linkedSale.amountPaid-previousSalePaid, advanceBalance:saleAllocation.advanceTotal-previousSaleAdvance } });
+    } else if (order.customer) {
+      await Customer.findByIdAndUpdate(order.customer, { $inc:{ advanceBalance:allocation.advanceTotal-previousAdvance } });
+    }
+    await logActivity(req, { action:"deleted", entityType:"Order", entityId:order._id, entityLabel:order.orderNo, summary:`Deleted payment from ${order.orderNo}`, changes:[{ field:"payment", before:deleted, after:null }] });
+    res.json({ success:true, data:order, message:"Order payment deleted and balances recalculated." });
   } catch (err) { res.status(500).json({ success:false, message:err.message }); }
 };
 
@@ -1202,6 +1259,8 @@ exports.updateSalePaymentRecord = async (req, res) => {
     if (!payment) return res.status(404).json({ success:false, message:"Payment record not found." });
     const amount = +req.body.amount;
     if (!Number.isFinite(amount) || amount <= 0) return res.status(400).json({ success:false, message:"Enter a valid payment amount." });
+    const sourceOrder = sale.sourceOrder ? await Order.findById(sale.sourceOrder) : null;
+    const sourcePayment = sourceOrder?.payments?.id(req.params.paymentId);
     const previousPaid = +sale.amountPaid || 0;
     const previousAdvance = sale.payments.reduce((sum,row) => sum + (+row.advanceAmount || 0), 0);
     const before = payment.toObject();
@@ -1209,6 +1268,16 @@ exports.updateSalePaymentRecord = async (req, res) => {
     if (req.body.method) payment.paymentMode = req.body.method;
     if (req.body.date) payment.date = new Date(req.body.date);
     if (req.body.notes !== undefined) payment.notes = req.body.notes;
+    if (sourcePayment) {
+      sourcePayment.amount = amount;
+      if (req.body.method) sourcePayment.paymentMode = req.body.method;
+      if (req.body.date) sourcePayment.date = new Date(req.body.date);
+      if (req.body.notes !== undefined) sourcePayment.notes = req.body.notes;
+      const orderAllocation = allocatePayments(sourceOrder.payments, sourceOrder.grandTotal);
+      sourceOrder.amountPaid = orderAllocation.appliedTotal;
+      sourceOrder.paymentMode = sourceOrder.payments.length > 1 ? "Multiple" : sourcePayment.paymentMode;
+      await sourceOrder.save();
+    }
     const allocation = allocatePayments(sale.payments, sale.grandTotal);
     sale.amountPaid = allocation.appliedTotal;
     sale.paymentMode = sale.payments.length > 1 ? "Multiple" : payment.paymentMode;
@@ -1218,6 +1287,37 @@ exports.updateSalePaymentRecord = async (req, res) => {
     }
     await logActivity(req, { action:"payment", entityType:"Sale", entityId:sale._id, entityLabel:sale.invoiceNo, summary:`Edited payment for ${sale.invoiceNo}`, changes:toChanges(before, payment, ["amount","paymentMode","date","notes","appliedAmount","advanceAmount"]), metadata:{ previousPaid, newPaid:sale.amountPaid } });
     res.json({ success:true, data:sale, message:"Sale payment updated successfully." });
+  } catch (err) { res.status(500).json({ success:false, message:err.message }); }
+};
+
+exports.deleteSalePaymentRecord = async (req, res) => {
+  try {
+    if (req.user?.role !== "admin") return res.status(403).json({ success:false, message:"Only an admin can delete sale payments." });
+    const sale = await Sale.findById(req.params.saleId);
+    if (!sale) return res.status(404).json({ success:false, message:"Sale not found." });
+    if (sale.status === "Cancelled") return res.status(400).json({ success:false, message:"Cancelled sale payments cannot be deleted." });
+    const payment = sale.payments.id(req.params.paymentId);
+    if (!payment) return res.status(404).json({ success:false, message:"Payment record not found." });
+    const deleted = payment.toObject();
+    const previousPaid = +sale.amountPaid || 0;
+    const previousAdvance = sale.payments.reduce((sum,row) => sum + (+row.advanceAmount || 0), 0);
+    const sourceOrder = sale.sourceOrder ? await Order.findById(sale.sourceOrder) : null;
+    const sourcePayment = sourceOrder?.payments?.id(req.params.paymentId);
+    sale.payments.pull(req.params.paymentId);
+    const allocation = allocatePayments(sale.payments, sale.grandTotal);
+    sale.amountPaid = allocation.appliedTotal;
+    sale.paymentMode = sale.payments.length > 1 ? "Multiple" : (sale.payments[0]?.paymentMode || "Credit");
+    await sale.save();
+    if (sourcePayment) {
+      sourceOrder.payments.pull(req.params.paymentId);
+      const orderAllocation = allocatePayments(sourceOrder.payments, sourceOrder.grandTotal);
+      sourceOrder.amountPaid = orderAllocation.appliedTotal;
+      sourceOrder.paymentMode = sourceOrder.payments.length > 1 ? "Multiple" : (sourceOrder.payments[0]?.paymentMode || "Credit");
+      await sourceOrder.save();
+    }
+    if (sale.customer) await Customer.findByIdAndUpdate(sale.customer, { $inc:{ totalReceived:sale.amountPaid-previousPaid, advanceBalance:allocation.advanceTotal-previousAdvance } });
+    await logActivity(req, { action:"deleted", entityType:"Sale", entityId:sale._id, entityLabel:sale.invoiceNo, summary:`Deleted payment from ${sale.invoiceNo}`, changes:[{ field:"payment", before:deleted, after:null }] });
+    res.json({ success:true, data:sale, message:"Sale payment deleted and balances recalculated." });
   } catch (err) { res.status(500).json({ success:false, message:err.message }); }
 };
 

@@ -261,3 +261,26 @@ exports.updateVendorPayment = async (req, res) => {
     res.json({ success:true, data:payment, message:"Vendor payment updated successfully." });
   } catch (err) { res.status(500).json({ success:false, message:err.message }); }
 };
+
+exports.deleteVendorPayment = async (req, res) => {
+  try {
+    if (req.user?.role !== "admin") return res.status(403).json({ success:false, message:"Only an admin can delete vendor payments." });
+    const payment = await VendorLedger.findById(req.params.id);
+    if (!payment || payment.type !== "Payment") return res.status(404).json({ success:false, message:"Vendor payment record not found." });
+    let purchase = payment.againstEntry ? await VendorLedger.findById(payment.againstEntry) : null;
+    if (!purchase) {
+      const match = String(payment.notes || "").match(/against\s+(.+?)(?:\s+—|$)/i);
+      if (match) purchase = await VendorLedger.findOne({ vendor:payment.vendor, type:"Purchase", invoiceNo:match[1].trim() });
+    }
+    const amount = +payment.amount || 0;
+    const before = payment.toObject();
+    if (purchase) {
+      purchase.paid = Math.max(0, (+purchase.paid || 0) - amount);
+      await purchase.save();
+    }
+    await Vendor.findByIdAndUpdate(payment.vendor, { $inc:{ totalPaid:-amount } });
+    await payment.deleteOne();
+    await logActivity(req, { action:"deleted", entityType:"Vendor Ledger", entityId:payment._id, entityLabel:payment.invoiceNo, summary:`Deleted vendor payment ${payment.invoiceNo || payment._id}`, changes:[{ field:"payment", before, after:null }], metadata:{ linkedPurchase:purchase?._id, amount } });
+    res.json({ success:true, message:"Vendor payment deleted and balances recalculated." });
+  } catch (err) { res.status(500).json({ success:false, message:err.message }); }
+};

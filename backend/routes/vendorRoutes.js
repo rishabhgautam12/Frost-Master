@@ -11,6 +11,7 @@ const {
   addLedgerEntry,
   payLedgerEntry,
   updateVendorPayment,
+  deleteVendorPayment,
 } = require("../controllers/vendorController");
 
 router.get("/",                    getVendors);
@@ -18,6 +19,7 @@ router.get("/ledger",              getVendorLedger);
 router.post("/ledger",             addLedgerEntry);
 router.patch("/ledger/:id/pay",    payLedgerEntry);      // ← new
 router.put("/ledger/payments/:id", updateVendorPayment);
+router.delete("/ledger/payments/:id", deleteVendorPayment);
 router.get("/:id",                 getVendorById);
 router.post("/",                   createVendor);
 router.put("/:id",                 updateVendor);

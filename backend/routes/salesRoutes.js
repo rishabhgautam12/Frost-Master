@@ -21,12 +21,14 @@ const {
   updateOrder,
   payForOrder,
   updateOrderPaymentRecord,
+  deleteOrderPaymentRecord,
   convertOrderToSale,
   getQuotations,
   createQuotation,
   updateQuotation,
   convertQuotationToOrder,
   updateSalePaymentRecord,
+  deleteSalePaymentRecord,
 } = require("../controllers/salesController");
 
 // Purchases
@@ -46,6 +48,7 @@ router.post("/orders", createOrder);
 router.put("/orders/:id", updateOrder);
 router.patch("/orders/:id/pay", payForOrder);
 router.put("/orders/:id/payments/:paymentId", updateOrderPaymentRecord);
+router.delete("/orders/:id/payments/:paymentId", deleteOrderPaymentRecord);
 router.post("/orders/:id/convert", convertOrderToSale);
 router.get("/", getSales);
 router.get("/gst-report", getGSTReport);
@@ -55,6 +58,7 @@ router.patch("/:id/payment", updateSalePayment);
 router.patch("/:id/cancel", cancelSale);
 router.patch("/:saleId/pay", payForSale);          // proper pay endpoint
 router.put("/:saleId/payments/:paymentId", updateSalePaymentRecord);
+router.delete("/:saleId/payments/:paymentId", deleteSalePaymentRecord);
 router.put("/:id/details", updateSaleDetails);      // edit notes / status
 router.delete("/:id", deleteSale);
 router.get("/:id", getSaleById);
