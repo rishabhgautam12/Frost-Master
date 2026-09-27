@@ -792,6 +792,7 @@ export default function SalesList({ navigate }) {
                     <Td>
                       <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                         <Btn sm color="blue" onClick={() => setDetailModal(s)}>View Details</Btn>
+                        {(isAdmin || currentUser()?.permissions?.complaints_view) && <Btn sm color="purple" onClick={() => { sessionStorage.setItem("complaintTarget", JSON.stringify({ referenceId:s._id, invoiceNo:s.invoiceNo })); navigate("complaints-active"); }}>Service / Complaints</Btn>}
                         <Btn sm color="teal" onClick={() => setPaymentDrawer(s)}>Payments ({s.payments?.length || 0})</Btn>
                         <Btn sm color="blue" onClick={() => setEditModal(s)}>✏️ Edit</Btn>
                         {isAdmin && <Btn sm color="red" onClick={() => handleDelete(s)}>Delete</Btn>}

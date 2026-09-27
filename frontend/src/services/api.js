@@ -108,6 +108,8 @@ export const dashboardAPI = {
 };
 
 export const complaintAPI = {
+  getEmployees: () => request("/complaints/employees"),
+  addEvent: (id, body) => request(`/complaints/${id}/timeline`, { method: "POST", body: JSON.stringify(body) }),
   getAll:        (params = {}) => request(`/complaints?${new URLSearchParams(params)}`),
   lookupInvoice: (params)      => request(`/complaints/invoice?${new URLSearchParams(params)}`),
   create:        (body)        => request("/complaints", { method: "POST", body: JSON.stringify(body) }),

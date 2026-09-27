@@ -148,8 +148,8 @@ export default function App() {
         {page === "sales-list"       && <Guard perm="sales_view">      <SalesList      navigate={setPage} /></Guard>}
         {page === "order-create"     && <Guard perm="sales_create">    <CreateOrder    navigate={setPage} /></Guard>}
         {page === "orders-list"      && <Guard perm="sales_view">      <OrdersList     navigate={setPage} /></Guard>}
-        {page === "complaints-active" && <Guard perm="complaints_view"><Complaints status="Active" user={user} /></Guard>}
-        {page === "complaints-solved" && <Guard perm="complaints_view"><Complaints status="Solved" user={user} /></Guard>}
+        {page === "complaints-active" && <Guard perm="complaints_view"><Complaints status="Active" user={user} navigate={setPage} /></Guard>}
+        {page === "complaints-solved" && <Guard perm="complaints_view"><Complaints status="Solved" user={user} navigate={setPage} /></Guard>}
         {page === "purchase-create"  && <Guard perm="purchases_create"><CreatePurchase navigate={setPage} /></Guard>}
         {page === "purchases-list"   && <Guard perm="purchases_view">  <PurchasesList  navigate={setPage} /></Guard>}
         {page === "gst-report"       && <Guard perm="reports_gst">     <GSTReport      /></Guard>}

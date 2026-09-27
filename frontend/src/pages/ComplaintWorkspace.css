@@ -1,0 +1,34 @@
+/* Ticket workspace sits above navigation and below the report form dialog. */
+.svc-overlay { z-index: 8000; padding: 24px; backdrop-filter: blur(5px); }
+.svc-workspace { max-height: calc(100dvh - 48px); border: 1px solid #d6e4e9; }
+.svc-workspace-header { flex-shrink: 0; background: linear-gradient(115deg,#edf8f5,#fff 65%); }
+.svc-workspace-header > div { min-width: 0; }
+.svc-close { width: auto; height: auto; padding: 11px 16px; font-size: 13px; font-weight: 800; color: #164a47; white-space: nowrap; border-color: #8ebcb6; box-shadow: 0 2px 6px #123c3310; }
+.svc-workspace-body { min-height: 0; flex: 1; overscroll-behavior: contain; }
+.svc-window-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-shrink: 0; padding: 15px 26px; background: #fff; border-top: 1px solid #bdcfd6; }
+.svc-window-footer span { font-size: 12px; color: #637884; }
+.svc-window-footer button,.svc-context button { padding: 10px 16px; background: #0e706b; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.svc-context { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 22px; margin: 18px 0; background: #edf5fd; border: 1px solid #b8cfe2; border-radius: 12px; }
+.svc-context strong { display: block; margin-top: 6px; font-size: 16px; color: #234b6b; }
+.svc-context p { margin: 6px 0 0; color: #526d82; line-height: 1.6; }
+.svc-handover { display: grid; grid-template-columns: 180px 1fr 1fr; gap: 24px; margin-top: 18px; padding: 22px; border: 1px solid #b7d6cc; border-left: 4px solid #108272; border-radius: 12px; background: #f0f8f4; }
+.svc-handover h3 { margin: 8px 0; font-size: 17px; }
+.svc-handover .svc-detail { margin-bottom: 0; }
+.svc-handover-form { padding: 18px; border: 1px solid #bfd9d3; background: #f2f9f6; border-radius: 10px; margin: 16px 0; }
+.svc-stats>div { box-shadow: 0 4px 15px #253e4c06; border-top: 3px solid #348b83; }
+.svc-actions { border-bottom: 1px solid #d3e0e4; margin-bottom: 20px; }
+.svc-report { box-shadow: 0 6px 18px #19394906; }
+.svc-event { transition: background .15s, border-color .15s; border-radius: 8px; margin-bottom: 5px; }
+.svc-event:hover { background: #edf4f6; }
+.svc-event.selected .svc-dot { background: #0e706b; color: #fff; border-color: #0e706b; }
+@media(max-width:760px) {
+  .svc-overlay { padding: 0; }
+  .svc-workspace { max-height: 100dvh; height: 100dvh; }
+  .svc-workspace-header { gap: 10px; }
+  .svc-workspace-header h2 { font-size: 18px; }
+  .svc-close { padding: 10px; font-size: 11px; }
+  .svc-window-footer { padding: 12px 16px; }
+  .svc-window-footer span { max-width: 55%; font-size: 10px; }
+  .svc-context { align-items: flex-start; flex-direction: column; padding: 16px; }
+  .svc-handover { grid-template-columns: 1fr; gap: 18px; padding: 16px; }
+}

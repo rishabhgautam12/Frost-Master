@@ -1,104 +1,78 @@
 import { useEffect, useState } from "react";
-import { PageTitle, Btn, Badge, TableWrap, Th, Td, LoadingSpinner, ErrorMsg, EmptyState, Modal, FormGroup, FormInput, FormSelect, SuccessToast } from "../components/Shared";
+import { Btn, Modal, FormGroup, FormInput, FormSelect, LoadingSpinner } from "../components/Shared";
 import { complaintAPI } from "../services/api";
+import "./Complaints.css";
+import "./ComplaintWorkspace.css";
 
-const priorityColor = { Low:"gray", Medium:"blue", High:"yellow", Urgent:"red" };
-const textAreaStyle = { width:"100%", padding:"9px 12px", border:"1px solid #d1d5db", borderRadius:7, fontSize:13, resize:"vertical", boxSizing:"border-box", background:"#f9fafb" };
+const stages = ["New", "Assigned", "Visit Scheduled", "In Progress", "Waiting for Parts", "Waiting for Customer", "Closed"];
+const now = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16); };
+const date = value => value ? new Date(value).toLocaleString("en-IN", { dateStyle:"medium", timeStyle:"short" }) : "Not recorded";
+const stageOf = t => t.status === "Solved" ? "Closed" : t.stage || "New";
+const initial = () => ({ referenceType:"External", externalComplaintNo:"", source:"Email", emailReference:"", partyName:"", phone:"", email:"", address:"", productName:"", modelNumber:"", serialNumber:"", complaint:"", priority:"Medium", receivedAt:now(), assignedEmployee:"", invoice:"", product:"" });
+const badge = text => <span className={`svc-badge ${["High","Urgent"].includes(text) ? "urgent" : ""}`}>{text}</span>;
+function Detail({ label, value }) { return value ? <div className="svc-detail"><label>{label}</label><div>{value}</div></div> : null; }
+function history(t) { return t.timeline?.length ? t.timeline : [{ type:"Received", occurredAt:t.createdAt, actorName:t.createdByName, notes:t.complaint, stage:"New" }, ...(t.status === "Solved" ? [{ type:"Closed", occurredAt:t.resolvedAt, actorName:t.resolvedByName, workDone:t.resolution, stage:"Closed" }] : [])]; }
 
-export default function Complaints({ status = "Active", user }) {
-  const canManage = user?.role === "admin" || user?.permissions?.complaints_manage;
-  const [complaints, setComplaints] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [addOpen, setAddOpen] = useState(false);
-  const [lookupLoading, setLookupLoading] = useState(false);
-  const [invoiceData, setInvoiceData] = useState(null);
-  const [form, setForm] = useState({ referenceType:"Sale", invoice:"", product:"", complaint:"", priority:"Medium" });
-  const [solving, setSolving] = useState(null);
-  const [resolution, setResolution] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState("");
+export default function Complaints({ status = "Active", user, navigate }) {
+  const [target,setTarget] = useState(() => { try { return JSON.parse(sessionStorage.getItem("complaintTarget") || "null"); } catch { return null; } });
+  const manage = user?.role === "admin" || user?.permissions?.complaints_manage === true;
+  const [tickets,setTickets] = useState([]), [employees,setEmployees] = useState([]);
+  const [loading,setLoading] = useState(true), [error,setError] = useState(""), [notice,setNotice] = useState("");
+  const [search,setSearch] = useState(""), [stage,setStage] = useState(""), [assignee,setAssignee] = useState(""), [page,setPage] = useState(1);
+  const [ticket,setTicket] = useState(null), [step,setStep] = useState(0);
+  const [creating,setCreating] = useState(false), [form,setForm] = useState(initial), [invoice,setInvoice] = useState(null), [fetching,setFetching] = useState(false);
+  const [action,setAction] = useState(null), [saving,setSaving] = useState(false), [formError,setFormError] = useState("");
+  async function load() { setLoading(true); try { const r = await complaintAPI.getAll(target ? { referenceType:"Sale",referenceId:target.referenceId } : { status }); setTickets(r.data || []); setError(""); } catch(e) { setError(e.message); } finally { setLoading(false); } }
+  useEffect(() => { setTicket(null); setPage(1); setStage(""); load(); }, [status,target]);
+  useEffect(() => { sessionStorage.removeItem("complaintTarget"); }, []);
+  useEffect(() => {
+    if (!ticket) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const close = e => { if (e.key === "Escape" && !action && !creating) setTicket(null); };
+    window.addEventListener("keydown",close);
+    return () => { document.body.style.overflow = previous; window.removeEventListener("keydown",close); };
+  }, [ticket,action,creating]);
+  useEffect(() => { if(manage) complaintAPI.getEmployees().then(r => setEmployees(r.data || [])).catch(e => setError(e.message)); }, [manage]);
+  useEffect(() => { setPage(1); }, [search,stage,assignee]);
+  const set = (key,value) => setForm(p => ({ ...p,[key]:value }));
+  const change = (key,value) => setAction(p => ({ ...p,[key]:value }));
+  const open = t => { setTicket(t); setStep(history(t).length-1); };
+  const begin = type => { const latest = [...history(ticket)].reverse().find(e => e.workDone || e.nextAction); setFormError(""); setAction({ type, occurredAt:now(), notes:"", employee:"", scheduledAt:"", stage:["In Progress","Waiting for Parts","Waiting for Customer"].includes(ticket.stage) ? ticket.stage : "In Progress", problemFound:"", workDone:type === "Assigned" ? latest?.workDone || "" : "", partsUsed:"", nextAction:type === "Assigned" ? latest?.nextAction || "" : "", customerFeedback:"" }); };
+  const options = employees.map(e => <option key={e._id} value={e._id}>{e.name}{e.role ? ` · ${e.role}` : ""}</option>);
+  const filtered = tickets.filter(t => (!stage || stageOf(t)===stage) && (!assignee || (assignee==="none" ? !t.assignedEmployee : String(t.assignedEmployee?._id || t.assignedEmployee)===assignee)) && [t.complaintNo,t.externalComplaintNo,t.partyName,t.productName,t.phone,t.complaint,t.invoiceNo,t.assignedEmployeeName].join(" ").toLowerCase().includes(search.toLowerCase()));
+  const pages = Math.max(1,Math.ceil(filtered.length/20)), currentPage = Math.min(page,pages);
+  const events = ticket ? history(ticket) : [], event = events[step];
+  const input = (label,key,type="text",required=false) => <FormGroup key={key} label={label}><FormInput type={type} required={required} value={form[key]} onChange={e => set(key,e.target.value)} /></FormGroup>;
+  const area = (label,key,required=false) => <FormGroup key={key} label={label}><textarea required={required} rows={3} value={action[key]} onChange={e => change(key,e.target.value)} /></FormGroup>;
+  async function lookup(event) { event.preventDefault(); setFetching(true); setInvoice(null); setFormError(""); try { const r = await complaintAPI.lookupInvoice({ type:form.referenceType, invoice:form.invoice }); setInvoice(r.data); set("product",""); } catch(e) { setFormError(e.message); } finally { setFetching(false); } }
+  async function create(e) { e.preventDefault(); setFormError(""); if(form.referenceType!=="External" && (!invoice || !form.product)) { setFormError("Fetch an invoice and select a product."); return; } setSaving(true); try { const r = await complaintAPI.create({ ...form, referenceId:invoice?.referenceId, receivedAt:form.receivedAt ? new Date(form.receivedAt).toISOString() : undefined, assignedEmployee:form.assignedEmployee || undefined }); setCreating(false); open(r.data); setNotice("Service ticket created."); await load(); } catch(e) { setFormError(e.message); } finally { setSaving(false); } }
+  async function save(e) { e.preventDefault(); setFormError(""); setSaving(true); try { const r = await complaintAPI.addEvent(ticket._id,{ ...action, occurredAt:action.type === "Visit Scheduled" || !action.occurredAt ? undefined : new Date(action.occurredAt).toISOString(), scheduledAt:action.scheduledAt ? new Date(action.scheduledAt).toISOString() : undefined }); open(r.data); setAction(null); setNotice("Ticket timeline updated."); await load(); } catch(e) { setFormError(e.message); } finally { setSaving(false); } }
 
-  const load = () => {
-    setLoading(true);
-    complaintAPI.getAll({ status }).then(res => { setComplaints(res.data || []); setError(""); }).catch(err => setError(err.message)).finally(() => setLoading(false));
-  };
-  useEffect(load, [status]);
+  return <div className="service-desk">
+    <header className="svc-header"><div><div className="svc-eyebrow">FROST MASTER · SERVICE DESK</div><h1>{status==="Solved" ? "Closed complaints" : "Active complaints"}</h1><p>Every assignment, visit and resolution in one service history.</p></div>{manage && status==="Active" && <Btn color="teal" onClick={() => { setForm({ ...initial(), ...(target ? { referenceType:"Sale",invoice:target.invoiceNo } : {}) }); setInvoice(null); setFormError(""); setCreating(true); }}>+ New service ticket</Btn>}</header>
+    {notice && <div className="svc-notice" role="status">{notice}<button aria-label="Dismiss" onClick={() => setNotice("")}>×</button></div>}{error && <div className="svc-error" role="alert">{error} <button onClick={load}>Retry</button></div>}
+    <div className="svc-stats">{[[status==="Solved" ? "Closed tickets" : "Open tickets",tickets.length],["Unassigned",tickets.filter(t => !t.assignedEmployee && t.status!=="Solved").length],["Awaiting action",tickets.filter(t => stageOf(t).startsWith("Waiting")).length],["High priority",tickets.filter(t => ["High","Urgent"].includes(t.priority)).length]].map(([label,value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
+    {target && <div className="svc-context"><div><strong>Service history · {target.invoiceNo}</strong><p>All active and closed complaints for this sale. Create a ticket and select the affected invoice product.</p></div><button type="button" onClick={() => setTarget(null)}>Show all complaints</button></div>}
+    <section className="svc-list"><div className="svc-filters"><input aria-label="Search tickets" placeholder="Search ticket, customer, product or employee..." value={search} onChange={e => setSearch(e.target.value)} /><select aria-label="Filter by stage" value={stage} onChange={e => setStage(e.target.value)}><option value="">All stages</option>{stages.map(s => <option key={s}>{s}</option>)}</select><select aria-label="Filter by employee" value={assignee} onChange={e => setAssignee(e.target.value)}><option value="">All employees</option><option value="none">Unassigned</option>{[...new Map(tickets.filter(t => t.assignedEmployee).map(t => [String(t.assignedEmployee?._id || t.assignedEmployee),t.assignedEmployeeName])).entries()].map(([id,name]) => <option key={id} value={id}>{name}</option>)}</select></div>
+    {loading ? <LoadingSpinner /> : !filtered.length ? <div className="svc-empty"><h3>No tickets found</h3><p>Create a service ticket or adjust your filters.</p></div> : <div className="svc-table-scroll"><table><thead><tr>{["Ticket / reference","Customer & product","Stage","Assigned to","Priority","Received", ""].map((s,i) => <th key={i}>{s}</th>)}</tr></thead><tbody>{filtered.slice((currentPage-1)*20,currentPage*20).map(t => <tr key={t._id}><td><button className="svc-link" onClick={() => open(t)}>{t.externalComplaintNo || t.complaintNo}</button><small>{t.complaintNo}{t.invoiceNo ? ` · ${t.invoiceNo}` : ""}</small></td><td><strong>{t.partyName || "Customer"}</strong><small>{t.productName}</small></td><td>{badge(stageOf(t))}</td><td>{t.assignedEmployeeName || "Unassigned"}</td><td>{badge(t.priority)}</td><td>{date(t.receivedAt || t.createdAt)}</td><td><button className="svc-link" onClick={() => open(t)}>View timeline →</button></td></tr>)}</tbody></table></div>}
+    <footer className="svc-pagination"><span>{filtered.length} tickets · Page {currentPage} of {pages}</span><div><Btn sm color="cancel" disabled={currentPage<=1} onClick={() => setPage(currentPage-1)}>Previous</Btn> <Btn sm color="cancel" disabled={currentPage>=pages} onClick={() => setPage(currentPage+1)}>Next</Btn></div></footer></section>
 
-  const resetAdd = () => {
-    setForm({ referenceType:"Sale", invoice:"", product:"", complaint:"", priority:"Medium" });
-    setInvoiceData(null);
-  };
-  const lookup = async () => {
-    if (!form.invoice.trim()) return alert("Enter an invoice number.");
-    setLookupLoading(true);
-    try {
-      const res = await complaintAPI.lookupInvoice({ type:form.referenceType, invoice:form.invoice.trim() });
-      setInvoiceData(res.data);
-      setForm(prev => ({ ...prev, product:"" }));
-    } catch (err) { setInvoiceData(null); alert(err.message); }
-    setLookupLoading(false);
-  };
-  const create = async () => {
-    if (!invoiceData || !form.product || !form.complaint.trim()) return alert("Fetch an invoice, select a product, and enter complaint details.");
-    setSaving(true);
-    try {
-      await complaintAPI.create({ referenceType:form.referenceType, referenceId:invoiceData.referenceId, product:form.product, complaint:form.complaint, priority:form.priority });
-      setAddOpen(false); resetAdd(); setToast("Complaint added successfully"); load();
-    } catch (err) { alert(err.message); }
-    setSaving(false);
-  };
-  const solve = async () => {
-    if (!resolution.trim()) return alert("Enter resolution details.");
-    setSaving(true);
-    try {
-      await complaintAPI.solve(solving._id, { resolution, resolvedAt:new Date().toISOString() });
-      setSolving(null); setResolution(""); setToast("Complaint marked as solved"); load();
-    } catch (err) { alert(err.message); }
-    setSaving(false);
-  };
+    {ticket && <div className="svc-overlay" onMouseDown={e => { if(e.target === e.currentTarget) setTicket(null); }}><section className="svc-workspace" role="dialog" aria-modal="true" aria-label={`Ticket ${ticket.complaintNo}`}><header className="svc-workspace-header"><div><div className="svc-eyebrow">SERVICE TICKET · {ticket.complaintNo}</div><h2>{ticket.externalComplaintNo || ticket.productName}</h2><div className="svc-inline">{badge(stageOf(ticket))}{badge(ticket.priority)}<span>{ticket.assignedEmployeeName || "Awaiting assignment"}</span></div></div><button className="svc-close" aria-label="Close ticket details" onClick={() => setTicket(null)}>Close window ×</button></header><div className="svc-workspace-body">
+      <section className="svc-overview"><h3>Complaint overview</h3><div className="svc-grid"><Detail label="Customer" value={ticket.partyName} /><Detail label="Phone" value={ticket.phone} /><Detail label="Email" value={ticket.email} /><Detail label="Service address" value={ticket.address} /><Detail label="Product" value={ticket.productName} /><Detail label="Model / serial number" value={[ticket.modelNumber,ticket.serialNumber].filter(Boolean).join(" / ")} /><Detail label="Source / invoice" value={ticket.referenceType==="External" ? ticket.source : `${ticket.referenceType} · ${ticket.invoiceNo}`} /><Detail label="Email subject / reference" value={ticket.emailReference} /><Detail label="Received" value={date(ticket.receivedAt || ticket.createdAt)} /></div><div className="svc-problem"><Detail label="Reported problem" value={ticket.complaint} /></div></section>
+      {ticket.invoiceNo && <section className="svc-context"><div><div className="svc-eyebrow">LINKED {ticket.referenceType?.toUpperCase()} INVOICE</div><strong>{ticket.invoiceNo}</strong><p>{ticket.productName} · {ticket.partyName} · {date(ticket.referenceDate)}</p></div>{ticket.referenceType === "Sale" && navigate && (user?.role === "admin" || user?.permissions?.sales_view) && <button type="button" onClick={() => { sessionStorage.setItem("salesListTarget",JSON.stringify({ invoiceNo:ticket.invoiceNo,date:ticket.referenceDate })); navigate("sales-list"); }}>Open linked sale →</button>}</section>}
+      {ticket.assignedEmployee && (() => { const latest = [...events].reverse().find(e => e.workDone || e.nextAction); return <section className="svc-handover"><div><div className="svc-eyebrow">CURRENT OWNER</div><h3>{ticket.assignedEmployeeName}</h3><span>{stageOf(ticket)}</span></div><Detail label="Latest completed work" value={latest?.workDone || "No work report recorded yet."} /><Detail label={ticket.status === "Solved" ? "Outcome" : "Continue from here"} value={ticket.status === "Solved" ? ticket.resolution : latest?.nextAction || "Review the reported issue and add the next visit or work report."} /></section>; })()}
+      {manage && <div className="svc-actions">{ticket.status==="Solved" ? <Btn color="blue" onClick={() => begin("Reopened")}>Reopen ticket</Btn> : <><Btn color="teal" onClick={() => begin("Assigned")}>{ticket.assignedEmployee ? "Handover to employee" : "Assign employee"}</Btn>{[["Visit Scheduled","Schedule visit"],["Visit Report","Add visit report"],["Work Update","Work update"]].map(([type,label]) => <Btn key={type} color="blue" disabled={!ticket.assignedEmployee} onClick={() => begin(type)}>{label}</Btn>)}<Btn color="cancel" onClick={() => begin("Note")}>Add note</Btn><Btn color="green" disabled={!ticket.assignedEmployee} onClick={() => begin("Closed")}>Close ticket</Btn></>}</div>}
+      <div className="svc-history-heading"><h3>Service timeline</h3><span>{events.length} steps · Select a step to read its report</span></div><div className="svc-history"><nav aria-label="Ticket timeline" className="svc-timeline">{events.map((entry,i) => <button key={entry._id || i} aria-pressed={step===i} className={`svc-event ${step===i ? "selected" : ""}`} onClick={() => setStep(i)}><span className="svc-dot">{i+1}</span><span><strong>{entry.type}</strong><small>{date(entry.occurredAt)}</small><span>{entry.employeeName || entry.actorName || "Service desk"}</span></span></button>)}</nav>{event && <article className="svc-report"><div className="svc-eyebrow">STEP {step+1} · SERVICE REPORT</div><h2>{event.type}</h2><div className="svc-report-meta">{date(event.occurredAt)} · {event.actorName || "Staff"}</div><div className="svc-grid"><Detail label="Employee responsible" value={event.employeeName} /><Detail label="Previously assigned to" value={event.previousEmployeeName} /><Detail label="Stage after this step" value={event.stage} /><Detail label="Scheduled visit" value={event.scheduledAt && date(event.scheduledAt)} /></div>{[["Details / reason","notes"],["Problem found","problemFound"],["Work performed / resolution","workDone"],["Parts used / required","partsUsed"],["Pending work / next action","nextAction"],["Customer feedback / confirmation","customerFeedback"]].map(([label,key]) => <Detail key={key} label={label} value={event[key]} />)}<small className="svc-recorded">Recorded by {event.actorName || "Staff"}{event.recordedAt ? ` on ${date(event.recordedAt)}` : ""}</small></article>}</div>
+    </div><footer className="svc-window-footer"><span>{ticket.status === "Solved" ? "Closed ticket · Complete service history retained" : "Service history is preserved through every handover"}</span><button type="button" onClick={() => setTicket(null)}>Close window</button></footer></section></div>}
 
-  return (
-    <div>
-      <PageTitle>{status === "Active" ? "Active Complaints" : "Solved Complaints"}</PageTitle>
-      {toast && <SuccessToast msg={toast} />}
-      {status === "Active" && canManage && <div style={{ marginBottom:14 }}><Btn color="teal" onClick={() => { resetAdd(); setAddOpen(true); }}>+ Add Complaint</Btn></div>}
-      {loading ? <LoadingSpinner /> : error ? <ErrorMsg message={error} onRetry={load} /> : complaints.length === 0 ? <EmptyState text={`No ${status.toLowerCase()} complaints found.`} /> : (
-        <TableWrap><table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
-          <thead><tr>{["Complaint No.","Added","Reference","Invoice Date","Party","Product","Complaint","Priority",status === "Solved" ? "Resolution" : "Action"].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
-          <tbody>{complaints.map(row => <tr key={row._id} style={{ borderBottom:"1px solid #f1f5f9" }}>
-            <Td style={{ fontWeight:800 }}>{row.complaintNo}</Td>
-            <Td>{new Date(row.createdAt).toLocaleDateString("en-IN")}</Td>
-            <Td><div><Badge color={row.referenceType === "Sale" ? "green" : "blue"}>{row.referenceType}</Badge></div><div style={{ marginTop:4, fontFamily:"monospace" }}>{row.invoiceNo}</div></Td>
-            <Td>{row.referenceDate ? new Date(row.referenceDate).toLocaleDateString("en-IN") : "-"}</Td>
-            <Td>{row.partyName || "-"}</Td>
-            <Td><strong>{row.productName}</strong>{row.productDescription && <div style={{ color:"#64748b", marginTop:3 }}>{row.productDescription}</div>}</Td>
-            <Td style={{ minWidth:190, whiteSpace:"pre-wrap" }}>{row.complaint}</Td>
-            <Td><Badge color={priorityColor[row.priority]}>{row.priority}</Badge></Td>
-            <Td>{status === "Active" ? (canManage ? <Btn sm color="green" onClick={() => { setSolving(row); setResolution(""); }}>Mark Solved</Btn> : "-") : <div><div style={{ whiteSpace:"pre-wrap" }}>{row.resolution}</div><div style={{ color:"#64748b", fontSize:10.5, marginTop:4 }}>{row.resolvedAt ? new Date(row.resolvedAt).toLocaleDateString("en-IN") : ""} {row.resolvedByName ? `by ${row.resolvedByName}` : ""}</div></div>}</Td>
-          </tr>)}</tbody>
-        </table></TableWrap>
-      )}
+    <Modal open={creating} onClose={() => !saving && setCreating(false)} title="New service ticket" wide><form onSubmit={create} className="svc-form"><p>Record an external complaint or link an existing invoice.</p>{formError && <div className="svc-error" role="alert">{formError}</div>}<div className="svc-form-grid"><FormGroup label="Complaint reference"><FormSelect value={form.referenceType} onChange={e => { set("referenceType",e.target.value); setInvoice(null); set("product",""); }}><option>External</option><option>Sale</option><option>Purchase</option></FormSelect></FormGroup>{input("External complaint number (optional)","externalComplaintNo")}</div>
+      {form.referenceType!=="External" && <div className="svc-invoice"><FormInput aria-label="Invoice number" value={form.invoice} onChange={e => { set("invoice",e.target.value); setInvoice(null); }} placeholder="Invoice / purchase number" /><Btn color="blue" disabled={fetching} onClick={lookup}>{fetching ? "Fetching..." : "Fetch invoice"}</Btn>{invoice && <FormSelect required value={form.product} onChange={e => set("product",e.target.value)}><option value="">Select invoice product</option>{invoice.items.map((item,i) => <option key={i} value={item.product}>{item.productName}</option>)}</FormSelect>}</div>}
+      <div className="svc-form-grid">{form.referenceType==="External" && <>{input("Customer name *","partyName","text",true)}{input("Product / appliance *","productName","text",true)}</>}{input("Phone","phone")}{input("Email","email","email")}{input("Model number","modelNumber")}{input("Serial number","serialNumber")}{input("Email subject / reference","emailReference")}{input("Received date & time (defaults to now)","receivedAt","datetime-local")}<FormGroup label="Received through"><FormSelect value={form.source} onChange={e => set("source",e.target.value)}>{["Email","Phone","Walk-in","Other"].map(s => <option key={s}>{s}</option>)}</FormSelect></FormGroup><FormGroup label="Priority"><FormSelect value={form.priority} onChange={e => set("priority",e.target.value)}>{["Low","Medium","High","Urgent"].map(s => <option key={s}>{s}</option>)}</FormSelect></FormGroup><FormGroup label="Assign employee"><FormSelect value={form.assignedEmployee} onChange={e => set("assignedEmployee",e.target.value)}><option value="">Assign later</option>{options}</FormSelect></FormGroup></div><FormGroup label="Service address"><textarea rows={2} value={form.address} onChange={e => set("address",e.target.value)} /></FormGroup><FormGroup label="Reported problem *"><textarea required rows={4} value={form.complaint} onChange={e => set("complaint",e.target.value)} /></FormGroup><div className="svc-form-footer"><button type="button" disabled={saving} onClick={() => setCreating(false)}>Cancel</button><button type="submit" disabled={saving}>{saving ? "Creating..." : "Create ticket"}</button></div></form></Modal>
 
-      <Modal open={addOpen} onClose={() => !saving && setAddOpen(false)} title="Add Complaint" wide>
-        <div style={{ display:"grid", gridTemplateColumns:"180px 1fr auto", gap:10, alignItems:"end" }}>
-          <FormGroup label="Reference Type"><FormSelect value={form.referenceType} onChange={e => { setForm(p => ({ ...p, referenceType:e.target.value, product:"" })); setInvoiceData(null); }}><option>Sale</option><option>Purchase</option></FormSelect></FormGroup>
-          <FormGroup label="Invoice Number"><FormInput value={form.invoice} onChange={e => { setForm(p => ({ ...p, invoice:e.target.value })); setInvoiceData(null); }} placeholder={form.referenceType === "Sale" ? "e.g. INV-2026-0001" : "Purchase No. or vendor invoice no."} /></FormGroup>
-          <Btn color="blue" disabled={lookupLoading} onClick={lookup}>{lookupLoading ? "Fetching..." : "Fetch Invoice"}</Btn>
-        </div>
-        {invoiceData && <div style={{ background:"#f0fdf4", border:"1px solid #86efac", borderRadius:8, padding:12, margin:"10px 0 14px", color:"#166534" }}><strong>{invoiceData.invoiceNo}</strong> · {new Date(invoiceData.date).toLocaleDateString("en-IN")} · {invoiceData.partyName}</div>}
-        {invoiceData && <FormGroup label="Complaint Product *"><FormSelect value={form.product} onChange={e => setForm(p => ({ ...p, product:e.target.value }))}><option value="">Select product from invoice</option>{invoiceData.items.map((item, index) => <option key={`${item.product}-${index}`} value={item.product}>{item.productName}{item.modelNumber ? ` (${item.modelNumber})` : ""} · Qty ${item.qty}</option>)}</FormSelect></FormGroup>}
-        {form.product && invoiceData && (() => { const item = invoiceData.items.find(value => String(value.product) === String(form.product)); return item?.description ? <div style={{ background:"#f8fafc", border:"1px solid #e2e8f0", borderRadius:7, padding:10, color:"#64748b", marginBottom:12 }}><strong>Product description:</strong> {item.description}</div> : null; })()}
-        <FormGroup label="Priority"><FormSelect value={form.priority} onChange={e => setForm(p => ({ ...p, priority:e.target.value }))}>{["Low","Medium","High","Urgent"].map(value => <option key={value}>{value}</option>)}</FormSelect></FormGroup>
-        <FormGroup label="Complaint Details *"><textarea rows={4} style={textAreaStyle} value={form.complaint} onChange={e => setForm(p => ({ ...p, complaint:e.target.value }))} placeholder="Describe the product issue..." /></FormGroup>
-        <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}><Btn color="cancel" onClick={() => setAddOpen(false)}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={create}>{saving ? "Saving..." : "Add Complaint"}</Btn></div>
-      </Modal>
-
-      <Modal open={!!solving} onClose={() => !saving && setSolving(null)} title={`Solve ${solving?.complaintNo || "Complaint"}`}>
-        <div style={{ marginBottom:12 }}><strong>{solving?.productName}</strong><div style={{ color:"#64748b", marginTop:4 }}>{solving?.complaint}</div></div>
-        <FormGroup label="Resolution Details *"><textarea rows={4} style={textAreaStyle} value={resolution} onChange={e => setResolution(e.target.value)} placeholder="Explain how this complaint was resolved..." /></FormGroup>
-        <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}><Btn color="cancel" onClick={() => setSolving(null)}>Cancel</Btn><Btn color="green" disabled={saving} onClick={solve}>{saving ? "Saving..." : "Mark as Solved"}</Btn></div>
-      </Modal>
-    </div>
-  );
+    <Modal open={!!action} onClose={() => !saving && setAction(null)} title={action ? `${action.type==="Assigned" ? "Assign / reassign employee" : action.type} · ${ticket?.externalComplaintNo || ticket?.complaintNo}` : "Update ticket"} wide>{action && <form onSubmit={save} className="svc-form">{formError && <div className="svc-error" role="alert">{formError}</div>}<p>Employee responsible: {ticket?.assignedEmployeeName || "Unassigned"}. Recorded by {user?.name || user?.username || "you"}.</p>{action.type !== "Visit Scheduled" && <FormGroup label={action.type === "Visit Report" ? "Actual visit date & time (defaults to now)" : "Event date & time (defaults to now)"}><FormInput type="datetime-local" value={action.occurredAt} onChange={e => change("occurredAt",e.target.value)} /></FormGroup>}{action.type === "Visit Scheduled" && <p>Choose the planned visit time. Record what happened later using Add visit report.</p>}{action.type==="Assigned" && <FormGroup label="Assign to employee *"><FormSelect required value={action.employee} onChange={e => change("employee",e.target.value)}><option value="">Select active employee</option>{options}</FormSelect></FormGroup>}{action.type==="Visit Scheduled" && <FormGroup label="Scheduled visit date & time *"><FormInput required type="datetime-local" value={action.scheduledAt} onChange={e => change("scheduledAt",e.target.value)} /></FormGroup>}{area(action.type==="Reopened" ? "Reason for reopening *" : action.type==="Note" ? "Note *" : "Notes (optional)","notes",["Note","Reopened"].includes(action.type))}
+      {action.type === "Assigned" && ticket?.assignedEmployee && <div className="svc-handover-form"><h3>Handover report</h3><p>Work continues at the current stage. Explain what is complete and what the receiving employee should do next.</p>{area("Work completed so far (optional)","workDone")}{area("Instructions for next employee (optional)","nextAction")}{area("Parts used / still required","partsUsed")}</div>}
+      {["Visit Report","Work Update","Closed"].includes(action.type) && <>{action.type!=="Closed" && area("Problem found / diagnosis (optional)","problemFound")}{area(action.type==="Closed" ? "Final work performed & resolution *" : "Work performed *","workDone",true)}{area("Parts used / required","partsUsed")}{action.type!=="Closed" && <><FormGroup label="Current work status"><FormSelect value={action.stage} onChange={e => change("stage",e.target.value)}>{["In Progress","Waiting for Parts","Waiting for Customer"].map(s => <option key={s}>{s}</option>)}</FormSelect></FormGroup>{area("Pending work / next action (optional)","nextAction")}</>}{area("Customer feedback / confirmation","customerFeedback")}</>}
+      <div className="svc-form-footer"><button type="button" disabled={saving} onClick={() => setAction(null)}>Cancel</button><button type="submit" disabled={saving}>{saving ? "Saving..." : action.type==="Closed" ? "Close ticket & save report" : action.type==="Visit Scheduled" ? "Schedule visit" : "Save timeline step"}</button></div></form>}</Modal>
+  </div>;
 }
