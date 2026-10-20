@@ -140,7 +140,7 @@ export default function CreatePurchase({ navigate }) {
     <div style={{ maxWidth:1180, margin:"auto" }}>
       <PageTitle>Create Purchase</PageTitle>
       {toast && <SuccessToast msg={toast} />}
-      <div style={{ background:"#fff", borderRadius:10, padding:28, border:"1px solid #e2e8f0" }}>
+      <div style={{ background:"#fff", borderRadius:10, padding:28, border:"1px solid #e6e9f2" }}>
 
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:20 }}>
           <FormGroup label="Vendor *">
@@ -159,17 +159,17 @@ export default function CreatePurchase({ navigate }) {
 
         <div style={{ marginBottom:20 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-            <div style={{ fontWeight:800, fontSize:13, color:"#1e293b" }}>Payment Entries</div>
+            <div style={{ fontWeight:800, fontSize:13, color:"#0f1535" }}>Payment Entries</div>
             <Btn sm color="blue" onClick={addPaymentRow}>+ Add Payment</Btn>
           </div>
-          <div style={{ border:"1px solid #e2e8f0", borderRadius:8, overflow:"hidden" }}>
+          <div style={{ border:"1px solid #e6e9f2", borderRadius:8, overflow:"hidden" }}>
             {payments.map((payment, i) => (
               <div key={i} style={{
                 display:"grid",
                 gridTemplateColumns:"150px 1fr 150px 1.4fr 36px",
                 gap:8,
                 padding:10,
-                borderTop:i ? "1px solid #f1f5f9" : "none",
+                borderTop:i ? "1px solid #f1f3f9" : "none",
                 alignItems:"center",
               }}>
                 <FormSelect value={payment.paymentMode} onChange={e => setPayment(i, "paymentMode", e.target.value)}>
@@ -182,24 +182,24 @@ export default function CreatePurchase({ navigate }) {
                 <FormInput placeholder="Payment notes / ref no." value={payment.notes}
                   onChange={e => setPayment(i, "notes", e.target.value)} />
                 <button type="button" onClick={() => removePaymentRow(i)}
-                  style={{ border:"none", borderRadius:6, background:"#fee2e2", color:"#991b1b", height:34, cursor:"pointer", fontWeight:800 }}>
+                  style={{ border:"none", borderRadius:6, background:"#fdeceb", color:"#a33a35", height:34, cursor:"pointer", fontWeight:800 }}>
                   x
                 </button>
               </div>
             ))}
           </div>
-          <div style={{ color:"#64748b", fontSize:11, marginTop:6 }}>
+          <div style={{ color:"#6b7392", fontSize:11, marginTop:6 }}>
             Add Cash/UPI/Bank/Cheque rows for each payment. Credit rows are treated as unpaid balance.
           </div>
         </div>
         {/* Items table */}
         <div style={{ marginBottom:20 }}>
           <div style={{ fontWeight:700, fontSize:13, marginBottom:10 }}>📦 Purchased Items</div>
-          <div style={{ background:"#fff", border:"1px solid #e2e8f0", borderRadius:8, overflowX:"auto", overflowY:"hidden" }}>
+          <div style={{ background:"#fff", border:"1px solid #e6e9f2", borderRadius:8, overflowX:"auto", overflowY:"hidden" }}>
             {/* Table header */}
             <div style={{ display:"grid",
               gridTemplateColumns:"minmax(240px,2fr) 64px 100px 140px 70px 90px 105px 78px 95px 88px 100px 40px",
-              minWidth:1320, gap:0, background:"#f8fafc", padding:"8px 10px",
+              minWidth:1320, gap:0, background:"#f7f8fc", padding:"8px 10px",
               fontSize:11, fontWeight:700, color:"#374155" }}>
               {["Product","+ New","Model No.","Warehouse","Qty","Rate","Billing Rate","GST %","Transport","Trans GST","Total",""].map(h => (
                 <div key={h} style={{ padding:"0 4px" }}>{h}</div>
@@ -212,7 +212,7 @@ export default function CreatePurchase({ navigate }) {
               const isNewForm = newProductRow === i;
 
               return (
-                <div key={i} style={{ borderTop:"1px solid #f1f5f9" }}>
+                <div key={i} style={{ borderTop:"1px solid #f1f3f9" }}>
                   {/* Row */}
                   <div style={{ display:"grid",
                     gridTemplateColumns:"minmax(240px,2fr) 64px 100px 140px 70px 90px 105px 78px 95px 88px 100px 40px",
@@ -222,8 +222,8 @@ export default function CreatePurchase({ navigate }) {
                     <div style={{ padding:"0 4px" }}>
                       <select value={it.product}
                         onChange={e => setItem(i, "product", e.target.value)}
-                        style={{ width:"100%", padding:"7px 8px", border:"1px solid #d1d5db",
-                          borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                        style={{ width:"100%", padding:"7px 8px", border:"1px solid #dde1ec",
+                          borderRadius:6, fontSize:12, background:"#fafbfe" }}>
                         <option value="">— Select product —</option>
                         {products.map(p => (
                           <option key={p._id} value={p._id}>
@@ -240,9 +240,9 @@ export default function CreatePurchase({ navigate }) {
                         onClick={() => setNewProductRow(isNewForm ? null : i)}
                         style={{
                           width:"100%", padding:"7px 6px", borderRadius:6,
-                          border:`1px solid ${isNewForm ? "#ef4444" : "#3b82f6"}`,
-                          background: isNewForm ? "#fee2e2" : "#eff6ff",
-                          color: isNewForm ? "#991b1b" : "#1e40af",
+                          border:`1px solid ${isNewForm ? "#e0524c" : "#5a8be8"}`,
+                          background: isNewForm ? "#fdeceb" : "#f2f6fe",
+                          color: isNewForm ? "#a33a35" : "#34509f",
                           cursor:"pointer", fontSize:11, fontWeight:700,
                           whiteSpace:"nowrap",
                         }}>
@@ -261,8 +261,8 @@ export default function CreatePurchase({ navigate }) {
                       {warehouseOptions.length ? (
                         <select value={it.warehouse || ""}
                           onChange={e => setItem(i, "warehouse", e.target.value)}
-                          style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db",
-                            borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                          style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec",
+                            borderRadius:6, fontSize:12, background:"#fafbfe" }}>
                           {it.warehouse && !warehouseOptions.some(w => w.name === it.warehouse) && (
                             <option value={it.warehouse}>{it.warehouse}</option>
                           )}
@@ -272,7 +272,7 @@ export default function CreatePurchase({ navigate }) {
                         <input value={it.warehouse || ""}
                           onChange={e => setItem(i, "warehouse", e.target.value)}
                           placeholder="Main Warehouse"
-                          style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db",
+                          style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec",
                             borderRadius:6, fontSize:12 }} />
                       )}
                     </div>
@@ -281,7 +281,7 @@ export default function CreatePurchase({ navigate }) {
                     <div style={{ padding:"0 4px" }}>
                       <input type="number" min="1" value={it.qty}
                         onChange={e => setItem(i, "qty", e.target.value)}
-                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db",
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec",
                           borderRadius:6, fontSize:12, textAlign:"center" }} />
                     </div>
 
@@ -290,7 +290,7 @@ export default function CreatePurchase({ navigate }) {
                       <input type="number" value={it.rate}
                         onChange={e => setItem(i, "rate", e.target.value)}
                         placeholder="₹"
-                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db",
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec",
                           borderRadius:6, fontSize:12 }} />
                     </div>
 
@@ -299,7 +299,7 @@ export default function CreatePurchase({ navigate }) {
                       <input type="number" value={it.billingRate}
                         onChange={e => setItem(i, "billingRate", e.target.value)}
                         placeholder="Taxable"
-                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db",
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec",
                           borderRadius:6, fontSize:12 }} />
                     </div>
 
@@ -307,8 +307,8 @@ export default function CreatePurchase({ navigate }) {
                     <div style={{ padding:"0 4px" }}>
                       <select value={it.gstRate}
                         onChange={e => setItem(i, "gstRate", e.target.value)}
-                        style={{ width:"100%", padding:"7px 4px", border:"1px solid #d1d5db",
-                          borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                        style={{ width:"100%", padding:"7px 4px", border:"1px solid #dde1ec",
+                          borderRadius:6, fontSize:12, background:"#fafbfe" }}>
                         {["0","5","9","12","18","28"].map(r => (
                           <option key={r} value={r}>{r}%</option>
                         ))}
@@ -320,7 +320,7 @@ export default function CreatePurchase({ navigate }) {
                       <input type="number" value={it.transportAmount}
                         onChange={e => setItem(i, "transportAmount", e.target.value)}
                         placeholder="0"
-                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db",
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec",
                           borderRadius:6, fontSize:12 }} />
                     </div>
 
@@ -328,8 +328,8 @@ export default function CreatePurchase({ navigate }) {
                     <div style={{ padding:"0 4px" }}>
                       <select value={it.transportGstRate}
                         onChange={e => setItem(i, "transportGstRate", e.target.value)}
-                        style={{ width:"100%", padding:"7px 4px", border:"1px solid #d1d5db",
-                          borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                        style={{ width:"100%", padding:"7px 4px", border:"1px solid #dde1ec",
+                          borderRadius:6, fontSize:12, background:"#fafbfe" }}>
                         {["0","5","12","18","28"].map(r => (
                           <option key={r} value={r}>{r}%</option>
                         ))}
@@ -344,7 +344,7 @@ export default function CreatePurchase({ navigate }) {
                     {/* Remove */}
                     <div style={{ padding:"0 4px" }}>
                       <button onClick={() => removeItem(i)}
-                        style={{ background:"#fee2e2", color:"#991b1b", border:"none",
+                        style={{ background:"#fdeceb", color:"#a33a35", border:"none",
                           borderRadius:4, padding:"5px 8px", cursor:"pointer",
                           fontSize:11, width:"100%" }}>✕</button>
                     </div>
@@ -366,7 +366,7 @@ export default function CreatePurchase({ navigate }) {
               );
             })}
 
-            <div style={{ padding:"10px 14px", borderTop:"1px solid #f1f5f9" }}>
+            <div style={{ padding:"10px 14px", borderTop:"1px solid #f1f3f9" }}>
               <Btn color="blue" sm onClick={addItem}>+ Add Item</Btn>
             </div>
           </div>
@@ -377,26 +377,26 @@ export default function CreatePurchase({ navigate }) {
           <FormGroup label="Notes">
             <FormInput placeholder="Any notes..." value={form.notes} onChange={set("notes")} />
           </FormGroup>
-          <div style={{ background:"#f8fafc", borderRadius:8, padding:16, fontSize:13 }}>
+          <div style={{ background:"#f7f8fc", borderRadius:8, padding:16, fontSize:13 }}>
             <div style={{ fontWeight:700, marginBottom:10 }}>Purchase Summary</div>
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}>
               <span>Subtotal</span><span>₹{totals.sub.toFixed(2)}</span>
             </div>
-            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#64748b" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#6b7392" }}>
               <span>Transport</span><span>₹{totals.transport.toFixed(2)}</span>
             </div>
-            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#f59e0b" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#e5a03a" }}>
               <span>Total GST</span><span>₹{totals.gst.toFixed(2)}</span>
             </div>
             <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0",
-              borderTop:"2px solid #e2e8f0", fontWeight:800, fontSize:15 }}>
+              borderTop:"2px solid #e6e9f2", fontWeight:800, fontSize:15 }}>
               <span>Grand Total</span><span>₹{grand.toFixed(2)}</span>
             </div>
-            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#16a34a" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#1f9d6b" }}>
               <span>Amount Paid</span><span>₹{totalPaid.toFixed(2)}</span>
             </div>
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0",
-              color:(grand-totalPaid)>0?"#ef4444":"#94a3b8", fontWeight:700 }}>
+              color:(grand-totalPaid)>0?"#e0524c":"#9aa1b9", fontWeight:700 }}>
               <span>Outstanding</span>
               <span>₹{Math.max(0, grand-totalPaid).toFixed(2)}</span>
             </div>

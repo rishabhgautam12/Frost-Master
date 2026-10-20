@@ -88,11 +88,11 @@ export default function ProductStock({ navigate }) {
       {/* ── Summary Cards ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(145px,1fr))", gap: 12, marginBottom: 18 }}>
         {[
-          { label: "Total Stock Units",  value: totalUnits,                          color: "#3b82f6", icon: "📦" },
-          { label: "Stock Value", value: `₹${totalValue.toLocaleString()}`,   color: "#8b5cf6", icon: "💰" },
-          { label: "Low Stock Items",    value: lowStock,                             color: "#f59e0b", icon: "⚠️" },
-          { label: "Out of Stock",       value: outOfStock,                           color: "#ef4444", icon: "🚫" },
-          { label: "Negative Stock",     value: negativeStock,                        color: "#dc2626", icon: "📉" },
+          { label: "Total Stock Units",  value: totalUnits,                          color: "#5a8be8", icon: "📦" },
+          { label: "Stock Value", value: `₹${totalValue.toLocaleString()}`,   color: "#d946ef", icon: "💰" },
+          { label: "Low Stock Items",    value: lowStock,                             color: "#e5a03a", icon: "⚠️" },
+          { label: "Out of Stock",       value: outOfStock,                           color: "#e0524c", icon: "🚫" },
+          { label: "Negative Stock",     value: negativeStock,                        color: "#d0433d", icon: "📉" },
         ].map((c, i) => {
           const key = ["all", "value", "low", "out", "negative"][i];
           const active = stockFilter === key;
@@ -100,16 +100,16 @@ export default function ProductStock({ navigate }) {
           <button type="button" key={key} onClick={() => setStockFilter(key)} style={{
             textAlign: "left", cursor: "pointer",
             background: "#fff", borderRadius: 10, padding: "14px 16px",
-            border: active ? `2px solid ${c.color}` : "1px solid #e2e8f0", borderLeft: `4px solid ${c.color}`,
+            border: active ? `2px solid ${c.color}` : "1px solid #e6e9f2", borderLeft: `4px solid ${c.color}`,
             boxShadow: active ? "0 6px 16px rgba(15, 23, 42, 0.12)" : "none",
           }}>
-            <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ fontSize: 11, color: "#6b7392", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
               {c.icon} {c.label}
             </div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: (c.label === "Negative Stock" && negativeStock > 0) ? "#dc2626" : "#1e293b", marginTop: 4 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: (c.label === "Negative Stock" && negativeStock > 0) ? "#d0433d" : "#0f1535", marginTop: 4 }}>
               {c.value}
             </div>
-            {key === "value" && <div style={{ fontSize: 10.5, color: "#64748b", marginTop: 2 }}>{valueStock} valued item{valueStock === 1 ? "" : "s"}</div>}
+            {key === "value" && <div style={{ fontSize: 10.5, color: "#6b7392", marginTop: 2 }}>{valueStock} valued item{valueStock === 1 ? "" : "s"}</div>}
           </button>
           );
         })}
@@ -117,7 +117,7 @@ export default function ProductStock({ navigate }) {
 
       {/* Negative stock warning banner */}
       {negativeStock > 0 && (
-        <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "#b91c1c", display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ background: "#fef2f2", border: "1px solid #f3b8b4", borderRadius: 8, padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "#b91c1c", display: "flex", alignItems: "center", gap: 8 }}>
           📉 <strong>{negativeStock} product{negativeStock > 1 ? "s have" : " has"} negative stock</strong> — sales have been recorded beyond available stock. Please restock or verify.
         </div>
       )}
@@ -161,34 +161,34 @@ export default function ProductStock({ navigate }) {
             </thead>
             <tbody>
               {filteredProducts.length === 0
-                ? <tr><td colSpan={11} style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>No products found.</td></tr>
+                ? <tr><td colSpan={11} style={{ padding: 40, textAlign: "center", color: "#9aa1b9" }}>No products found.</td></tr>
                 : filteredProducts.map(p => {
                   const status   = getStatus(p);
                   const stockVal = stockValueOf(p);
                   const isNeg    = p.stock < 0;
                   return (
                     <tr key={p._id}
-                      style={{ borderBottom: "1px solid #f1f5f9", background: isNeg ? "#fff5f5" : "" }}
-                      onMouseEnter={e => e.currentTarget.style.background = "#f0fdfa"}
+                      style={{ borderBottom: "1px solid #f1f3f9", background: isNeg ? "#fff5f5" : "" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#f5f3ff"}
                       onMouseLeave={e => e.currentTarget.style.background = isNeg ? "#fff5f5" : ""}>
                       <Td style={{ fontWeight: 700 }}>{p.name}</Td>
                       <Td style={{ fontFamily: "monospace", color: "#0ea5e9", fontSize: 11 }}>{p.modelNumber}</Td>
-                      <Td style={{ color: "#64748b" }}>{p.vendor?.name || "—"}</Td>
-                      <Td style={{ color: "#475569", fontSize: 11, maxWidth: 220 }}>
+                      <Td style={{ color: "#6b7392" }}>{p.vendor?.name || "—"}</Td>
+                      <Td style={{ color: "#4a5272", fontSize: 11, maxWidth: 220 }}>
                         {warehouseSummary(p.warehouses?.length ? p.warehouses : defaultWarehouseRows(p.stock))}
                       </Td>
                       <Td>₹{p.purchasePrice.toLocaleString()}</Td>
-                      <Td style={{ color: "#16a34a", fontWeight: 700 }}>₹{p.sellingPrice.toLocaleString()}</Td>
+                      <Td style={{ color: "#1f9d6b", fontWeight: 700 }}>₹{p.sellingPrice.toLocaleString()}</Td>
                       <Td>
                         <span style={{
                           fontWeight: 800, fontSize: 14,
-                          color: isNeg ? "#dc2626" : p.stock === 0 ? "#ef4444" : p.stock <= p.minStockAlert ? "#f59e0b" : "#1e293b",
+                          color: isNeg ? "#d0433d" : p.stock === 0 ? "#e0524c" : p.stock <= p.minStockAlert ? "#e5a03a" : "#0f1535",
                         }}>
                           {p.stock}
                           {isNeg && <span style={{ fontSize: 10, marginLeft: 3 }}>📉</span>}
                         </span>
                       </Td>
-                      <Td style={{ color: "#64748b" }}>{p.minStockAlert}</Td>
+                      <Td style={{ color: "#6b7392" }}>{p.minStockAlert}</Td>
                       <Td>₹{stockVal.toLocaleString()}</Td>
                       <Td>
                         <Badge color={statusColor[status]}>{status}</Badge>
@@ -207,19 +207,19 @@ export default function ProductStock({ navigate }) {
             </tbody>
             {filteredProducts.length > 0 && (
               <tfoot>
-                <tr style={{ background: "#ccfbf1", borderTop: "2px solid #14b8a6" }}>
-                  <td colSpan={6} style={{ padding: "10px 12px", fontWeight: 800, fontSize: 12, color: "#92400e" }}>
+                <tr style={{ background: "#ede9fe", borderTop: "2px solid #8b5cf6" }}>
+                  <td colSpan={6} style={{ padding: "10px 12px", fontWeight: 800, fontSize: 12, color: "#8a5a12" }}>
                     📊 TOTAL ({filteredProducts.length} products)
                   </td>
                   <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 14,
-                    color: filteredUnits < 0 ? "#dc2626" : "#1e293b" }}>
+                    color: filteredUnits < 0 ? "#d0433d" : "#0f1535" }}>
                     {filteredUnits}
                   </td>
                   <td style={{ padding: "10px 12px" }}></td>
-                  <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 13, color: "#1e293b" }}>
+                  <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 13, color: "#0f1535" }}>
                     ₹{filteredValue.toLocaleString()}
                   </td>
-                  <td colSpan={2} style={{ padding: "10px 12px", fontSize: 11, color: "#92400e" }}>
+                  <td colSpan={2} style={{ padding: "10px 12px", fontSize: 11, color: "#8a5a12" }}>
                     {negativeStock > 0
                       ? `⚠️ ${negativeStock} product${negativeStock > 1 ? "s" : ""} in negative`
                       : outOfStock > 0
@@ -239,21 +239,21 @@ export default function ProductStock({ navigate }) {
         title={`Adjust Stock — ${adjModal?.name}`}>
         {adjModal && (
           <div>
-            <div style={{ background: "#f8fafc", borderRadius: 8, padding: "12px 16px", marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+            <div style={{ background: "#f7f8fc", borderRadius: 8, padding: "12px 16px", marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
               <div>
-                <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Current Stock</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: adjModal.stock < 0 ? "#dc2626" : "#1e293b" }}>
+                <div style={{ fontSize: 10, color: "#6b7392", fontWeight: 700, textTransform: "uppercase" }}>Current Stock</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: adjModal.stock < 0 ? "#d0433d" : "#0f1535" }}>
                   {adjModal.stock} units
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Min Alert</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>{adjModal.minStockAlert}</div>
+                <div style={{ fontSize: 10, color: "#6b7392", fontWeight: 700, textTransform: "uppercase" }}>Min Alert</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#0f1535" }}>{adjModal.minStockAlert}</div>
               </div>
               <div>
-                <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>After Adjustment</div>
+                <div style={{ fontSize: 10, color: "#6b7392", fontWeight: 700, textTransform: "uppercase" }}>After Adjustment</div>
                 <div style={{ fontSize: 20, fontWeight: 800,
-                  color: previewStock < 0 ? "#dc2626" : previewStock === 0 ? "#ef4444" : "#16a34a" }}>
+                  color: previewStock < 0 ? "#d0433d" : previewStock === 0 ? "#e0524c" : "#1f9d6b" }}>
                   {previewStock ?? adjModal.stock} units
                 </div>
               </div>
@@ -295,7 +295,7 @@ export default function ProductStock({ navigate }) {
             </FormGroup>
 
             {previewStock < 0 && (
-              <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 7, padding: "8px 12px", marginBottom: 12, fontSize: 11.5, color: "#b91c1c" }}>
+              <div style={{ background: "#fef2f2", border: "1px solid #f3b8b4", borderRadius: 7, padding: "8px 12px", marginBottom: 12, fontSize: 11.5, color: "#b91c1c" }}>
                 ⚠️ This will result in negative stock ({previewStock} units). Proceed only if intentional.
               </div>
             )}

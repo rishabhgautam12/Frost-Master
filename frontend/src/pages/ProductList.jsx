@@ -112,7 +112,7 @@ export default function ProductList({ navigate }) {
         <Input placeholder="Search by name or model number..." value={search}
           onChange={e => setSearch(e.target.value)} style={{ width:220 }} />
         <Btn color="blue" onClick={load}>Search</Btn>
-        <span style={{ fontSize:11, color:"#64748b", marginLeft:"auto" }}>
+        <span style={{ fontSize:11, color:"#6b7392", marginLeft:"auto" }}>
           {products.length} products
         </span>
       </SearchBar>
@@ -128,8 +128,8 @@ export default function ProductList({ navigate }) {
               {products.length === 0
                 ? <tr><td colSpan={13}><EmptyState text="No products found. Add one!" /></td></tr>
                 : products.map(p => (
-                  <tr key={p._id} style={{ borderBottom:"1px solid #f1f5f9" }}
-                    onMouseEnter={e=>e.currentTarget.style.background="#f0fdfa"}
+                  <tr key={p._id} style={{ borderBottom:"1px solid #f1f3f9" }}
+                    onMouseEnter={e=>e.currentTarget.style.background="#f5f3ff"}
                     onMouseLeave={e=>e.currentTarget.style.background=""}>
                     <Td style={{ fontWeight:700 }}>{p.name}</Td>
                     <Td style={{ fontFamily:"monospace", color:"#0ea5e9", fontSize:11 }}>
@@ -138,16 +138,16 @@ export default function ProductList({ navigate }) {
                     <Td style={{ fontFamily:"monospace" }}>{p.hsnCode || "-"}</Td>
                     <Td><Badge color={p.productType === "Imported" ? "purple" : "green"}>{p.productType || "Manufacturing"}</Badge></Td>
                     <Td>{p.brand||"—"}</Td>
-                    <Td style={{ color:"#64748b" }}>{p.vendor?.name||"—"}</Td>
-                    <Td style={{ color:"#475569", fontSize:11, maxWidth:190 }}>
+                    <Td style={{ color:"#6b7392" }}>{p.vendor?.name||"—"}</Td>
+                    <Td style={{ color:"#4a5272", fontSize:11, maxWidth:190 }}>
                       {warehouseSummary(p.warehouses?.length ? p.warehouses : defaultWarehouseRows(p.stock))}
                     </Td>
                     <Td>₹{p.purchasePrice.toLocaleString()}</Td>
-                    <Td style={{ color:"#16a34a", fontWeight:700 }}>
+                    <Td style={{ color:"#1f9d6b", fontWeight:700 }}>
                       ₹{p.sellingPrice.toLocaleString()}
                     </Td>
                     <Td style={{ fontWeight:700,
-                      color:+p.profitMargin>=0?"#16a34a":"#ef4444" }}>
+                      color:+p.profitMargin>=0?"#1f9d6b":"#e0524c" }}>
                       {p.profitMargin}%
                     </Td>
                     <Td>
@@ -155,7 +155,7 @@ export default function ProductList({ navigate }) {
                         {p.stock}{p.stock===0?" ⚠️":""}
                       </Badge>
                     </Td>
-                    <Td style={{ color:"#64748b" }}>{p.gstRate||18}%</Td>
+                    <Td style={{ color:"#6b7392" }}>{p.gstRate||18}%</Td>
                     <Td>
                       <div style={{ display:"flex", gap:5 }}>
                         <Btn sm color="blue" onClick={() => openEdit(p)}>✏️ Edit</Btn>
@@ -176,8 +176,8 @@ export default function ProductList({ navigate }) {
         {editProd && (
           <div>
             {margin !== null && (
-              <div style={{ background:+margin>=0?"#dcfce7":"#fee2e2",
-                border:`1px solid ${+margin>=0?"#86efac":"#fca5a5"}`,
+              <div style={{ background:+margin>=0?"#e3f5ec":"#fdeceb",
+                border:`1px solid ${+margin>=0?"#a8e2c6":"#f3b8b4"}`,
                 borderRadius:8, padding:"9px 14px", marginBottom:14, fontSize:12 }}>
                 💡 Margin: <strong>{margin}%</strong> &nbsp;|&nbsp;
                 Buy ₹{editProd.purchasePrice} → Sell ₹{editProd.sellingPrice} →

@@ -22,18 +22,18 @@ import QuickAddProduct from "../components/QuickAddProduct";
 /* ─── small helpers ─── */
 const Stat = ({ label, value, color }) => (
   <div style={{ background:"#fff", borderRadius:8, padding:"14px 16px",
-    borderLeft:`4px solid ${color}`, border:"1px solid #e2e8f0", minWidth:130, flex:1 }}>
-    <div style={{ fontSize:20, fontWeight:800, color:"#1e293b" }}>{value}</div>
-    <div style={{ fontSize:10, color:"#64748b", marginTop:3 }}>{label}</div>
+    borderLeft:`4px solid ${color}`, border:"1px solid #e6e9f2", minWidth:130, flex:1 }}>
+    <div style={{ fontSize:20, fontWeight:800, color:"#0f1535" }}>{value}</div>
+    <div style={{ fontSize:10, color:"#6b7392", marginTop:3 }}>{label}</div>
   </div>
 );
 
 const TH = ({ children }) => (
-  <th style={{ padding:"9px 11px", background:"#14b8a6", textAlign:"left",
-    color:"#ecfeff", fontWeight:700, fontSize:11, whiteSpace:"nowrap" }}>{children}</th>
+  <th style={{ padding:"9px 11px", background:"#8b5cf6", textAlign:"left",
+    color:"#f5f3ff", fontWeight:700, fontSize:11, whiteSpace:"nowrap" }}>{children}</th>
 );
 const TD = ({ children, style={} }) => (
-  <td style={{ padding:"9px 11px", fontSize:12, color:"#334155", ...style }}>{children}</td>
+  <td style={{ padding:"9px 11px", fontSize:12, color:"#3a4260", ...style }}>{children}</td>
 );
 
 /* ────────────────────────────────────────────────
@@ -126,10 +126,10 @@ function PurchasesTab({ vendorId, onRefresh }) {
       {toast && <SuccessToast msg={toast} />}
       {/* summary row */}
       <div style={{ display:"flex", gap:10, marginBottom:14, flexWrap:"wrap" }}>
-        <Stat label="Total Purchases"  value={purchases.length}                              color="#3b82f6" />
-        <Stat label="Total Amount"     value={`₹${totalAmt.toLocaleString()}`}               color="#8b5cf6" />
-        <Stat label="Amount Paid"      value={`₹${totalPaid.toLocaleString()}`}              color="#16a34a" />
-        <Stat label="Outstanding"      value={`₹${(totalAmt-totalPaid).toLocaleString()}`}   color="#ef4444" />
+        <Stat label="Total Purchases"  value={purchases.length}                              color="#5a8be8" />
+        <Stat label="Total Amount"     value={`₹${totalAmt.toLocaleString()}`}               color="#d946ef" />
+        <Stat label="Amount Paid"      value={`₹${totalPaid.toLocaleString()}`}              color="#1f9d6b" />
+        <Stat label="Outstanding"      value={`₹${(totalAmt-totalPaid).toLocaleString()}`}   color="#e0524c" />
       </div>
 
       <div style={{ overflowX:"auto" }}>
@@ -144,8 +144,8 @@ function PurchasesTab({ vendorId, onRefresh }) {
               return (
                 <>
                   <tr key={p._id}
-                    style={{ borderBottom:"1px solid #f1f5f9", cursor:"pointer" }}
-                    onMouseEnter={e => e.currentTarget.style.background="#f0fdfa"}
+                    style={{ borderBottom:"1px solid #f1f3f9", cursor:"pointer" }}
+                    onMouseEnter={e => e.currentTarget.style.background="#f5f3ff"}
                     onMouseLeave={e => e.currentTarget.style.background=""}>
                     <TD>
                       <button onClick={() => setExpanded(expanded===p._id ? null : p._id)}
@@ -158,8 +158,8 @@ function PurchasesTab({ vendorId, onRefresh }) {
                     <TD style={{ fontFamily:"monospace", fontSize:11 }}>{p.invoiceNo||"—"}</TD>
                     <TD>{p.items?.length||0}</TD>
                     <TD style={{ fontWeight:700 }}>₹{p.grandTotal.toLocaleString()}</TD>
-                    <TD style={{ color:"#16a34a", fontWeight:700 }}>₹{(p.amountPaid||0).toLocaleString()}</TD>
-                    <TD style={{ color: due>0?"#ef4444":"#94a3b8", fontWeight:700 }}>
+                    <TD style={{ color:"#1f9d6b", fontWeight:700 }}>₹{(p.amountPaid||0).toLocaleString()}</TD>
+                    <TD style={{ color: due>0?"#e0524c":"#9aa1b9", fontWeight:700 }}>
                       {due>0 ? `₹${due.toLocaleString()}` : "—"}
                     </TD>
                     <TD>{p.paymentMode}</TD>
@@ -173,19 +173,19 @@ function PurchasesTab({ vendorId, onRefresh }) {
 
                   {/* Expanded items */}
                   {expanded===p._id && (
-                    <tr style={{ background:"#f8fafc" }}>
+                    <tr style={{ background:"#f7f8fc" }}>
                       <td colSpan={11} style={{ padding:"12px 20px" }}>
-                        <div style={{ fontSize:11, fontWeight:700, color:"#64748b", marginBottom:8 }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:"#6b7392", marginBottom:8 }}>
                           📦 PURCHASE ITEMS
                         </div>
                         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11 }}>
                           <thead><tr>
                             {["Product","Model No.","Qty","Rate (₹)","Total (₹)","GST (₹)"]
-                              .map(h=><th key={h} style={{ padding:"6px 10px", background:"#e2e8f0", textAlign:"left", fontWeight:700 }}>{h}</th>)}
+                              .map(h=><th key={h} style={{ padding:"6px 10px", background:"#e6e9f2", textAlign:"left", fontWeight:700 }}>{h}</th>)}
                           </tr></thead>
                           <tbody>
                             {(p.items||[]).map((it,i)=>(
-                              <tr key={i} style={{ borderBottom:"1px solid #e2e8f0" }}>
+                              <tr key={i} style={{ borderBottom:"1px solid #e6e9f2" }}>
                                 <td style={{ padding:"6px 10px", fontWeight:700 }}>{it.productName||"—"}</td>
                                 <td style={{ padding:"6px 10px", fontFamily:"monospace", color:"#0ea5e9" }}>
                                   {it.product?.modelNumber||"—"}
@@ -193,13 +193,13 @@ function PurchasesTab({ vendorId, onRefresh }) {
                                 <td style={{ padding:"6px 10px" }}>{it.qty}</td>
                                 <td style={{ padding:"6px 10px" }}>₹{it.rate?.toLocaleString()}</td>
                                 <td style={{ padding:"6px 10px", fontWeight:700 }}>₹{it.total?.toLocaleString()}</td>
-                                <td style={{ padding:"6px 10px", color:"#f59e0b" }}>₹{it.gstAmount?.toFixed(2)}</td>
+                                <td style={{ padding:"6px 10px", color:"#e5a03a" }}>₹{it.gstAmount?.toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                         {p.notes && (
-                          <div style={{ marginTop:8, fontSize:11, color:"#64748b" }}>
+                          <div style={{ marginTop:8, fontSize:11, color:"#6b7392" }}>
                             📝 Notes: {p.notes}
                           </div>
                         )}
@@ -211,13 +211,13 @@ function PurchasesTab({ vendorId, onRefresh }) {
             })}
           </tbody>
           <tfoot>
-            <tr style={{ background:"#eef6f5", fontWeight:800 }}>
+            <tr style={{ background:"#f5f3ff", fontWeight:800 }}>
               <td colSpan={5} style={{ padding:"10px 11px", fontSize:12 }}>
                 TOTAL ({purchases.length} purchases)
               </td>
               <td style={{ padding:"10px 11px" }}>₹{totalAmt.toLocaleString()}</td>
-              <td style={{ padding:"10px 11px", color:"#16a34a" }}>₹{totalPaid.toLocaleString()}</td>
-              <td style={{ padding:"10px 11px", color:"#ef4444" }}>₹{(totalAmt-totalPaid).toLocaleString()}</td>
+              <td style={{ padding:"10px 11px", color:"#1f9d6b" }}>₹{totalPaid.toLocaleString()}</td>
+              <td style={{ padding:"10px 11px", color:"#e0524c" }}>₹{(totalAmt-totalPaid).toLocaleString()}</td>
               <td colSpan={3}></td>
             </tr>
           </tfoot>
@@ -243,20 +243,20 @@ function PurchasesTab({ vendorId, onRefresh }) {
           return (
             <div>
               {/* Purchase summary strip */}
-              <div style={{ background:"#f8fafc", border:"1px solid #e2e8f0", borderRadius:8,
+              <div style={{ background:"#f7f8fc", border:"1px solid #e6e9f2", borderRadius:8,
                 padding:"12px 16px", marginBottom:16, display:"grid",
                 gridTemplateColumns:"repeat(3,1fr)", gap:10, fontSize:12 }}>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700, textTransform:"uppercase", marginBottom:3 }}>Grand Total</div>
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700, textTransform:"uppercase", marginBottom:3 }}>Grand Total</div>
                   <div style={{ fontWeight:800, fontSize:15 }}>₹{grandTotal.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700, textTransform:"uppercase", marginBottom:3 }}>New Amount Paid</div>
-                  <div style={{ fontWeight:700, color:"#16a34a", fontSize:15 }}>₹{newPaid.toLocaleString()}</div>
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700, textTransform:"uppercase", marginBottom:3 }}>New Amount Paid</div>
+                  <div style={{ fontWeight:700, color:"#1f9d6b", fontSize:15 }}>₹{newPaid.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700, textTransform:"uppercase", marginBottom:3 }}>New Balance</div>
-                  <div style={{ fontWeight:800, color: newDue>0?"#ef4444":"#16a34a", fontSize:15 }}>
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700, textTransform:"uppercase", marginBottom:3 }}>New Balance</div>
+                  <div style={{ fontWeight:800, color: newDue>0?"#e0524c":"#1f9d6b", fontSize:15 }}>
                     {newDue>0 ? `₹${newDue.toLocaleString()}` : "✅ Fully Paid"}
                   </div>
                 </div>
@@ -278,29 +278,29 @@ function PurchasesTab({ vendorId, onRefresh }) {
                   <FormInput type="number" placeholder="0"
                     value={editForm.amountPaid} onChange={setF("amountPaid")} />
                   {+editForm.amountPaid > grandTotal && (
-                    <div style={{ color:"#ef4444", fontSize:10, marginTop:3 }}>
+                    <div style={{ color:"#e0524c", fontSize:10, marginTop:3 }}>
                       ⚠️ Cannot exceed grand total ₹{grandTotal.toLocaleString()}
                     </div>
                   )}
                 </FormGroup>
               </div>
               <div style={{ marginBottom:16 }}>
-                <div style={{ fontWeight:800, fontSize:13, marginBottom:8, color:"#1e293b" }}>Purchase Items</div>
-                <div style={{ border:"1px solid #e2e8f0", borderRadius:8, overflowX:"auto" }}>
-                  <div style={{ display:"grid", gridTemplateColumns:"minmax(210px,2fr) 95px 130px 70px 95px 82px 92px", minWidth:820, background:"#f8fafc", padding:"8px 10px", fontSize:11, fontWeight:800, color:"#1e293b" }}>
+                <div style={{ fontWeight:800, fontSize:13, marginBottom:8, color:"#0f1535" }}>Purchase Items</div>
+                <div style={{ border:"1px solid #e6e9f2", borderRadius:8, overflowX:"auto" }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"minmax(210px,2fr) 95px 130px 70px 95px 82px 92px", minWidth:820, background:"#f7f8fc", padding:"8px 10px", fontSize:11, fontWeight:800, color:"#0f1535" }}>
                     {["Product","Model No.","Warehouse","Qty","Rate","GST %","Total"].map(h => <div key={h} style={{ padding:"0 4px" }}>{h}</div>)}
                   </div>
                   {editItems.map((it, idx) => {
                     const rowTotal = (+it.qty || 0) * (+it.rate || 0);
                     const rowGst = (rowTotal * (+it.gstRate || 0)) / 100;
                     return (
-                      <div key={idx} style={{ display:"grid", gridTemplateColumns:"minmax(210px,2fr) 95px 130px 70px 95px 82px 92px", minWidth:820, padding:"8px 10px", borderTop:"1px solid #f1f5f9", alignItems:"start" }}>
+                      <div key={idx} style={{ display:"grid", gridTemplateColumns:"minmax(210px,2fr) 95px 130px 70px 95px 82px 92px", minWidth:820, padding:"8px 10px", borderTop:"1px solid #f1f3f9", alignItems:"start" }}>
                         <div style={{ padding:"7px 4px 0", fontWeight:700 }}>{it.productName || "Item"}</div>
                         <div style={{ padding:"7px 4px 0", fontFamily:"monospace", color:"#0ea5e9", fontSize:11 }}>{it.modelNumber || "-"}</div>
                         <div style={{ padding:"0 4px" }}>
                           {warehouseOptions.length ? (
                             <select value={it.warehouse} onChange={e => setItem(idx, "warehouse", e.target.value)}
-                              style={{ width:"100%", padding:"7px 8px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box", background:"#f9fafb" }}>
+                              style={{ width:"100%", padding:"7px 8px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, boxSizing:"border-box", background:"#fafbfe" }}>
                               {it.warehouse && !warehouseOptions.some(w => w.name === it.warehouse) && (
                                 <option value={it.warehouse}>{it.warehouse}</option>
                               )}
@@ -308,24 +308,24 @@ function PurchasesTab({ vendorId, onRefresh }) {
                             </select>
                           ) : (
                             <input value={it.warehouse} onChange={e => setItem(idx, "warehouse", e.target.value)}
-                              style={{ width:"100%", padding:"7px 8px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
+                              style={{ width:"100%", padding:"7px 8px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
                           )}
                         </div>
                         <div style={{ padding:"0 4px" }}>
                           <input type="number" min="1" value={it.qty} onChange={e => setItem(idx, "qty", e.target.value)}
-                            style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
+                            style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
                         </div>
                         <div style={{ padding:"0 4px" }}>
                           <input type="number" min="0" value={it.rate} onChange={e => setItem(idx, "rate", e.target.value)}
-                            style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
+                            style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
                         </div>
                         <div style={{ padding:"0 4px" }}>
                           <select value={it.gstRate} onChange={e => setItem(idx, "gstRate", e.target.value)}
-                            style={{ width:"100%", padding:"7px 4px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                            style={{ width:"100%", padding:"7px 4px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, background:"#fafbfe" }}>
                             {["0","5","9","12","18","28"].map(r => <option key={r} value={r}>{r}%</option>)}
                           </select>
                         </div>
-                        <div style={{ padding:"7px 4px 0", fontWeight:800, color:"#16a34a", fontSize:12 }}>
+                        <div style={{ padding:"7px 4px 0", fontWeight:800, color:"#1f9d6b", fontSize:12 }}>
                           ₹{(rowTotal + rowGst).toFixed(2)}
                         </div>
                       </div>
@@ -460,8 +460,8 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
   const ProductFormFields = ({ f, setF, isEdit }) => (
     <>
       {(isEdit ? editMargin : addMargin) !== null && (
-        <div style={{ background:+(isEdit?editMargin:addMargin)>=0?"#dcfce7":"#fee2e2",
-          border:`1px solid ${+(isEdit?editMargin:addMargin)>=0?"#86efac":"#fca5a5"}`,
+        <div style={{ background:+(isEdit?editMargin:addMargin)>=0?"#e3f5ec":"#fdeceb",
+          border:`1px solid ${+(isEdit?editMargin:addMargin)>=0?"#a8e2c6":"#f3b8b4"}`,
           borderRadius:8, padding:"10px 14px", marginBottom:14, fontSize:12 }}>
           💡 Margin: <strong>{isEdit?editMargin:addMargin}%</strong> &nbsp;|&nbsp;
           Buy ₹{f.purchasePrice} → Sell ₹{f.sellingPrice} →
@@ -509,7 +509,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
     <div>
       {toast && <SuccessToast msg={toast} />}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-        <span style={{ fontSize:12, color:"#64748b" }}>{products.length} products from {vendorName}</span>
+        <span style={{ fontSize:12, color:"#6b7392" }}>{products.length} products from {vendorName}</span>
         <Btn color="teal" onClick={() => setAddModal(true)}>+ Add New Product</Btn>
       </div>
 
@@ -529,25 +529,25 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
                     : "—";
                   const stockStatus = p.stock===0?"Out":p.stock<=p.minStockAlert?"Low":"OK";
                   return (
-                    <tr key={p._id} style={{ borderBottom:"1px solid #f1f5f9" }}
-                      onMouseEnter={e=>e.currentTarget.style.background="#f0fdfa"}
+                    <tr key={p._id} style={{ borderBottom:"1px solid #f1f3f9" }}
+                      onMouseEnter={e=>e.currentTarget.style.background="#f5f3ff"}
                       onMouseLeave={e=>e.currentTarget.style.background=""}>
                       <TD style={{ fontWeight:700 }}>{p.name}</TD>
                       <TD style={{ fontFamily:"monospace", color:"#0ea5e9", fontSize:11 }}>{p.modelNumber}</TD>
                       <TD style={{ fontFamily:"monospace" }}>{p.hsnCode || "-"}</TD>
                       <TD>{p.brand||"—"}</TD>
                       <TD>₹{p.purchasePrice.toLocaleString()}</TD>
-                      <TD style={{ color:"#16a34a", fontWeight:700 }}>
-                        {p.sellingPrice ? `₹${p.sellingPrice.toLocaleString()}` : <span style={{ color:"#f59e0b" }}>Not set</span>}
+                      <TD style={{ color:"#1f9d6b", fontWeight:700 }}>
+                        {p.sellingPrice ? `₹${p.sellingPrice.toLocaleString()}` : <span style={{ color:"#e5a03a" }}>Not set</span>}
                       </TD>
-                      <TD style={{ color: margin!=="—" && +margin>=0?"#16a34a":"#ef4444", fontWeight:700 }}>
+                      <TD style={{ color: margin!=="—" && +margin>=0?"#1f9d6b":"#e0524c", fontWeight:700 }}>
                         {margin !== "—" ? `${margin}%` : "—"}
                       </TD>
                       <TD style={{ fontWeight:800, fontSize:14,
-                        color:p.stock===0?"#ef4444":p.stock<=p.minStockAlert?"#f59e0b":"#1e293b" }}>
+                        color:p.stock===0?"#e0524c":p.stock<=p.minStockAlert?"#e5a03a":"#0f1535" }}>
                         {p.stock}
                       </TD>
-                      <TD style={{ color:"#64748b" }}>{p.gstRate}%</TD>
+                      <TD style={{ color:"#6b7392" }}>{p.gstRate}%</TD>
                       <TD><Badge color={{ Out:"red", Low:"yellow", OK:"green" }[stockStatus]}>{stockStatus}</Badge></TD>
                       <TD>
                         <Btn sm color="blue" onClick={() => openEdit(p)}>✏️ Edit</Btn>
@@ -663,10 +663,10 @@ function LedgerTab({ vendorId, onRefresh }) {
 
       {/* Summary */}
       <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:14 }}>
-        <Stat label="Total Purchased"    value={`₹${totalPurchased.toLocaleString()}`} color="#3b82f6" />
-        <Stat label="We Paid Them"       value={`₹${totalPaid.toLocaleString()}`}       color="#16a34a" />
-        <Stat label="We Owe (Payable)"   value={`₹${amountPayable.toLocaleString()}`}   color="#ef4444" />
-        <Stat label="They Owe (Returns)" value={`₹${totalReturns.toLocaleString()}`}    color="#f59e0b" />
+        <Stat label="Total Purchased"    value={`₹${totalPurchased.toLocaleString()}`} color="#5a8be8" />
+        <Stat label="We Paid Them"       value={`₹${totalPaid.toLocaleString()}`}       color="#1f9d6b" />
+        <Stat label="We Owe (Payable)"   value={`₹${amountPayable.toLocaleString()}`}   color="#e0524c" />
+        <Stat label="They Owe (Returns)" value={`₹${totalReturns.toLocaleString()}`}    color="#e5a03a" />
       </div>
 
       {entries.length === 0
@@ -688,11 +688,11 @@ function LedgerTab({ vendorId, onRefresh }) {
                   return (
                     <tr key={e._id}
                       style={{
-                        borderBottom:"1px solid #f1f5f9",
-                        background: isPayment ? "#f0fdf4" : "transparent",
+                        borderBottom:"1px solid #f1f3f9",
+                        background: isPayment ? "#f0faf5" : "transparent",
                       }}
-                      onMouseEnter={ev=>ev.currentTarget.style.background=isPayment?"#dcfce7":"#f0fdfa"}
-                      onMouseLeave={ev=>ev.currentTarget.style.background=isPayment?"#f0fdf4":"transparent"}>
+                      onMouseEnter={ev=>ev.currentTarget.style.background=isPayment?"#e3f5ec":"#f5f3ff"}
+                      onMouseLeave={ev=>ev.currentTarget.style.background=isPayment?"#f0faf5":"transparent"}>
                       <TD>{new Date(e.date).toLocaleDateString("en-IN")}</TD>
                       <TD>
                         <Badge color={{
@@ -707,11 +707,11 @@ function LedgerTab({ vendorId, onRefresh }) {
                         {e.invoiceNo||"—"}
                       </TD>
                       {/* Invoice Amount — for Payment rows show "—" since it's not an invoice */}
-                      <TD style={{ fontWeight:700, color: isPayment?"#94a3b8":"#1e293b" }}>
+                      <TD style={{ fontWeight:700, color: isPayment?"#9aa1b9":"#0f1535" }}>
                         {isPayment ? "—" : `₹${e.amount.toLocaleString()}`}
                       </TD>
                       {/* Amount Paid — for Purchase: how much paid so far; for Payment: the payment itself */}
-                      <TD style={{ color:"#16a34a", fontWeight:700 }}>
+                      <TD style={{ color:"#1f9d6b", fontWeight:700 }}>
                         {isPayment
                           ? `₹${e.amount.toLocaleString()}`   // Payment row: amount IS the payment
                           : e.paid > 0
@@ -720,11 +720,11 @@ function LedgerTab({ vendorId, onRefresh }) {
                         }
                       </TD>
                       {/* Balance Due — only meaningful for Purchase entries */}
-                      <TD style={{ color: !isReturn && !isPayment && bal>0?"#ef4444":"#94a3b8", fontWeight:700 }}>
+                      <TD style={{ color: !isReturn && !isPayment && bal>0?"#e0524c":"#9aa1b9", fontWeight:700 }}>
                         {!isReturn && !isPayment && bal>0 ? `₹${bal.toLocaleString()}` : "—"}
                       </TD>
                       {/* Notes */}
-                      <TD style={{ color:"#64748b", fontSize:11, maxWidth:180 }}>
+                      <TD style={{ color:"#6b7392", fontSize:11, maxWidth:180 }}>
                         {e.notes
                           ? <span title={e.notes}>{e.notes.length>40 ? e.notes.slice(0,40)+"…" : e.notes}</span>
                           : "—"
@@ -759,33 +759,33 @@ function LedgerTab({ vendorId, onRefresh }) {
           return (
             <div>
               {/* Invoice summary strip */}
-              <div style={{ background:"#f8fafc", border:"1px solid #e2e8f0",
+              <div style={{ background:"#f7f8fc", border:"1px solid #e6e9f2",
                 borderRadius:8, padding:"12px 16px", marginBottom:16,
                 display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, fontSize:12 }}>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Invoice Amount</div>
                   <div style={{ fontWeight:800, fontSize:14 }}>₹{payModal.amount.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Already Paid</div>
-                  <div style={{ fontWeight:700, color:"#16a34a" }}>₹{payModal.paid.toLocaleString()}</div>
+                  <div style={{ fontWeight:700, color:"#1f9d6b" }}>₹{payModal.paid.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Balance Due</div>
-                  <div style={{ fontWeight:800, color:"#ef4444", fontSize:14 }}>₹{bal.toLocaleString()}</div>
+                  <div style={{ fontWeight:800, color:"#e0524c", fontSize:14 }}>₹{bal.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Current Status</div>
                   <Badge color={{ Settled:"green", Partial:"yellow", Pending:"red" }[payModal.status]}>
                     {payModal.status}
                   </Badge>
                 </div>
                 <div style={{ gridColumn:"span 2" }}>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>After This Payment</div>
                   <Badge color={leftAfter===0 && paying>0 ? "green" : paying>0 ? "yellow" : "red"}>
                     {leftAfter===0 && paying>0
@@ -804,7 +804,7 @@ function LedgerTab({ vendorId, onRefresh }) {
                     onChange={setPay("amount")}
                     placeholder={`Max ₹${bal.toLocaleString()}`} />
                   {paying > bal && (
-                    <div style={{ color:"#ef4444", fontSize:10, marginTop:3 }}>
+                    <div style={{ color:"#e0524c", fontSize:10, marginTop:3 }}>
                       ⚠️ Cannot exceed balance of ₹{bal.toLocaleString()}
                     </div>
                   )}
@@ -977,8 +977,8 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
     <div>
       {toast && <SuccessToast msg={toast} />}
 
-      <div style={{ background:"#f0fdfa", border:"1px solid #ccfbf1", borderRadius:8,
-        padding:"10px 16px", marginBottom:16, fontSize:12, color:"#92400e" }}>
+      <div style={{ background:"#f5f3ff", border:"1px solid #ede9fe", borderRadius:8,
+        padding:"10px 16px", marginBottom:16, fontSize:12, color:"#8a5a12" }}>
         ℹ️ Record a purchase from <strong>{vendorName}</strong>.
         Select an existing product or click <strong>"+ New Product"</strong> to add one on the spot —
         it will be saved to your product list automatically.
@@ -1000,9 +1000,9 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
       </div>
 
       {/* Items */}
-      <div style={{ background:"#fff", borderRadius:8, border:"1px solid #e2e8f0",
+      <div style={{ background:"#fff", borderRadius:8, border:"1px solid #e6e9f2",
         marginBottom:16, overflow:"hidden" }}>
-        <div style={{ padding:"12px 14px", borderBottom:"1px solid #f1f5f9",
+        <div style={{ padding:"12px 14px", borderBottom:"1px solid #f1f3f9",
           fontWeight:700, fontSize:13 }}>
           📦 Purchase Items
         </div>
@@ -1013,21 +1013,21 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
           const isNewProductForm = newProductRow === i;
 
           return (
-            <div key={i} style={{ borderBottom:"1px solid #f1f5f9" }}>
+            <div key={i} style={{ borderBottom:"1px solid #f1f3f9" }}>
               {/* Row */}
               <div style={{ display:"flex", flexWrap:"wrap", gap:8, padding:"10px 14px",
                 alignItems:"flex-end" }}>
                 {/* Product select */}
                 <div style={{ flex:"2 1 180px" }}>
                   <label style={{ display:"block", fontSize:10, fontWeight:700,
-                    color:"#64748b", textTransform:"uppercase", marginBottom:4 }}>
+                    color:"#6b7392", textTransform:"uppercase", marginBottom:4 }}>
                     Product
                   </label>
                   <div style={{ display:"flex", gap:6 }}>
                     <select value={it.product}
                       onChange={e => setItem(i, "product", e.target.value)}
-                      style={{ flex:1, padding:"8px 10px", border:"1px solid #d1d5db",
-                        borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                      style={{ flex:1, padding:"8px 10px", border:"1px solid #dde1ec",
+                        borderRadius:6, fontSize:12, background:"#fafbfe" }}>
                       <option value="">— Select product —</option>
                       {purchaseProducts.map(p => (
                         <option key={p._id} value={p._id}>
@@ -1038,9 +1038,9 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
                     <button
                       onClick={() => setNewProductRow(isNewProductForm ? null : i)}
                       style={{
-                        padding:"7px 10px", borderRadius:6, border:"1px solid #3b82f6",
-                        background: isNewProductForm ? "#3b82f6" : "#eff6ff",
-                        color: isNewProductForm ? "#fff" : "#3b82f6",
+                        padding:"7px 10px", borderRadius:6, border:"1px solid #5a8be8",
+                        background: isNewProductForm ? "#5a8be8" : "#f2f6fe",
+                        color: isNewProductForm ? "#fff" : "#5a8be8",
                         cursor:"pointer", fontSize:11, fontWeight:700, whiteSpace:"nowrap",
                       }}>
                       {isNewProductForm ? "✕ Cancel" : "+ New"}
@@ -1051,10 +1051,10 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
                 {/* Model No */}
                 <div style={{ flex:"1 1 90px" }}>
                   <label style={{ display:"block", fontSize:10, fontWeight:700,
-                    color:"#64748b", textTransform:"uppercase", marginBottom:4 }}>
+                    color:"#6b7392", textTransform:"uppercase", marginBottom:4 }}>
                     Model No.
                   </label>
-                  <div style={{ padding:"8px 10px", background:"#f8fafc", border:"1px solid #e2e8f0",
+                  <div style={{ padding:"8px 10px", background:"#f7f8fc", border:"1px solid #e6e9f2",
                     borderRadius:6, fontSize:11, fontFamily:"monospace", color:"#0ea5e9",
                     minHeight:35 }}>
                     {prod?.modelNumber || "—"}
@@ -1064,14 +1064,14 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
                 {/* Warehouse */}
                 <div style={{ flex:"1 1 140px" }}>
                   <label style={{ display:"block", fontSize:10, fontWeight:700,
-                    color:"#64748b", textTransform:"uppercase", marginBottom:4 }}>
+                    color:"#6b7392", textTransform:"uppercase", marginBottom:4 }}>
                     Warehouse
                   </label>
                   {warehouseOptions.length ? (
                     <select value={it.warehouse || ""}
                       onChange={e => setItem(i, "warehouse", e.target.value)}
-                      style={{ width:"100%", padding:"8px 8px", border:"1px solid #d1d5db",
-                        borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                      style={{ width:"100%", padding:"8px 8px", border:"1px solid #dde1ec",
+                        borderRadius:6, fontSize:12, background:"#fafbfe" }}>
                       {it.warehouse && !warehouseOptions.some(w => w.name === it.warehouse) && (
                         <option value={it.warehouse}>{it.warehouse}</option>
                       )}
@@ -1081,51 +1081,51 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
                     <input value={it.warehouse || ""}
                       onChange={e => setItem(i, "warehouse", e.target.value)}
                       placeholder="Main Warehouse"
-                      style={{ width:"100%", padding:"8px 8px", border:"1px solid #d1d5db",
-                        borderRadius:6, fontSize:12, background:"#f9fafb" }} />
+                      style={{ width:"100%", padding:"8px 8px", border:"1px solid #dde1ec",
+                        borderRadius:6, fontSize:12, background:"#fafbfe" }} />
                   )}
                 </div>
 
                 {/* Qty */}
                 <div style={{ flex:"0 0 70px" }}>
                   <label style={{ display:"block", fontSize:10, fontWeight:700,
-                    color:"#64748b", textTransform:"uppercase", marginBottom:4 }}>Qty</label>
+                    color:"#6b7392", textTransform:"uppercase", marginBottom:4 }}>Qty</label>
                   <input type="number" min="1" value={it.qty}
                     onChange={e => setItem(i, "qty", e.target.value)}
-                    style={{ width:"100%", padding:"8px 8px", border:"1px solid #d1d5db",
+                    style={{ width:"100%", padding:"8px 8px", border:"1px solid #dde1ec",
                       borderRadius:6, fontSize:12, textAlign:"center" }} />
                 </div>
 
                 {/* Rate */}
                 <div style={{ flex:"0 0 90px" }}>
                   <label style={{ display:"block", fontSize:10, fontWeight:700,
-                    color:"#64748b", textTransform:"uppercase", marginBottom:4 }}>Rate (₹)</label>
+                    color:"#6b7392", textTransform:"uppercase", marginBottom:4 }}>Rate (₹)</label>
                   <input type="number" value={it.rate}
                     onChange={e => setItem(i, "rate", e.target.value)}
                     placeholder="₹"
-                    style={{ width:"100%", padding:"8px 8px", border:"1px solid #d1d5db",
+                    style={{ width:"100%", padding:"8px 8px", border:"1px solid #dde1ec",
                       borderRadius:6, fontSize:12 }} />
                 </div>
 
                 {/* Billing Rate */}
                 <div style={{ flex:"0 0 110px" }}>
                   <label style={{ display:"block", fontSize:10, fontWeight:700,
-                    color:"#64748b", textTransform:"uppercase", marginBottom:4 }}>Billing Rate</label>
+                    color:"#6b7392", textTransform:"uppercase", marginBottom:4 }}>Billing Rate</label>
                   <input type="number" value={it.billingRate}
                     onChange={e => setItem(i, "billingRate", e.target.value)}
                     placeholder="Taxable"
-                    style={{ width:"100%", padding:"8px 8px", border:"1px solid #d1d5db",
+                    style={{ width:"100%", padding:"8px 8px", border:"1px solid #dde1ec",
                       borderRadius:6, fontSize:12 }} />
                 </div>
 
                 {/* GST */}
                 <div style={{ flex:"0 0 80px" }}>
                   <label style={{ display:"block", fontSize:10, fontWeight:700,
-                    color:"#64748b", textTransform:"uppercase", marginBottom:4 }}>GST %</label>
+                    color:"#6b7392", textTransform:"uppercase", marginBottom:4 }}>GST %</label>
                   <select value={it.gstRate}
                     onChange={e => setItem(i, "gstRate", e.target.value)}
-                    style={{ width:"100%", padding:"8px 6px", border:"1px solid #d1d5db",
-                      borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                    style={{ width:"100%", padding:"8px 6px", border:"1px solid #dde1ec",
+                      borderRadius:6, fontSize:12, background:"#fafbfe" }}>
                     {["0","5","9","12","18","28"].map(r=><option key={r} value={r}>{r}%</option>)}
                   </select>
                 </div>
@@ -1133,22 +1133,22 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
                 {/* Transport */}
                 <div style={{ flex:"0 0 100px" }}>
                   <label style={{ display:"block", fontSize:10, fontWeight:700,
-                    color:"#64748b", textTransform:"uppercase", marginBottom:4 }}>Transport</label>
+                    color:"#6b7392", textTransform:"uppercase", marginBottom:4 }}>Transport</label>
                   <input type="number" value={it.transportAmount}
                     onChange={e => setItem(i, "transportAmount", e.target.value)}
                     placeholder="0"
-                    style={{ width:"100%", padding:"8px 8px", border:"1px solid #d1d5db",
+                    style={{ width:"100%", padding:"8px 8px", border:"1px solid #dde1ec",
                       borderRadius:6, fontSize:12 }} />
                 </div>
 
                 {/* Transport GST */}
                 <div style={{ flex:"0 0 90px" }}>
                   <label style={{ display:"block", fontSize:10, fontWeight:700,
-                    color:"#64748b", textTransform:"uppercase", marginBottom:4 }}>Trans GST</label>
+                    color:"#6b7392", textTransform:"uppercase", marginBottom:4 }}>Trans GST</label>
                   <select value={it.transportGstRate}
                     onChange={e => setItem(i, "transportGstRate", e.target.value)}
-                    style={{ width:"100%", padding:"8px 6px", border:"1px solid #d1d5db",
-                      borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                    style={{ width:"100%", padding:"8px 6px", border:"1px solid #dde1ec",
+                      borderRadius:6, fontSize:12, background:"#fafbfe" }}>
                     {["0","5","12","18","28"].map(r=><option key={r} value={r}>{r}%</option>)}
                   </select>
                 </div>
@@ -1156,8 +1156,8 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
                 {/* Total */}
                 <div style={{ flex:"0 0 90px" }}>
                   <label style={{ display:"block", fontSize:10, fontWeight:700,
-                    color:"#64748b", textTransform:"uppercase", marginBottom:4 }}>Total</label>
-                  <div style={{ padding:"8px 10px", background:"#f8fafc", border:"1px solid #e2e8f0",
+                    color:"#6b7392", textTransform:"uppercase", marginBottom:4 }}>Total</label>
+                  <div style={{ padding:"8px 10px", background:"#f7f8fc", border:"1px solid #e6e9f2",
                     borderRadius:6, fontSize:12, fontWeight:700 }}>
                     ₹{ci.total.toFixed(2)}
                   </div>
@@ -1166,7 +1166,7 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
                 {/* Remove */}
                 {items.length > 1 && (
                   <button onClick={() => removeRow(i)}
-                    style={{ alignSelf:"flex-end", background:"#fee2e2", color:"#991b1b",
+                    style={{ alignSelf:"flex-end", background:"#fdeceb", color:"#a33a35",
                       border:"none", borderRadius:6, padding:"8px 10px",
                       cursor:"pointer", fontSize:12, marginBottom:1 }}>✕</button>
                 )}
@@ -1204,26 +1204,26 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
             <FormInput placeholder="Any notes..." value={form.notes} onChange={setF("notes")} />
           </FormGroup>
         </div>
-        <div style={{ background:"#f8fafc", borderRadius:8, padding:"16px", fontSize:13 }}>
+        <div style={{ background:"#f7f8fc", borderRadius:8, padding:"16px", fontSize:13 }}>
           <div style={{ fontWeight:700, marginBottom:10 }}>Purchase Summary</div>
           <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}>
             <span>Subtotal</span><span>?{totals.sub.toFixed(2)}</span>
           </div>
-          <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#64748b" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#6b7392" }}>
             <span>Transport</span><span>?{totals.transport.toFixed(2)}</span>
           </div>
-          <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#f59e0b" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#e5a03a" }}>
             <span>Total GST</span><span>₹{totals.gst.toFixed(2)}</span>
           </div>
           <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0",
-            borderTop:"2px solid #e2e8f0", fontWeight:800, fontSize:16, color:"#1e293b" }}>
+            borderTop:"2px solid #e6e9f2", fontWeight:800, fontSize:16, color:"#0f1535" }}>
             <span>Grand Total</span><span>₹{grand.toFixed(2)}</span>
           </div>
-          <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#16a34a" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#1f9d6b" }}>
             <span>{form.paymentMode === "Cash" ? "Cash Amount" : "Amount Paid"}</span><span>₹{(+form.amountPaid||0).toFixed(2)}</span>
           </div>
           <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0",
-            color:(grand-(+form.amountPaid||0))>0?"#ef4444":"#94a3b8", fontWeight:700 }}>
+            color:(grand-(+form.amountPaid||0))>0?"#e0524c":"#9aa1b9", fontWeight:700 }}>
             <span>Outstanding</span>
             <span>₹{Math.max(0, grand-(+form.amountPaid||0)).toFixed(2)}</span>
           </div>
@@ -1281,13 +1281,13 @@ export default function VendorProfile({ vendorId, navigate }) {
       </div>
 
       {/* Vendor header card */}
-      <div style={{ background:"linear-gradient(135deg,#111827,#1f2937)",
+      <div style={{ background:"linear-gradient(135deg,#0f1535,#1f2937)",
         borderRadius:12, padding:"22px 24px", marginBottom:20, color:"#fff" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:12 }}>
           <div>
             <div style={{ fontSize:24, fontWeight:900, letterSpacing:"-0.5px" }}>{vendor.name}</div>
-            <div style={{ fontSize:15, color:"#9ca3af", marginTop:3 }}>{vendor.company}</div>
-            <div style={{ display:"flex", gap:20, marginTop:10, flexWrap:"wrap", fontSize:13, color:"#d1d5db" }}>
+            <div style={{ fontSize:15, color:"#9aa1b9", marginTop:3 }}>{vendor.company}</div>
+            <div style={{ display:"flex", gap:20, marginTop:10, flexWrap:"wrap", fontSize:13, color:"#dde1ec" }}>
               <span>📞 {vendor.phone}</span>
               {vendor.email && <span>📧 {vendor.email}</span>}
               {vendor.city  && <span>📍 {vendor.city}</span>}
@@ -1303,28 +1303,28 @@ export default function VendorProfile({ vendorId, navigate }) {
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",
           gap:10, marginTop:18 }}>
           {[
-            { label:"Total Purchased",    value:`₹${(summary.totalPurchased||0).toLocaleString()}`,  bg:"rgba(59,130,246,0.2)",  border:"#3b82f6" },
-            { label:"We Paid Them",       value:`₹${(summary.totalPaid||0).toLocaleString()}`,        bg:"rgba(22,163,74,0.2)",   border:"#16a34a" },
-            { label:"We Owe (Payable)",   value:`₹${(summary.amountPayable||0).toLocaleString()}`,    bg:"rgba(239,68,68,0.2)",   border:"#ef4444" },
-            { label:"They Owe (Returns)", value:`₹${(summary.totalReturns||0).toLocaleString()}`,     bg:"rgba(245,158,11,0.2)",  border:"#f59e0b" },
+            { label:"Total Purchased",    value:`₹${(summary.totalPurchased||0).toLocaleString()}`,  bg:"rgba(59,130,246,0.2)",  border:"#5a8be8" },
+            { label:"We Paid Them",       value:`₹${(summary.totalPaid||0).toLocaleString()}`,        bg:"rgba(22,163,74,0.2)",   border:"#1f9d6b" },
+            { label:"We Owe (Payable)",   value:`₹${(summary.amountPayable||0).toLocaleString()}`,    bg:"rgba(239,68,68,0.2)",   border:"#e0524c" },
+            { label:"They Owe (Returns)", value:`₹${(summary.totalReturns||0).toLocaleString()}`,     bg:"rgba(245,158,11,0.2)",  border:"#e5a03a" },
           ].map((c,i) => (
             <div key={i} style={{ background:c.bg, borderRadius:8, padding:"12px 14px",
               borderLeft:`3px solid ${c.border}` }}>
               <div style={{ fontSize:18, fontWeight:800, color:"#fff" }}>{c.value}</div>
-              <div style={{ fontSize:10, color:"#9ca3af", marginTop:2 }}>{c.label}</div>
+              <div style={{ fontSize:10, color:"#9aa1b9", marginTop:2 }}>{c.label}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Tabs */}
-      <div style={{ display:"flex", borderBottom:"2px solid #e2e8f0", marginBottom:20, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", borderBottom:"2px solid #e6e9f2", marginBottom:20, flexWrap:"wrap" }}>
         {TABS.map(t => (
           <div key={t.key} onClick={() => setTab(t.key)}
             style={{ padding:"10px 22px", fontWeight:700, fontSize:13, cursor:"pointer",
-              borderBottom: tab===t.key ? "3px solid #14b8a6" : "3px solid transparent",
-              marginBottom:-2, color: tab===t.key ? "#1e293b" : "#64748b",
-              background: t.key==="add-purchase" && tab!==t.key ? "#f0fdf4" : "transparent",
+              borderBottom: tab===t.key ? "3px solid #8b5cf6" : "3px solid transparent",
+              marginBottom:-2, color: tab===t.key ? "#0f1535" : "#6b7392",
+              background: t.key==="add-purchase" && tab!==t.key ? "#f0faf5" : "transparent",
               borderRadius: t.key==="add-purchase" ? "6px 6px 0 0" : 0,
             }}>
             {t.label}

@@ -85,7 +85,7 @@ export default function VendorList({ navigate }) {
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
         marginBottom:14, flexWrap:"wrap", gap:10 }}>
         <Btn color="teal" onClick={() => navigate("vendor-add")}>+ Add New Vendor</Btn>
-        <span style={{ fontSize:12, color:"#64748b" }}>{filtered.length} vendors</span>
+        <span style={{ fontSize:12, color:"#6b7392" }}>{filtered.length} vendors</span>
       </div>
 
       <SearchBar>
@@ -93,12 +93,12 @@ export default function VendorList({ navigate }) {
           onChange={e => setSearch(e.target.value)} style={{ width:240 }} />
       </SearchBar>
 
-      <div style={{ display:"flex", borderBottom:"2px solid #e2e8f0", marginBottom:14 }}>
+      <div style={{ display:"flex", borderBottom:"2px solid #e6e9f2", marginBottom:14 }}>
         {["Active","Inactive"].map(t => (
           <div key={t} onClick={() => setActiveTab(t)}
             style={{ padding:"9px 22px", fontWeight:700, fontSize:12.5, cursor:"pointer",
               borderBottom: activeTab===t ? "3px solid #0ea5e9" : "3px solid transparent",
-              marginBottom:-2, color: activeTab===t ? "#0ea5e9" : "#64748b" }}>{t}</div>
+              marginBottom:-2, color: activeTab===t ? "#0ea5e9" : "#6b7392" }}>{t}</div>
         ))}
       </div>
 
@@ -113,8 +113,8 @@ export default function VendorList({ navigate }) {
               {filtered.length === 0
                 ? <tr><td colSpan={9}><EmptyState text="No vendors found." /></td></tr>
                 : filtered.map(v => (
-                  <tr key={v._id} style={{ borderBottom:"1px solid #f1f5f9" }}
-                    onMouseEnter={e=>e.currentTarget.style.background="#f0fdfa"}
+                  <tr key={v._id} style={{ borderBottom:"1px solid #f1f3f9" }}
+                    onMouseEnter={e=>e.currentTarget.style.background="#f5f3ff"}
                     onMouseLeave={e=>e.currentTarget.style.background=""}>
                     <Td style={{ fontWeight:700 }}>
                       <span onClick={() => navigate(`vendor-profile:${v._id}`)}
@@ -126,12 +126,12 @@ export default function VendorList({ navigate }) {
                     <Td>{v.company}</Td>
                     <Td>{v.city||"—"}</Td>
                     <Td>{v.phone}</Td>
-                    <Td style={{ fontFamily:"monospace", fontSize:10, color:"#94a3b8" }}>
+                    <Td style={{ fontFamily:"monospace", fontSize:10, color:"#9aa1b9" }}>
                       {v.gstin||"—"}
                     </Td>
                     <Td style={{ fontWeight:700 }}>₹{(v.totalPurchased||0).toLocaleString()}</Td>
                     <Td style={{ fontWeight:700,
-                      color:(v.totalPurchased-v.totalPaid)>0?"#ef4444":"#94a3b8" }}>
+                      color:(v.totalPurchased-v.totalPaid)>0?"#e0524c":"#9aa1b9" }}>
                       {(v.totalPurchased-v.totalPaid)>0
                         ? `₹${(v.totalPurchased-v.totalPaid).toLocaleString()}` : "—"}
                     </Td>

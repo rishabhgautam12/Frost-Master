@@ -70,15 +70,15 @@ function PaymentModal({ sale, onClose, onDone }) {
 
   return (
     <Modal open title={`Record Payment — ${sale.invoiceNo}`} onClose={onClose}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16, background: "#f8fafc", padding: 14, borderRadius: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16, background: "#f7f8fc", padding: 14, borderRadius: 8 }}>
         {[
-          { label: "Grand Total",  value: `₹${sale.grandTotal.toLocaleString()}`,  color: "#1e293b" },
-          { label: "Already Paid", value: `₹${sale.amountPaid.toLocaleString()}`,  color: "#16a34a" },
-          { label: "Balance Due",  value: `₹${due.toLocaleString()}`,              color: due > 0 ? "#ef4444" : "#94a3b8" },
+          { label: "Grand Total",  value: `₹${sale.grandTotal.toLocaleString()}`,  color: "#0f1535" },
+          { label: "Already Paid", value: `₹${sale.amountPaid.toLocaleString()}`,  color: "#1f9d6b" },
+          { label: "Balance Due",  value: `₹${due.toLocaleString()}`,              color: due > 0 ? "#e0524c" : "#9aa1b9" },
           { label: "Status",       value: sale.status,                             badge: true },
         ].map((d, i) => (
           <div key={i}>
-            <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>{d.label}</div>
+            <div style={{ fontSize: 10, color: "#6b7392", fontWeight: 700, textTransform: "uppercase" }}>{d.label}</div>
             {d.badge
               ? <div style={{ marginTop: 4 }}><Badge color={stColor[sale.status]}>{sale.status}</Badge></div>
               : <div style={{ fontSize: 18, fontWeight: 800, color: d.color }}>{d.value}</div>
@@ -94,7 +94,7 @@ function PaymentModal({ sale, onClose, onDone }) {
           <Btn color="blue" onClick={() => setAmount(String(due))}>Full Due</Btn>
         </div>
       </FormGroup>
-      {+amount > due && <div style={{color:"#7c3aed",fontWeight:700,marginBottom:10}}>₹{(+amount-due).toLocaleString()} extra will be stored as customer advance.</div>}
+      {+amount > due && <div style={{color:"#c026d3",fontWeight:700,marginBottom:10}}>₹{(+amount-due).toLocaleString()} extra will be stored as customer advance.</div>}
 
       <FormGroup label="Payment Method">
         <FormSelect value={method} onChange={(e) => setMethod(e.target.value)}>
@@ -110,10 +110,10 @@ function PaymentModal({ sale, onClose, onDone }) {
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
           placeholder="Add a note for this payment..."
           rows={2}
-          style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 13, resize: "vertical", boxSizing: "border-box", background: "#f9fafb" }} />
+          style={{ width: "100%", padding: "9px 12px", border: "1px solid #dde1ec", borderRadius: 7, fontSize: 13, resize: "vertical", boxSizing: "border-box", background: "#fafbfe" }} />
       </FormGroup>
 
-      {err && <div style={{ color: "#ef4444", fontSize: 12, marginBottom: 10 }}>⚠️ {err}</div>}
+      {err && <div style={{ color: "#e0524c", fontSize: 12, marginBottom: 10 }}>⚠️ {err}</div>}
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
         <Btn color="cancel" onClick={onClose}>Cancel</Btn>
         <Btn color="green" onClick={handlePay} disabled={saving}>{saving ? "Saving..." : "✅ Record Payment"}</Btn>
@@ -133,49 +133,49 @@ function PaymentHistoryDrawer({ sale, onClose, onAddPayment, isAdmin, onEditPaym
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 10000 }}>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(15,23,42,.42)" }} />
-      <aside style={{ position: "absolute", top: 0, right: 0, height: "100%", width: "min(460px, 100vw)", background: "#f8fafc", boxShadow: "-12px 0 30px rgba(15,23,42,.18)", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "20px 22px", background: "#fff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", gap: 14 }}>
+      <aside style={{ position: "absolute", top: 0, right: 0, height: "100%", width: "min(460px, 100vw)", background: "#f7f8fc", boxShadow: "-12px 0 30px rgba(15,23,42,.18)", display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "20px 22px", background: "#fff", borderBottom: "1px solid #e6e9f2", display: "flex", justifyContent: "space-between", gap: 14 }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a" }}>Payment History</div>
-            <div style={{ marginTop: 3, fontSize: 12, color: "#64748b" }}>{sale.invoiceNo} · {sale.customer?.name || sale.customerName || "Walk-in"}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#0f1535" }}>Payment History</div>
+            <div style={{ marginTop: 3, fontSize: 12, color: "#6b7392" }}>{sale.invoiceNo} · {sale.customer?.name || sale.customerName || "Walk-in"}</div>
           </div>
-          <button onClick={onClose} aria-label="Close payment history" style={{ border: 0, background: "#f1f5f9", borderRadius: 8, width: 34, height: 34, cursor: "pointer", fontSize: 20 }}>×</button>
+          <button onClick={onClose} aria-label="Close payment history" style={{ border: 0, background: "#f1f3f9", borderRadius: 8, width: 34, height: 34, cursor: "pointer", fontSize: 20 }}>×</button>
         </div>
         <div style={{ padding: 18, overflowY: "auto", flex: 1 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 18 }}>
-            {[["Invoice Total", sale.grandTotal, "#0f172a"], ["Total Paid", sale.amountPaid, "#16a34a"], ["Balance Due", sale.amountDue, "#dc2626"]].map(([label, value, color]) => (
-              <div key={label} style={{ padding: "11px 9px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 9 }}>
-                <div style={{ fontSize: 9, fontWeight: 800, color: "#64748b", textTransform: "uppercase" }}>{label}</div>
+            {[["Invoice Total", sale.grandTotal, "#0f1535"], ["Total Paid", sale.amountPaid, "#1f9d6b"], ["Balance Due", sale.amountDue, "#d0433d"]].map(([label, value, color]) => (
+              <div key={label} style={{ padding: "11px 9px", background: "#fff", border: "1px solid #e6e9f2", borderRadius: 9 }}>
+                <div style={{ fontSize: 9, fontWeight: 800, color: "#6b7392", textTransform: "uppercase" }}>{label}</div>
                 <div style={{ marginTop: 4, fontSize: 15, fontWeight: 800, color }}>₹{(+value || 0).toLocaleString()}</div>
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 12, fontWeight: 800, color: "#334155", marginBottom: 10 }}>{payments.length} recorded payment{payments.length === 1 ? "" : "s"}</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#3a4260", marginBottom: 10 }}>{payments.length} recorded payment{payments.length === 1 ? "" : "s"}</div>
           <RefundHistory record={sale} />
           {legacyAmount > 0 && (
             <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 9, padding: 12, marginBottom: 10 }}>
-              <div style={{ fontWeight: 800, color: "#92400e" }}>₹{legacyAmount.toLocaleString()} previously paid</div>
+              <div style={{ fontWeight: 800, color: "#8a5a12" }}>₹{legacyAmount.toLocaleString()} previously paid</div>
               <div style={{ fontSize: 11, color: "#a16207", marginTop: 3 }}>This amount was saved before detailed payment tracking was enabled.</div>
             </div>
           )}
           {payments.length === 0 && legacyAmount === 0 ? (
-            <div style={{ textAlign: "center", color: "#94a3b8", padding: "42px 10px", background: "#fff", border: "1px dashed #cbd5e1", borderRadius: 10 }}>No payments recorded yet.</div>
+            <div style={{ textAlign: "center", color: "#9aa1b9", padding: "42px 10px", background: "#fff", border: "1px dashed #d9deea", borderRadius: 10 }}>No payments recorded yet.</div>
           ) : payments.map((payment, index) => (
-            <div key={payment._id || `${payment.date}-${index}`} style={{ background: "#fff", border: "1px solid #e2e8f0", borderLeft: "4px solid #22c55e", borderRadius: 9, padding: 13, marginBottom: 9 }}>
+            <div key={payment._id || `${payment.date}-${index}`} style={{ background: "#fff", border: "1px solid #e6e9f2", borderLeft: "4px solid #22c55e", borderRadius: 9, padding: 13, marginBottom: 9 }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                <div style={{ fontWeight: 800, color: "#15803d", fontSize: 17 }}>₹{(+payment.amount || 0).toLocaleString()}</div>
+                <div style={{ fontWeight: 800, color: "#17855a", fontSize: 17 }}>₹{(+payment.amount || 0).toLocaleString()}</div>
                 <Badge color="green">{payment.paymentMode || "Cash"}</Badge>
               </div>
-              <div style={{ marginTop: 7, color: "#475569", fontSize: 12 }}>{new Date(payment.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
-              <div style={{ marginTop: 3, color: "#64748b", fontSize: 11 }}>Recorded by {payment.recordedByName || "Staff"}</div>
-              {+payment.advanceAmount > 0 && <div style={{marginTop:4,color:"#7c3aed",fontSize:11,fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString()} stored as customer advance</div>}
-              {payment.notes && <div style={{ marginTop: 8, padding: "7px 9px", borderRadius: 6, background: "#f8fafc", color: "#475569", fontSize: 12 }}>{payment.notes}</div>}
+              <div style={{ marginTop: 7, color: "#4a5272", fontSize: 12 }}>{new Date(payment.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
+              <div style={{ marginTop: 3, color: "#6b7392", fontSize: 11 }}>Recorded by {payment.recordedByName || "Staff"}</div>
+              {+payment.advanceAmount > 0 && <div style={{marginTop:4,color:"#c026d3",fontSize:11,fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString()} stored as customer advance</div>}
+              {payment.notes && <div style={{ marginTop: 8, padding: "7px 9px", borderRadius: 6, background: "#f7f8fc", color: "#4a5272", fontSize: 12 }}>{payment.notes}</div>}
               {payment.refundedAmount > 0 && <div style={{color:"#b45309",marginTop:6}}>Refunded ₹{payment.refundedAmount.toLocaleString("en-IN")} · Net ₹{(payment.amount-payment.refundedAmount).toLocaleString("en-IN")}</div>}
               {isAdmin && payment._id && !sale.refunds?.length && <div style={{display:"flex",justifyContent:"flex-end",gap:6,marginTop:8}}><Btn sm color="blue" onClick={()=>onEditPayment(payment)}>Edit Payment</Btn><Btn sm color="red" onClick={()=>onDeletePayment(payment)}>Delete</Btn></div>}
             </div>
           ))}
         </div>
-        <div style={{ padding: "14px 18px", background: "#fff", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 9 }}>
+        <div style={{ padding: "14px 18px", background: "#fff", borderTop: "1px solid #e6e9f2", display: "flex", justifyContent: "flex-end", gap: 9 }}>
           <Btn color="cancel" onClick={onClose}>Close</Btn>
           {canPay && <Btn color="green" onClick={onAddPayment}>+ Add Payment</Btn>}
         </div>
@@ -193,7 +193,7 @@ function PaymentEditModal({ title, payment, onClose, onSave }) {
     setSaving(true);setError("");
     try { await onSave({...form,amount:+form.amount}); } catch(err) { setError(err.message);setSaving(false); }
   };
-  return <Modal open title={title} onClose={onClose}><FormGroup label="Amount"><FormInput type="number" min="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))} /></FormGroup><FormGroup label="Payment Method"><FormSelect value={form.method} onChange={e=>setForm(p=>({...p,method:e.target.value}))}>{["Cash","UPI","Card","Bank Transfer","Cheque"].map(method=><option key={method}>{method}</option>)}</FormSelect></FormGroup><FormGroup label="Payment Date"><FormInput type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))} /></FormGroup><FormGroup label="Notes / Reference"><FormInput value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} /></FormGroup>{error&&<div style={{color:"#dc2626",marginBottom:10}}>{error}</div>}<div style={{display:"flex",justifyContent:"flex-end",gap:8}}><Btn color="cancel" onClick={onClose}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={save}>{saving?"Saving...":"Save Payment"}</Btn></div></Modal>;
+  return <Modal open title={title} onClose={onClose}><FormGroup label="Amount"><FormInput type="number" min="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))} /></FormGroup><FormGroup label="Payment Method"><FormSelect value={form.method} onChange={e=>setForm(p=>({...p,method:e.target.value}))}>{["Cash","UPI","Card","Bank Transfer","Cheque"].map(method=><option key={method}>{method}</option>)}</FormSelect></FormGroup><FormGroup label="Payment Date"><FormInput type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))} /></FormGroup><FormGroup label="Notes / Reference"><FormInput value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} /></FormGroup>{error&&<div style={{color:"#d0433d",marginBottom:10}}>{error}</div>}<div style={{display:"flex",justifyContent:"flex-end",gap:8}}><Btn color="cancel" onClick={onClose}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={save}>{saving?"Saving...":"Save Payment"}</Btn></div></Modal>;
 }
 
 function EditModal({ sale, onClose, onDone }) {
@@ -215,10 +215,10 @@ function EditModal({ sale, onClose, onDone }) {
 
   return (
     <Modal open title={`Edit Sale — ${sale.invoiceNo}`} onClose={onClose}>
-      <div style={{ marginBottom: 14, background: "#f8fafc", padding: 12, borderRadius: 8, fontSize: 12, color: "#64748b" }}>
-        Customer: <strong style={{ color: "#1e293b" }}>{sale.customer?.name || sale.customerName || "Walk-in"}</strong>
-        &nbsp;|&nbsp; Total: <strong style={{ color: "#1e293b" }}>₹{sale.grandTotal?.toLocaleString()}</strong>
-        &nbsp;|&nbsp; Paid: <strong style={{ color: "#16a34a" }}>₹{sale.amountPaid?.toLocaleString()}</strong>
+      <div style={{ marginBottom: 14, background: "#f7f8fc", padding: 12, borderRadius: 8, fontSize: 12, color: "#6b7392" }}>
+        Customer: <strong style={{ color: "#0f1535" }}>{sale.customer?.name || sale.customerName || "Walk-in"}</strong>
+        &nbsp;|&nbsp; Total: <strong style={{ color: "#0f1535" }}>₹{sale.grandTotal?.toLocaleString()}</strong>
+        &nbsp;|&nbsp; Paid: <strong style={{ color: "#1f9d6b" }}>₹{sale.amountPaid?.toLocaleString()}</strong>
       </div>
 
       <FormGroup label="Payment Mode">
@@ -234,7 +234,7 @@ function EditModal({ sale, onClose, onDone }) {
             <option value="Partial">Partial</option>
             <option value="Pending">Pending</option>
           </FormSelect>
-          <div style={{ fontSize: 10.5, color: "#94a3b8", marginTop: 4 }}>
+          <div style={{ fontSize: 10.5, color: "#9aa1b9", marginTop: 4 }}>
             ⚠️ Manually override the status if needed. If set to Paid, amount paid will sync automatically.
           </div>
         </FormGroup>
@@ -244,10 +244,10 @@ function EditModal({ sale, onClose, onDone }) {
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
           placeholder="Add notes about this sale..."
           rows={3}
-          style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 13, resize: "vertical", boxSizing: "border-box", background: "#f9fafb" }} />
+          style={{ width: "100%", padding: "9px 12px", border: "1px solid #dde1ec", borderRadius: 7, fontSize: 13, resize: "vertical", boxSizing: "border-box", background: "#fafbfe" }} />
       </FormGroup>
 
-      {err && <div style={{ color: "#ef4444", fontSize: 12, marginBottom: 10 }}>⚠️ {err}</div>}
+      {err && <div style={{ color: "#e0524c", fontSize: 12, marginBottom: 10 }}>⚠️ {err}</div>}
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
         <Btn color="cancel" onClick={onClose}>Cancel</Btn>
         <Btn color="teal" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "💾 Save Changes"}</Btn>
@@ -418,7 +418,7 @@ function FullEditModal({ sale, onClose, onDone }) {
             <option value="">Select customer</option>
             {customers.map(c => <option key={c._id} value={c._id}>{c.name} - {c.phone}</option>)}
           </FormSelect>
-          {selectedCustomer && <div style={{ marginTop: 5, fontSize: 11, color: "#64748b" }}>{selectedCustomer.name} selected</div>}
+          {selectedCustomer && <div style={{ marginTop: 5, fontSize: 11, color: "#6b7392" }}>{selectedCustomer.name} selected</div>}
         </FormGroup>
       </div>
 
@@ -429,8 +429,8 @@ function FullEditModal({ sale, onClose, onDone }) {
 
       <InvoiceDetailsFields value={form.invoiceDetails} onChange={invoiceDetails => setForm(p => ({ ...p, invoiceDetails }))} />
 
-      <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflowX: "auto", marginBottom: 16 }}>
-        <div style={{ display: "grid", gridTemplateColumns: SALE_EDIT_GRID, minWidth: SALE_EDIT_MIN_WIDTH, background: "#f8fafc", padding: "8px 10px", fontSize: 11, fontWeight: 800, color: "#1e293b" }}>
+      <div style={{ border: "1px solid #e6e9f2", borderRadius: 8, overflowX: "auto", marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: SALE_EDIT_GRID, minWidth: SALE_EDIT_MIN_WIDTH, background: "#f7f8fc", padding: "8px 10px", fontSize: 11, fontWeight: 800, color: "#0f1535" }}>
           {["Product","Model No.","Warehouse","Qty","Rate","Billing Rate","Disc. %","GST %","Transport","Trans. GST %","Total",""].map(h => <div key={h} style={{ padding: "0 4px" }}>{h}</div>)}
         </div>
         {items.map((it, i) => {
@@ -438,10 +438,10 @@ function FullEditModal({ sale, onClose, onDone }) {
           const c = calcItem(it);
           const warehouses = warehouseOptions(prod);
           return (
-            <div key={i} style={{ display: "grid", gridTemplateColumns: SALE_EDIT_GRID, minWidth: SALE_EDIT_MIN_WIDTH, padding: "8px 10px", borderTop: "1px solid #f1f5f9", alignItems: "start" }}>
+            <div key={i} style={{ display: "grid", gridTemplateColumns: SALE_EDIT_GRID, minWidth: SALE_EDIT_MIN_WIDTH, padding: "8px 10px", borderTop: "1px solid #f1f3f9", alignItems: "start" }}>
               <div style={{ padding: "0 4px" }}>
                 <select value={it.product} onChange={e => setItem(i, "product", e.target.value)}
-                  style={{ width: "100%", padding: "7px 8px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, background: "#f9fafb" }}>
+                  style={{ width: "100%", padding: "7px 8px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, background: "#fafbfe" }}>
                   <option value="">Select product</option>
                   {products.map(p => <option key={p._id} value={p._id}>{p.name} | {p.modelNumber} | Stock: {p.stock}</option>)}
                 </select>
@@ -450,40 +450,40 @@ function FullEditModal({ sale, onClose, onDone }) {
               <div style={{ padding: "0 4px" }}>
                 <input list={`sale-wh-${i}`} value={it.warehouse} onChange={e => setItem(i, "warehouse", e.target.value)}
                   placeholder="Warehouse"
-                  style={{ width: "100%", padding: "7px 8px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} />
+                  style={{ width: "100%", padding: "7px 8px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} />
                 <datalist id={`sale-wh-${i}`}>
                   {warehouses.map(w => <option key={w.warehouse} value={w.warehouse}>{w.stock}</option>)}
                 </datalist>
                 {warehouses.length > 0 && (
-                  <div style={{ marginTop: 3, fontSize: 9.5, color: "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <div style={{ marginTop: 3, fontSize: 9.5, color: "#6b7392", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {warehouses.map(w => `${w.warehouse}: ${w.stock}`).join(" | ")}
                   </div>
                 )}
               </div>
-              <div style={{ padding: "0 4px" }}><input type="number" min="1" value={it.qty} onChange={e => setItem(i, "qty", e.target.value)} style={{ width: "100%", padding: "7px 6px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></div>
-              <div style={{ padding: "0 4px" }}><input type="number" value={it.rate} onChange={e => setItem(i, "rate", e.target.value)} style={{ width: "100%", padding: "7px 6px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></div>
-              <div style={{ padding: "0 4px" }}><input type="number" value={it.billingRate} onChange={e => setItem(i, "billingRate", e.target.value)} style={{ width: "100%", padding: "7px 6px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></div>
-              <div style={{ padding: "0 4px" }}><input type="number" min="0" max="100" step="0.01" value={it.discount} onChange={e => setItem(i, "discount", e.target.value)} style={{ width: "100%", padding: "7px 6px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></div>
+              <div style={{ padding: "0 4px" }}><input type="number" min="1" value={it.qty} onChange={e => setItem(i, "qty", e.target.value)} style={{ width: "100%", padding: "7px 6px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></div>
+              <div style={{ padding: "0 4px" }}><input type="number" value={it.rate} onChange={e => setItem(i, "rate", e.target.value)} style={{ width: "100%", padding: "7px 6px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></div>
+              <div style={{ padding: "0 4px" }}><input type="number" value={it.billingRate} onChange={e => setItem(i, "billingRate", e.target.value)} style={{ width: "100%", padding: "7px 6px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></div>
+              <div style={{ padding: "0 4px" }}><input type="number" min="0" max="100" step="0.01" value={it.discount} onChange={e => setItem(i, "discount", e.target.value)} style={{ width: "100%", padding: "7px 6px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></div>
               <div style={{ padding: "0 4px" }}>
                 <select value={it.gstRate} onChange={e => setItem(i, "gstRate", e.target.value)}
-                  style={{ width: "100%", padding: "7px 4px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, background: "#f9fafb" }}>
+                  style={{ width: "100%", padding: "7px 4px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, background: "#fafbfe" }}>
                   {["0","5","9","12","18","28"].map(r => <option key={r} value={r}>{r}%</option>)}
                 </select>
               </div>
-              <div style={{ padding: "0 4px" }}><input type="number" min="0" value={it.transportAmount} onChange={e => setItem(i, "transportAmount", e.target.value)} style={{ width: "100%", padding: "7px 6px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></div>
+              <div style={{ padding: "0 4px" }}><input type="number" min="0" value={it.transportAmount} onChange={e => setItem(i, "transportAmount", e.target.value)} style={{ width: "100%", padding: "7px 6px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} /></div>
               <div style={{ padding: "0 4px" }}>
-                <select value={it.transportGstRate} onChange={e => setItem(i, "transportGstRate", e.target.value)} style={{ width: "100%", padding: "7px 4px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, background: "#f9fafb" }}>
+                <select value={it.transportGstRate} onChange={e => setItem(i, "transportGstRate", e.target.value)} style={{ width: "100%", padding: "7px 4px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, background: "#fafbfe" }}>
                   {[0, 5, 12, 18, 28].map(r => <option key={r} value={r}>{r}%</option>)}
                 </select>
               </div>
-              <div style={{ padding: "7px 4px 0", fontWeight: 800, color: "#16a34a", fontSize: 12 }}>Rs {c.total.toFixed(2)}</div>
+              <div style={{ padding: "7px 4px 0", fontWeight: 800, color: "#1f9d6b", fontSize: 12 }}>Rs {c.total.toFixed(2)}</div>
               <div style={{ padding: "0 4px" }}>
-                <button type="button" onClick={() => removeItem(i)} style={{ width: "100%", padding: "6px 0", border: "none", borderRadius: 5, background: "#fee2e2", color: "#991b1b", cursor: "pointer", fontWeight: 800 }}>x</button>
+                <button type="button" onClick={() => removeItem(i)} style={{ width: "100%", padding: "6px 0", border: "none", borderRadius: 5, background: "#fdeceb", color: "#a33a35", cursor: "pointer", fontWeight: 800 }}>x</button>
               </div>
             </div>
           );
         })}
-        <div style={{ padding: "10px 14px", borderTop: "1px solid #f1f5f9" }}>
+        <div style={{ padding: "10px 14px", borderTop: "1px solid #f1f3f9" }}>
           <Btn sm color="blue" onClick={addItem}>+ Add Item</Btn>
         </div>
       </div>
@@ -500,24 +500,24 @@ function FullEditModal({ sale, onClose, onDone }) {
           </FormGroup>
           <FormGroup label="Notes">
             <textarea value={form.notes} onChange={set("notes")} placeholder="Add notes about this sale..." rows={3}
-              style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 13, resize: "vertical", boxSizing: "border-box", background: "#f9fafb" }} />
+              style={{ width: "100%", padding: "9px 12px", border: "1px solid #dde1ec", borderRadius: 7, fontSize: 13, resize: "vertical", boxSizing: "border-box", background: "#fafbfe" }} />
           </FormGroup>
         </div>
-        <div style={{ background: "#f8fafc", borderRadius: 8, padding: 16, fontSize: 13, alignSelf: "start" }}>
+        <div style={{ background: "#f7f8fc", borderRadius: 8, padding: 16, fontSize: 13, alignSelf: "start" }}>
           <div style={{ fontWeight: 800, marginBottom: 10 }}>Sale Summary</div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}><span>Subtotal</span><strong>Rs {totals.subtotal.toFixed(2)}</strong></div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7, color: "#f59e0b" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7, color: "#e5a03a" }}>
             <span>{form.paymentMode === "Cash" ? "Cash Amount" : "Discount"}</span>
             <strong>Rs {form.paymentMode === "Cash" ? (+form.amountPaid || 0).toFixed(2) : totals.discount.toFixed(2)}</strong>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}><span>GST</span><strong>Rs {totals.gst.toFixed(2)}</strong></div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}><span>Transport</span><strong>Rs {totals.transport.toFixed(2)}</strong></div>
-          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e2e8f0", paddingTop: 9, fontSize: 16 }}><span>Grand Total</span><strong>Rs {totals.total.toFixed(2)}</strong></div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, color: due > 0 ? "#ef4444" : "#16a34a" }}><span>Due</span><strong>Rs {due.toFixed(2)}</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e6e9f2", paddingTop: 9, fontSize: 16 }}><span>Grand Total</span><strong>Rs {totals.total.toFixed(2)}</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, color: due > 0 ? "#e0524c" : "#1f9d6b" }}><span>Due</span><strong>Rs {due.toFixed(2)}</strong></div>
         </div>
       </div>
 
-      {err && <div style={{ color: "#ef4444", fontSize: 12, marginBottom: 10 }}>Warning: {err}</div>}
+      {err && <div style={{ color: "#e0524c", fontSize: 12, marginBottom: 10 }}>Warning: {err}</div>}
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
         <Btn color="cancel" onClick={onClose}>Cancel</Btn>
         <Btn color="teal" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Btn>
@@ -528,7 +528,7 @@ function FullEditModal({ sale, onClose, onDone }) {
 
 function ExpandedRow({ sale, cols }) {
   return (
-    <tr style={{ background: "#f0fdf4" }}>
+    <tr style={{ background: "#f0faf5" }}>
       <td colSpan={cols} style={{ padding: "14px 20px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px,1fr))", gap: 12 }}>
           {[
@@ -543,36 +543,36 @@ function ExpandedRow({ sale, cols }) {
             { label: "SGST",         value: `₹${sale.sgst?.toLocaleString()}` },
           ].map((d, i) => (
             <div key={i}>
-              <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase" }}>{d.label}</div>
-              <div style={{ fontSize: 13, color: "#1e293b", fontWeight: 700, marginTop: 2 }}>{d.value}</div>
+              <div style={{ fontSize: 10, color: "#9aa1b9", fontWeight: 700, textTransform: "uppercase" }}>{d.label}</div>
+              <div style={{ fontSize: 13, color: "#0f1535", fontWeight: 700, marginTop: 2 }}>{d.value}</div>
             </div>
           ))}
           {sale.notes && (
             <div style={{ gridColumn: "1/-1" }}>
-              <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase" }}>Notes</div>
-              <div style={{ fontSize: 12.5, color: "#475569", marginTop: 2, background: "#fff", padding: "6px 10px", borderRadius: 6, border: "1px solid #e2e8f0" }}>
+              <div style={{ fontSize: 10, color: "#9aa1b9", fontWeight: 700, textTransform: "uppercase" }}>Notes</div>
+              <div style={{ fontSize: 12.5, color: "#4a5272", marginTop: 2, background: "#fff", padding: "6px 10px", borderRadius: 6, border: "1px solid #e6e9f2" }}>
                 📝 {sale.notes}
               </div>
             </div>
           )}
           {sale.items?.length > 0 && (
             <div style={{ gridColumn: "1/-1" }}>
-              <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>Items</div>
+              <div style={{ fontSize: 10, color: "#9aa1b9", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>Items</div>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ fontSize: 11.5, borderCollapse: "collapse", width: "100%" }}>
                   <thead>
-                    <tr style={{ background: "#e2e8f0" }}>
+                    <tr style={{ background: "#e6e9f2" }}>
                       {["Product","Warehouse","Qty","Rate","Discount %","Discount Amount","Total","GST Rate","GST Amt"].map(h => (
-                        <th key={h} style={{ padding: "5px 10px", textAlign: "left", fontWeight: 700, color: "#1e293b", whiteSpace: "nowrap" }}>{h}</th>
+                        <th key={h} style={{ padding: "5px 10px", textAlign: "left", fontWeight: 700, color: "#0f1535", whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {sale.items.map((it, i) => (
-                      <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f8fafc" }}>
+                      <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f7f8fc" }}>
                         <td style={{ padding: "5px 10px" }}>
                           <div>{it.productName || it.product?.name}</div>
-                          {it.description && <div style={{ marginTop:3, color:"#64748b", fontSize:10.5, whiteSpace:"pre-wrap" }}>{it.description}</div>}
+                          {it.description && <div style={{ marginTop:3, color:"#6b7392", fontSize:10.5, whiteSpace:"pre-wrap" }}>{it.description}</div>}
                         </td>
                         <td style={{ padding: "5px 10px" }}>{it.warehouse || "Main Warehouse"}</td>
                         <td style={{ padding: "5px 10px" }}>{it.qty}</td>
@@ -684,34 +684,34 @@ export default function SalesList({ navigate }) {
       {/* ── Summary Cards ── */}
       <div className="sales-summary-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 12, marginBottom: 16 }}>
         {[
-          { label: "Total Sales",     value: sales.length,                          color: "#3b82f6", icon: "🧾" },
-          { label: "Total Revenue",   value: `₹${totalRevenue.toLocaleString()}`,   color: "#8b5cf6", icon: "💼" },
-          { label: "Amount Received", value: `₹${totalReceived.toLocaleString()}`,  color: "#16a34a", icon: "✅" },
-          { label: "Amount Due",      value: `₹${totalDue.toLocaleString()}`,       color: "#ef4444", icon: "🔴" },
+          { label: "Total Sales",     value: sales.length,                          color: "#5a8be8", icon: "🧾" },
+          { label: "Total Revenue",   value: `₹${totalRevenue.toLocaleString()}`,   color: "#d946ef", icon: "💼" },
+          { label: "Amount Received", value: `₹${totalReceived.toLocaleString()}`,  color: "#1f9d6b", icon: "✅" },
+          { label: "Amount Due",      value: `₹${totalDue.toLocaleString()}`,       color: "#e0524c", icon: "🔴" },
         ].map((c, i) => (
-          <div className="sales-summary-card" key={i} style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #e2e8f0", borderLeft: `4px solid ${c.color}` }}>
-            <div className="sales-summary-label" style={{ fontSize: 11, color: "#64748b", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+          <div className="sales-summary-card" key={i} style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #e6e9f2", borderLeft: `4px solid ${c.color}` }}>
+            <div className="sales-summary-label" style={{ fontSize: 11, color: "#6b7392", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
               {c.icon} {c.label}
             </div>
-            <div className="sales-summary-value" style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", marginTop: 4 }}>{c.value}</div>
+            <div className="sales-summary-value" style={{ fontSize: 22, fontWeight: 800, color: "#0f1535", marginTop: 4 }}>{c.value}</div>
           </div>
         ))}
       </div>
 
       {/* ── Collection Progress Bar ── */}
       {totalRevenue > 0 && (
-        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "12px 18px", marginBottom: 16, display: "flex", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ fontSize: 12, color: "#64748b", fontWeight: 700, whiteSpace: "nowrap" }}>💰 Collection Status</div>
+        <div style={{ background: "#fff", border: "1px solid #e6e9f2", borderRadius: 10, padding: "12px 18px", marginBottom: 16, display: "flex", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ fontSize: 12, color: "#6b7392", fontWeight: 700, whiteSpace: "nowrap" }}>💰 Collection Status</div>
           <div style={{ flex: 1, minWidth: 180 }}>
-            <div style={{ height: 8, borderRadius: 20, background: "#fee2e2", overflow: "hidden" }}>
-              <div style={{ height: "100%", borderRadius: 20, background: "#16a34a", width: `${Math.min(100, (totalReceived / totalRevenue) * 100).toFixed(1)}%`, transition: "width 0.6s" }} />
+            <div style={{ height: 8, borderRadius: 20, background: "#fdeceb", overflow: "hidden" }}>
+              <div style={{ height: "100%", borderRadius: 20, background: "#1f9d6b", width: `${Math.min(100, (totalReceived / totalRevenue) * 100).toFixed(1)}%`, transition: "width 0.6s" }} />
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 10.5 }}>
-              <span style={{ color: "#16a34a", fontWeight: 700 }}>Collected: {((totalReceived / totalRevenue) * 100).toFixed(1)}%</span>
-              <span style={{ color: "#ef4444", fontWeight: 700 }}>Pending: {((totalDue / totalRevenue) * 100).toFixed(1)}%</span>
+              <span style={{ color: "#1f9d6b", fontWeight: 700 }}>Collected: {((totalReceived / totalRevenue) * 100).toFixed(1)}%</span>
+              <span style={{ color: "#e0524c", fontWeight: 700 }}>Pending: {((totalDue / totalRevenue) * 100).toFixed(1)}%</span>
             </div>
           </div>
-          <div style={{ fontSize: 12, color: "#ef4444", fontWeight: 800, whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 12, color: "#e0524c", fontWeight: 800, whiteSpace: "nowrap" }}>
             {dueCount > 0 ? `${dueCount} invoice${dueCount > 1 ? "s" : ""} pending` : "All cleared ✅"}
           </div>
         </div>
@@ -742,15 +742,15 @@ export default function SalesList({ navigate }) {
           onChange={(e) => setSearch(e.target.value)} style={{ minWidth: 200 }} />
         <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} title="Filter by exact date" />
         <select value={month} onChange={(e) => setMonth(e.target.value)}
-          style={{ padding: "7px 10px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, background: "#f9fafb" }}>
+          style={{ padding: "7px 10px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, background: "#fafbfe" }}>
           {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
         <select value={year} onChange={(e) => setYear(e.target.value)}
-          style={{ padding: "7px 10px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, background: "#f9fafb" }}>
+          style={{ padding: "7px 10px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, background: "#fafbfe" }}>
           {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
         <select value={status} onChange={(e) => setStatus(e.target.value)}
-          style={{ padding: "7px 10px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, background: "#f9fafb" }}>
+          style={{ padding: "7px 10px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, background: "#fafbfe" }}>
           <option value="">All Status</option>
           {["Paid","Partial","Pending","Cancelled"].map(s => <option key={s}>{s}</option>)}
         </select>
@@ -774,8 +774,8 @@ export default function SalesList({ navigate }) {
                 <tr><td colSpan={COLS}><EmptyState text="No sales found for the selected period." /></td></tr>
               ) : sales.map(s => (
                   <tr key={s._id}
-                    style={{ borderBottom: "1px solid #f1f5f9", background: s.amountDue > 0 && s.status !== "Cancelled" ? "#fff9f9" : "" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#f0fdfa"}
+                    style={{ borderBottom: "1px solid #f1f3f9", background: s.amountDue > 0 && s.status !== "Cancelled" ? "#fff9f9" : "" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#f5f3ff"}
                     onMouseLeave={e => e.currentTarget.style.background = s.amountDue > 0 && s.status !== "Cancelled" ? "#fff9f9" : ""}
                   >
                     <Td style={{ fontFamily: "monospace", color: "#0ea5e9", fontSize: 11 }}>{s.invoiceNo}</Td>
@@ -784,13 +784,13 @@ export default function SalesList({ navigate }) {
                     <Td>{s.saleType}</Td>
                     <Td>{s.paymentMode}</Td>
                     <Td style={{ fontWeight: 700 }}>₹{s.grandTotal.toLocaleString()}</Td>
-                    <Td style={{ color: "#16a34a", fontWeight: 700 }}>₹{s.amountPaid.toLocaleString()}</Td>
+                    <Td style={{ color: "#1f9d6b", fontWeight: 700 }}>₹{s.amountPaid.toLocaleString()}</Td>
                     <Td>
                       {s.amountDue > 0
-                        ? <span style={{ color: "#ef4444", fontWeight: 700, background: "#fee2e2", padding: "2px 7px", borderRadius: 20, fontSize: 11 }}>
+                        ? <span style={{ color: "#e0524c", fontWeight: 700, background: "#fdeceb", padding: "2px 7px", borderRadius: 20, fontSize: 11 }}>
                             ₹{s.amountDue.toLocaleString()}
                           </span>
-                        : <span style={{ color: "#94a3b8" }}>—</span>
+                        : <span style={{ color: "#9aa1b9" }}>—</span>
                       }
                     </Td>
                     <Td><Badge color={stColor[s.status] || "gray"}>{s.status}</Badge>{!!s.refunds?.length && <div style={{color:"#b45309",fontWeight:700,marginTop:5}}>Refunded ₹{s.refunds.reduce((sum,r)=>sum+r.amount,0).toLocaleString("en-IN")}</div>}</Td>
@@ -814,20 +814,20 @@ export default function SalesList({ navigate }) {
             {/* ── Footer Totals Row ── */}
             {sales.length > 0 && (
               <tfoot>
-                <tr style={{ background: "#ccfbf1", borderTop: "2px solid #14b8a6" }}>
-                  <td colSpan={5} style={{ padding: "10px 12px", fontWeight: 800, fontSize: 12, color: "#92400e" }}>
+                <tr style={{ background: "#ede9fe", borderTop: "2px solid #8b5cf6" }}>
+                  <td colSpan={5} style={{ padding: "10px 12px", fontWeight: 800, fontSize: 12, color: "#8a5a12" }}>
                     📊 TOTAL ({sales.length} invoice{sales.length > 1 ? "s" : ""})
                   </td>
-                  <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 13, color: "#1e293b" }}>
+                  <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 13, color: "#0f1535" }}>
                     ₹{totalRevenue.toLocaleString()}
                   </td>
-                  <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 13, color: "#16a34a" }}>
+                  <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 13, color: "#1f9d6b" }}>
                     ₹{totalReceived.toLocaleString()}
                   </td>
-                  <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 13, color: totalDue > 0 ? "#ef4444" : "#94a3b8" }}>
+                  <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 13, color: totalDue > 0 ? "#e0524c" : "#9aa1b9" }}>
                     {totalDue > 0 ? `₹${totalDue.toLocaleString()}` : "—"}
                   </td>
-                  <td colSpan={2} style={{ padding: "10px 12px", fontSize: 11, color: "#92400e" }}>
+                  <td colSpan={2} style={{ padding: "10px 12px", fontSize: 11, color: "#8a5a12" }}>
                     {dueCount > 0 ? `⚠️ ${dueCount} invoice${dueCount > 1 ? "s" : ""} have pending dues` : "✅ All invoices cleared"}
                   </td>
                 </tr>

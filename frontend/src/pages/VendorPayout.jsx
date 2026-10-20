@@ -81,15 +81,15 @@ export default function VendorPayout({ navigate }) {
       {toast && <SuccessToast msg={toast} />}
 
       <StatsGrid cards={[
-        { label:"Pending Invoices",  value: pending.length,                        color:"#f59e0b" },
-        { label:"Total Outstanding", value: `₹${totalDue.toLocaleString()}`,       color:"#ef4444" },
-        { label:"Active Vendors",    value: vendors.length,                        color:"#3b82f6" },
+        { label:"Pending Invoices",  value: pending.length,                        color:"#e5a03a" },
+        { label:"Total Outstanding", value: `₹${totalDue.toLocaleString()}`,       color:"#e0524c" },
+        { label:"Active Vendors",    value: vendors.length,                        color:"#5a8be8" },
       ]} />
 
       {loading ? <LoadingSpinner /> : error ? <ErrorMsg message={error} onRetry={load} /> : (
         <>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-            <div style={{ fontWeight:700, fontSize:14, color:"#1e293b" }}>⏳ Pending Payouts</div>
+            <div style={{ fontWeight:700, fontSize:14, color:"#0f1535" }}>⏳ Pending Payouts</div>
             <Btn color="green" onClick={() => downloadCSV(pending, [
               { label:"Vendor",        key:"vendor.name" },
               { label:"Invoice/Ref",   key:"invoiceNo"   },
@@ -108,15 +108,15 @@ export default function VendorPayout({ navigate }) {
               <tbody>
                 {pending.length === 0 ? (
                   <tr>
-                    <td colSpan={8} style={{ padding:40, textAlign:"center", color:"#94a3b8" }}>
+                    <td colSpan={8} style={{ padding:40, textAlign:"center", color:"#9aa1b9" }}>
                       🎉 All vendor payments are settled!
                     </td>
                   </tr>
                 ) : pending.map(e => {
                   const bal = e.balance ?? (e.amount - e.paid);
                   return (
-                    <tr key={e._id} style={{ borderBottom:"1px solid #f1f5f9" }}
-                      onMouseEnter={ev => ev.currentTarget.style.background="#f0fdfa"}
+                    <tr key={e._id} style={{ borderBottom:"1px solid #f1f3f9" }}
+                      onMouseEnter={ev => ev.currentTarget.style.background="#f5f3ff"}
                       onMouseLeave={ev => ev.currentTarget.style.background=""}>
                       <Td style={{ fontWeight:700 }}>{e.vendor?.name || "—"}</Td>
                       <Td style={{ fontFamily:"monospace", color:"#0ea5e9", fontSize:11 }}>
@@ -124,10 +124,10 @@ export default function VendorPayout({ navigate }) {
                       </Td>
                       <Td>{new Date(e.date).toLocaleDateString("en-IN")}</Td>
                       <Td style={{ fontWeight:700 }}>₹{e.amount.toLocaleString()}</Td>
-                      <Td style={{ color:"#16a34a", fontWeight:700 }}>
+                      <Td style={{ color:"#1f9d6b", fontWeight:700 }}>
                         ₹{e.paid.toLocaleString()}
                       </Td>
-                      <Td style={{ color:"#ef4444", fontWeight:800 }}>
+                      <Td style={{ color:"#e0524c", fontWeight:800 }}>
                         ₹{bal.toLocaleString()}
                       </Td>
                       <Td>
@@ -147,17 +147,17 @@ export default function VendorPayout({ navigate }) {
 
               {pending.length > 0 && (
                 <tfoot>
-                  <tr style={{ background:"#eef6f5", fontWeight:700 }}>
+                  <tr style={{ background:"#f5f3ff", fontWeight:700 }}>
                     <td colSpan={3} style={{ padding:"10px 12px" }}>
                       TOTAL ({pending.length} invoices)
                     </td>
                     <td style={{ padding:"10px 12px" }}>
                       ₹{pending.reduce((s,e)=>s+e.amount,0).toLocaleString()}
                     </td>
-                    <td style={{ padding:"10px 12px", color:"#16a34a" }}>
+                    <td style={{ padding:"10px 12px", color:"#1f9d6b" }}>
                       ₹{pending.reduce((s,e)=>s+e.paid,0).toLocaleString()}
                     </td>
-                    <td style={{ padding:"10px 12px", color:"#ef4444", fontWeight:800 }}>
+                    <td style={{ padding:"10px 12px", color:"#e0524c", fontWeight:800 }}>
                       ₹{totalDue.toLocaleString()}
                     </td>
                     <td colSpan={2}></td>
@@ -179,44 +179,44 @@ export default function VendorPayout({ navigate }) {
           return (
             <div>
               {/* Invoice summary strip */}
-              <div style={{ background:"#f8fafc", border:"1px solid #e2e8f0",
+              <div style={{ background:"#f7f8fc", border:"1px solid #e6e9f2",
                 borderRadius:8, padding:"12px 16px", marginBottom:16,
                 display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, fontSize:12 }}>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Invoice</div>
                   <div style={{ fontWeight:700, fontFamily:"monospace", color:"#0ea5e9" }}>
                     {payModal.invoiceNo || "—"}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Invoice Amount</div>
                   <div style={{ fontWeight:700 }}>₹{payModal.amount.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Balance Due</div>
-                  <div style={{ fontWeight:800, color:"#ef4444", fontSize:14 }}>
+                  <div style={{ fontWeight:800, color:"#e0524c", fontSize:14 }}>
                     ₹{bal.toLocaleString()}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Already Paid</div>
-                  <div style={{ fontWeight:700, color:"#16a34a" }}>
+                  <div style={{ fontWeight:700, color:"#1f9d6b" }}>
                     ₹{payModal.paid.toLocaleString()}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Current Status</div>
                   <Badge color={{ Settled:"green", Partial:"yellow", Pending:"red" }[payModal.status]}>
                     {payModal.status}
                   </Badge>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>After This Payment</div>
                   <Badge color={leftAfter === 0 ? "green" : paying > 0 ? "yellow" : "red"}>
                     {leftAfter === 0 && paying > 0
@@ -235,7 +235,7 @@ export default function VendorPayout({ navigate }) {
                     onChange={set("amount")}
                     placeholder={`Max ₹${bal.toLocaleString()}`} />
                   {paying > bal && (
-                    <div style={{ color:"#ef4444", fontSize:10, marginTop:3 }}>
+                    <div style={{ color:"#e0524c", fontSize:10, marginTop:3 }}>
                       ⚠️ Cannot exceed balance of ₹{bal.toLocaleString()}
                     </div>
                   )}

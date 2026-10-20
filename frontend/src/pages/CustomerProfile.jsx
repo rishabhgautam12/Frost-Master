@@ -18,17 +18,17 @@ const discountPercentFor = item => {
 const formatPercent = value => Number(value.toFixed(2));
 
 const TH = ({ children }) => (
-  <th style={{ padding:"9px 11px", background:"#14b8a6", textAlign:"left",
-    color:"#ecfeff", fontWeight:700, fontSize:11, whiteSpace:"nowrap" }}>{children}</th>
+  <th style={{ padding:"9px 11px", background:"#8b5cf6", textAlign:"left",
+    color:"#f5f3ff", fontWeight:700, fontSize:11, whiteSpace:"nowrap" }}>{children}</th>
 );
 const TD = ({ children, style={} }) => (
-  <td style={{ padding:"9px 11px", fontSize:12, color:"#334155", ...style }}>{children}</td>
+  <td style={{ padding:"9px 11px", fontSize:12, color:"#3a4260", ...style }}>{children}</td>
 );
 const Stat = ({ label, value, color }) => (
   <div style={{ background:"#fff", borderRadius:8, padding:"14px 16px",
-    borderLeft:`4px solid ${color}`, border:"1px solid #e2e8f0", flex:1, minWidth:130 }}>
-    <div style={{ fontSize:20, fontWeight:800, color:"#1e293b" }}>{value}</div>
-    <div style={{ fontSize:10, color:"#64748b", marginTop:3 }}>{label}</div>
+    borderLeft:`4px solid ${color}`, border:"1px solid #e6e9f2", flex:1, minWidth:130 }}>
+    <div style={{ fontSize:20, fontWeight:800, color:"#0f1535" }}>{value}</div>
+    <div style={{ fontSize:10, color:"#6b7392", marginTop:3 }}>{label}</div>
   </div>
 );
 
@@ -42,10 +42,10 @@ function ProductsBoughtTab({ productSummary, stats }) {
   return (
     <div>
       <div style={{ display:"flex", gap:10, marginBottom:14, flexWrap:"wrap" }}>
-        <Stat label="Unique Products"  value={productSummary.length}                         color="#3b82f6" />
-        <Stat label="Total Qty Bought" value={productSummary.reduce((s,p)=>s+p.totalQty,0)} color="#8b5cf6" />
-        <Stat label="Total Amount"     value={`₹${stats.totalBilled.toLocaleString()}`}      color="#f59e0b" />
-        <Stat label="Amount Due"       value={`₹${stats.totalDue.toLocaleString()}`}         color="#ef4444" />
+        <Stat label="Unique Products"  value={productSummary.length}                         color="#5a8be8" />
+        <Stat label="Total Qty Bought" value={productSummary.reduce((s,p)=>s+p.totalQty,0)} color="#d946ef" />
+        <Stat label="Total Amount"     value={`₹${stats.totalBilled.toLocaleString()}`}      color="#e5a03a" />
+        <Stat label="Amount Due"       value={`₹${stats.totalDue.toLocaleString()}`}         color="#e0524c" />
       </div>
 
       <div style={{ overflowX:"auto" }}>
@@ -56,24 +56,24 @@ function ProductsBoughtTab({ productSummary, stats }) {
           </tr></thead>
           <tbody>
             {productSummary.map((p,i) => (
-              <tr key={i} style={{ borderBottom:"1px solid #f1f5f9" }}
-                onMouseEnter={e=>e.currentTarget.style.background="#f0fdfa"}
+              <tr key={i} style={{ borderBottom:"1px solid #f1f3f9" }}
+                onMouseEnter={e=>e.currentTarget.style.background="#f5f3ff"}
                 onMouseLeave={e=>e.currentTarget.style.background=""}>
                 <TD style={{ fontWeight:700 }}>{p.name}</TD>
                 <TD style={{ fontFamily:"monospace", color:"#0ea5e9", fontSize:11 }}>
                   {p.modelNumber||"—"}
                 </TD>
                 <TD style={{ fontWeight:700, fontSize:14 }}>{p.totalQty}</TD>
-                <TD style={{ fontWeight:700, color:"#16a34a" }}>₹{p.totalAmount.toLocaleString()}</TD>
+                <TD style={{ fontWeight:700, color:"#1f9d6b" }}>₹{p.totalAmount.toLocaleString()}</TD>
                 <TD>{new Date(p.lastDate).toLocaleDateString("en-IN")}</TD>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr style={{ background:"#eef6f5", fontWeight:800 }}>
+            <tr style={{ background:"#f5f3ff", fontWeight:800 }}>
               <td colSpan={2} style={{ padding:"10px 11px" }}>TOTAL</td>
               <td style={{ padding:"10px 11px" }}>{productSummary.reduce((s,p)=>s+p.totalQty,0)}</td>
-              <td style={{ padding:"10px 11px", color:"#16a34a" }}>
+              <td style={{ padding:"10px 11px", color:"#1f9d6b" }}>
                 ₹{productSummary.reduce((s,p)=>s+p.totalAmount,0).toLocaleString()}
               </td>
               <td></td>
@@ -153,10 +153,10 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
       {toast && <SuccessToast msg={toast} />}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14, flexWrap:"wrap", gap:10 }}>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-          <Stat label="Total Orders"    value={sales.length}                         color="#3b82f6" />
-          <Stat label="Total Billed"    value={`₹${totalBilled.toLocaleString()}`}   color="#8b5cf6" />
-          <Stat label="Amount Received" value={`₹${totalReceived.toLocaleString()}`} color="#16a34a" />
-          <Stat label="Amount Due"      value={`₹${totalDue.toLocaleString()}`}      color="#ef4444" />
+          <Stat label="Total Orders"    value={sales.length}                         color="#5a8be8" />
+          <Stat label="Total Billed"    value={`₹${totalBilled.toLocaleString()}`}   color="#d946ef" />
+          <Stat label="Amount Received" value={`₹${totalReceived.toLocaleString()}`} color="#1f9d6b" />
+          <Stat label="Amount Due"      value={`₹${totalDue.toLocaleString()}`}      color="#e0524c" />
         </div>
         <Btn color="green" onClick={handleCSV}>⬇ Export CSV</Btn>
       </div>
@@ -170,8 +170,8 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
           <tbody>
             {sales.map(s => (
               <>
-                <tr key={s._id} style={{ borderBottom:"1px solid #f1f5f9" }}
-                  onMouseEnter={e=>e.currentTarget.style.background="#f0fdfa"}
+                <tr key={s._id} style={{ borderBottom:"1px solid #f1f3f9" }}
+                  onMouseEnter={e=>e.currentTarget.style.background="#f5f3ff"}
                   onMouseLeave={e=>e.currentTarget.style.background=""}>
                   <TD>
                     <button onClick={() => setExpanded(expanded===s._id ? null : s._id)}
@@ -184,8 +184,8 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
                   <TD>{s.saleType}</TD>
                   <TD>{s.paymentMode}</TD>
                   <TD style={{ fontWeight:700 }}>₹{s.grandTotal.toLocaleString()}</TD>
-                  <TD style={{ color:"#16a34a", fontWeight:700 }}>₹{s.amountPaid.toLocaleString()}</TD>
-                  <TD style={{ color:s.amountDue>0?"#ef4444":"#94a3b8", fontWeight:700 }}>
+                  <TD style={{ color:"#1f9d6b", fontWeight:700 }}>₹{s.amountPaid.toLocaleString()}</TD>
+                  <TD style={{ color:s.amountDue>0?"#e0524c":"#9aa1b9", fontWeight:700 }}>
                     {s.amountDue>0 ? `₹${s.amountDue.toLocaleString()}` : "—"}
                   </TD>
                   <TD>
@@ -203,47 +203,47 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
                 </tr>
 
                 {expanded===s._id && (
-                  <tr style={{ background:"#f8fafc" }}>
+                  <tr style={{ background:"#f7f8fc" }}>
                     <td colSpan={10} style={{ padding:"12px 20px" }}>
-                      <div style={{ fontSize:11, fontWeight:700, color:"#64748b", marginBottom:8 }}>
+                      <div style={{ fontSize:11, fontWeight:700, color:"#6b7392", marginBottom:8 }}>
                         🛍️ SALE ITEMS
                       </div>
                       <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11 }}>
                         <thead><tr>
                           {["Product","Qty","Rate ₹","Discount %","Discount ₹","Total ₹","GST ₹"]
-                            .map(h=><th key={h} style={{ padding:"6px 10px", background:"#e2e8f0", textAlign:"left", fontWeight:700 }}>{h}</th>)}
+                            .map(h=><th key={h} style={{ padding:"6px 10px", background:"#e6e9f2", textAlign:"left", fontWeight:700 }}>{h}</th>)}
                         </tr></thead>
                         <tbody>
                           {(s.items||[]).map((it,i)=>(
-                            <tr key={i} style={{ borderBottom:"1px solid #e2e8f0" }}>
+                            <tr key={i} style={{ borderBottom:"1px solid #e6e9f2" }}>
                               <td style={{ padding:"6px 10px", fontWeight:700 }}>{it.productName}</td>
                               <td style={{ padding:"6px 10px" }}>{it.qty}</td>
                               <td style={{ padding:"6px 10px" }}>₹{it.rate}</td>
-                              <td style={{ padding:"6px 10px", color:"#f59e0b" }}>
+                              <td style={{ padding:"6px 10px", color:"#e5a03a" }}>
                                 {discountPercentFor(it)>0 ? `${formatPercent(discountPercentFor(it))}%` : "—"}
                               </td>
-                              <td style={{ padding:"6px 10px", color:"#f59e0b" }}>
+                              <td style={{ padding:"6px 10px", color:"#e5a03a" }}>
                                 {discountAmountFor(it)>0 ? `₹${discountAmountFor(it).toFixed(2)}` : "—"}
                               </td>
                               <td style={{ padding:"6px 10px", fontWeight:700 }}>₹{it.total?.toLocaleString()}</td>
-                              <td style={{ padding:"6px 10px", color:"#f59e0b" }}>₹{it.gstAmount?.toFixed(2)}</td>
+                              <td style={{ padding:"6px 10px", color:"#e5a03a" }}>₹{it.gstAmount?.toFixed(2)}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
-                      <div style={{ display:"flex", gap:20, marginTop:10, fontSize:11, color:"#64748b", flexWrap:"wrap" }}>
+                      <div style={{ display:"flex", gap:20, marginTop:10, fontSize:11, color:"#6b7392", flexWrap:"wrap" }}>
                         <span>Subtotal: <strong>₹{s.subtotal?.toLocaleString()}</strong></span>
-                        <span>Discount: <strong style={{color:"#f59e0b"}}>-₹{(
+                        <span>Discount: <strong style={{color:"#e5a03a"}}>-₹{(
                           s.totalDiscount || (s.items || []).reduce((sum, item) => sum + discountAmountFor(item), 0)
                         ).toFixed(2)}</strong></span>
                         {s.isInterState
-                          ? <span>IGST: <strong style={{color:"#f59e0b"}}>₹{s.igst?.toFixed(2)}</strong></span>
+                          ? <span>IGST: <strong style={{color:"#e5a03a"}}>₹{s.igst?.toFixed(2)}</strong></span>
                           : <>
-                              <span>CGST: <strong style={{color:"#8b5cf6"}}>₹{s.cgst?.toFixed(2)}</strong></span>
-                              <span>SGST: <strong style={{color:"#ec4899"}}>₹{s.sgst?.toFixed(2)}</strong></span>
+                              <span>CGST: <strong style={{color:"#d946ef"}}>₹{s.cgst?.toFixed(2)}</strong></span>
+                              <span>SGST: <strong style={{color:"#f472b6"}}>₹{s.sgst?.toFixed(2)}</strong></span>
                             </>
                         }
-                        <span style={{ fontWeight:700, color:"#1e293b" }}>
+                        <span style={{ fontWeight:700, color:"#0f1535" }}>
                           Grand Total: ₹{s.grandTotal?.toLocaleString()}
                         </span>
                       </div>
@@ -273,39 +273,39 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
               </div>
 
               {/* Invoice summary strip */}
-              <div style={{ background:"#f8fafc", border:"1px solid #e2e8f0",
+              <div style={{ background:"#f7f8fc", border:"1px solid #e6e9f2",
                 borderRadius:8, padding:"12px 16px", marginBottom:16,
                 display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, fontSize:12 }}>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Invoice Total</div>
                   <div style={{ fontWeight:800, fontSize:14 }}>₹{payModal.grandTotal.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Already Received</div>
-                  <div style={{ fontWeight:700, color:"#16a34a" }}>₹{payModal.amountPaid.toLocaleString()}</div>
+                  <div style={{ fontWeight:700, color:"#1f9d6b" }}>₹{payModal.amountPaid.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Balance Due</div>
-                  <div style={{ fontWeight:800, color:"#ef4444", fontSize:14 }}>₹{due.toLocaleString()}</div>
+                  <div style={{ fontWeight:800, color:"#e0524c", fontSize:14 }}>₹{due.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>Current Status</div>
-                  <span style={{ background:{ Paid:"#dcfce7", Partial:"#ccfbf1", Pending:"#fee2e2" }[payModal.status],
-                    color:{ Paid:"#166534", Partial:"#92400e", Pending:"#991b1b" }[payModal.status],
+                  <span style={{ background:{ Paid:"#e3f5ec", Partial:"#ede9fe", Pending:"#fdeceb" }[payModal.status],
+                    color:{ Paid:"#13734d", Partial:"#8a5a12", Pending:"#a33a35" }[payModal.status],
                     padding:"2px 8px", borderRadius:20, fontSize:10, fontWeight:700 }}>
                     {payModal.status}
                   </span>
                 </div>
                 <div style={{ gridColumn:"span 2" }}>
-                  <div style={{ color:"#64748b", fontSize:10, fontWeight:700,
+                  <div style={{ color:"#6b7392", fontSize:10, fontWeight:700,
                     textTransform:"uppercase", marginBottom:3 }}>After This Payment</div>
                   <span style={{
-                    background: leftAfter===0 && paying>0 ? "#dcfce7" : paying>0 ? "#ccfbf1" : "#f1f5f9",
-                    color: leftAfter===0 && paying>0 ? "#166534" : paying>0 ? "#92400e" : "#64748b",
+                    background: leftAfter===0 && paying>0 ? "#e3f5ec" : paying>0 ? "#ede9fe" : "#f1f3f9",
+                    color: leftAfter===0 && paying>0 ? "#13734d" : paying>0 ? "#8a5a12" : "#6b7392",
                     padding:"2px 8px", borderRadius:20, fontSize:10, fontWeight:700 }}>
                     {leftAfter===0 && paying>0
                       ? "✅ Fully Settled"
@@ -321,7 +321,7 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
                   <FormInput type="number" value={payForm.amount}
                     onChange={setPay("amount")}
                     placeholder="Enter any received amount" />
-                  {paying > due && <div style={{color:"#7c3aed",fontSize:10,fontWeight:800,marginTop:3}}>₹{(paying-due).toLocaleString()} extra will be stored as customer advance.</div>}
+                  {paying > due && <div style={{color:"#c026d3",fontSize:10,fontWeight:800,marginTop:3}}>₹{(paying-due).toLocaleString()} extra will be stored as customer advance.</div>}
                 </FormGroup>
                 <FormGroup label="Payment Mode">
                   <FormSelect value={payForm.method} onChange={setPay("method")}>
@@ -448,8 +448,8 @@ function AddSaleTab({ customer, onDone }) {
     <div>
       {toast && <SuccessToast msg={toast} />}
 
-      <div style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:8,
-        padding:"10px 16px", marginBottom:16, fontSize:12, color:"#1e40af" }}>
+      <div style={{ background:"#f2f6fe", border:"1px solid #cddcf7", borderRadius:8,
+        padding:"10px 16px", marginBottom:16, fontSize:12, color:"#34509f" }}>
         Creating a sale for <strong>{customer.name}</strong>.
         Select a product — the rate will be filled automatically (you can edit it).
       </div>
@@ -478,12 +478,12 @@ function AddSaleTab({ customer, onDone }) {
         </label>
       </div>
 
-      <div style={{ background:"#fff", borderRadius:8, border:"1px solid #e2e8f0",
+      <div style={{ background:"#fff", borderRadius:8, border:"1px solid #e6e9f2",
         marginBottom:16, overflowX:"auto" }}>
-        <div style={{ padding:"12px 14px", borderBottom:"1px solid #f1f5f9",
+        <div style={{ padding:"12px 14px", borderBottom:"1px solid #f1f3f9",
           fontWeight:700, fontSize:13 }}>🛍️ Sale Items</div>
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
-          <thead><tr style={{ background:"#f8fafc" }}>
+          <thead><tr style={{ background:"#f7f8fc" }}>
             {["Product","Qty","Rate (₹)","Discount (%)","GST %","Total (₹)",""]
               .map(h=><th key={h} style={{ padding:"8px 10px", textAlign:"left",
                 fontWeight:700, fontSize:11 }}>{h}</th>)}
@@ -492,12 +492,12 @@ function AddSaleTab({ customer, onDone }) {
             {items.map((it,i) => {
               const c = calcItem(it);
               return (
-                <tr key={i} style={{ borderBottom:"1px solid #f1f5f9" }}>
+                <tr key={i} style={{ borderBottom:"1px solid #f1f3f9" }}>
                   <td style={{ padding:"7px 8px" }}>
                     <select value={it.product}
                       onChange={e=>setItem(i,"product",e.target.value)}
-                      style={{ width:220, padding:"7px 8px", border:"1px solid #d1d5db",
-                        borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                      style={{ width:220, padding:"7px 8px", border:"1px solid #dde1ec",
+                        borderRadius:6, fontSize:12, background:"#fafbfe" }}>
                       <option value="">— Select a product —</option>
                       {allProducts.map(p=>(
                         <option key={p._id} value={p._id}>
@@ -509,34 +509,34 @@ function AddSaleTab({ customer, onDone }) {
                   <td style={{ padding:"7px 8px" }}>
                     <input type="number" min="1" value={it.qty}
                       onChange={e=>setItem(i,"qty",e.target.value)}
-                      style={{ width:55, padding:"7px 8px", border:"1px solid #d1d5db",
+                      style={{ width:55, padding:"7px 8px", border:"1px solid #dde1ec",
                         borderRadius:6, fontSize:12, textAlign:"center" }} />
                   </td>
                   <td style={{ padding:"7px 8px" }}>
                     <input type="number" value={it.rate}
                       onChange={e=>setItem(i,"rate",e.target.value)}
-                      style={{ width:80, padding:"7px 8px", border:"1px solid #d1d5db",
+                      style={{ width:80, padding:"7px 8px", border:"1px solid #dde1ec",
                         borderRadius:6, fontSize:12 }} />
                   </td>
                   <td style={{ padding:"7px 8px" }}>
                     <input type="number" min="0" max="100" step="0.01" value={it.discount}
                       onChange={e=>setItem(i,"discount",e.target.value)}
-                      style={{ width:70, padding:"7px 8px", border:"1px solid #d1d5db",
+                      style={{ width:70, padding:"7px 8px", border:"1px solid #dde1ec",
                         borderRadius:6, fontSize:12 }} />
                     {c.discountAmount > 0 && (
-                      <div style={{ fontSize:9, color:"#f59e0b", marginTop:3 }}>
+                      <div style={{ fontSize:9, color:"#e5a03a", marginTop:3 }}>
                         -₹{c.discountAmount.toFixed(2)}
                       </div>
                     )}
                   </td>
-                  <td style={{ padding:"7px 8px", color:"#64748b" }}>{c.gstRate}%</td>
-                  <td style={{ padding:"7px 8px", fontWeight:700, color:"#16a34a" }}>
+                  <td style={{ padding:"7px 8px", color:"#6b7392" }}>{c.gstRate}%</td>
+                  <td style={{ padding:"7px 8px", fontWeight:700, color:"#1f9d6b" }}>
                     ₹{c.total.toFixed(2)}
                   </td>
                   <td style={{ padding:"7px 8px" }}>
                     {items.length>1 && (
                       <button onClick={()=>removeRow(i)}
-                        style={{ background:"#fee2e2", color:"#991b1b", border:"none",
+                        style={{ background:"#fdeceb", color:"#a33a35", border:"none",
                           borderRadius:4, padding:"4px 8px", cursor:"pointer" }}>✕</button>
                     )}
                   </td>
@@ -560,36 +560,36 @@ function AddSaleTab({ customer, onDone }) {
             <FormInput placeholder="Any notes..." value={form.notes} onChange={setF("notes")} />
           </FormGroup>
         </div>
-        <div style={{ background:"#f8fafc", borderRadius:8, padding:16, fontSize:13 }}>
+        <div style={{ background:"#f7f8fc", borderRadius:8, padding:16, fontSize:13 }}>
           <div style={{ fontWeight:700, marginBottom:10 }}>Invoice Summary</div>
           <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}>
             <span>Subtotal</span><span>₹{totals.sub.toFixed(2)}</span>
           </div>
-          <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#f59e0b" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#e5a03a" }}>
             <span>Discount</span><span>-₹{totals.discount.toFixed(2)}</span>
           </div>
           {form.isInterState
-            ? <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#f59e0b" }}>
+            ? <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#e5a03a" }}>
                 <span>IGST</span><span>₹{igst.toFixed(2)}</span>
               </div>
             : <>
-                <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#8b5cf6" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#d946ef" }}>
                   <span>CGST</span><span>₹{cgst.toFixed(2)}</span>
                 </div>
-                <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#ec4899" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#f472b6" }}>
                   <span>SGST</span><span>₹{sgst.toFixed(2)}</span>
                 </div>
               </>
           }
           <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0",
-            borderTop:"2px solid #e2e8f0", fontWeight:800, fontSize:16 }}>
+            borderTop:"2px solid #e6e9f2", fontWeight:800, fontSize:16 }}>
             <span>Grand Total</span><span>₹{totals.total.toFixed(2)}</span>
           </div>
-          <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#16a34a" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#1f9d6b" }}>
             <span>Amount Paid</span><span>₹{(+form.amountPaid||0).toFixed(2)}</span>
           </div>
           <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0",
-            color:due>0?"#ef4444":"#94a3b8", fontWeight:700 }}>
+            color:due>0?"#e0524c":"#9aa1b9", fontWeight:700 }}>
             <span>Balance Due</span><span>₹{due.toFixed(2)}</span>
           </div>
         </div>
@@ -645,7 +645,7 @@ export default function CustomerProfile({ customerId, navigate }) {
       </div>
 
       {/* Header */}
-      <div style={{ background:"linear-gradient(135deg,#0f172a,#1e3a5f)",
+      <div style={{ background:"linear-gradient(135deg,#0f1535,#1e3a5f)",
         borderRadius:12, padding:"22px 24px", marginBottom:20, color:"#fff" }}>
         <div style={{ display:"flex", justifyContent:"space-between",
           alignItems:"flex-start", flexWrap:"wrap", gap:12 }}>
@@ -654,7 +654,7 @@ export default function CustomerProfile({ customerId, navigate }) {
               {customer.name}
             </div>
             <div style={{ display:"flex", gap:16, marginTop:8, flexWrap:"wrap",
-              fontSize:13, color:"#94a3b8" }}>
+              fontSize:13, color:"#9aa1b9" }}>
               <span>📞 {customer.phone}</span>
               {customer.email && <span>📧 {customer.email}</span>}
               {customer.city  && <span>📍 {customer.city}</span>}
@@ -674,31 +674,31 @@ export default function CustomerProfile({ customerId, navigate }) {
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",
           gap:10, marginTop:18 }}>
           {[
-            { label:"Total Orders",    value: stats.totalOrders,                              bg:"rgba(59,130,246,0.2)",  border:"#3b82f6" },
-            { label:"Total Billed",    value:`₹${stats.totalBilled.toLocaleString()}`,         bg:"rgba(139,92,246,0.2)",  border:"#8b5cf6" },
-            { label:"Amount Received", value:`₹${stats.totalReceived.toLocaleString()}`,       bg:"rgba(22,163,74,0.2)",   border:"#16a34a" },
-            { label:"Amount Due",      value:`₹${stats.totalDue.toLocaleString()}`,            bg:"rgba(239,68,68,0.2)",   border:"#ef4444" },
-            { label:"Advance Balance", value:`₹${(stats.advanceBalance||0).toLocaleString()}`, bg:"rgba(124,58,237,0.2)", border:"#7c3aed" },
-            { label:"Credit Limit",    value:`₹${(customer.creditLimit||0).toLocaleString()}`, bg:"rgba(245,158,11,0.2)",  border:"#f59e0b" },
+            { label:"Total Orders",    value: stats.totalOrders,                              bg:"rgba(59,130,246,0.2)",  border:"#5a8be8" },
+            { label:"Total Billed",    value:`₹${stats.totalBilled.toLocaleString()}`,         bg:"rgba(139,92,246,0.2)",  border:"#d946ef" },
+            { label:"Amount Received", value:`₹${stats.totalReceived.toLocaleString()}`,       bg:"rgba(22,163,74,0.2)",   border:"#1f9d6b" },
+            { label:"Amount Due",      value:`₹${stats.totalDue.toLocaleString()}`,            bg:"rgba(239,68,68,0.2)",   border:"#e0524c" },
+            { label:"Advance Balance", value:`₹${(stats.advanceBalance||0).toLocaleString()}`, bg:"rgba(124,58,237,0.2)", border:"#c026d3" },
+            { label:"Credit Limit",    value:`₹${(customer.creditLimit||0).toLocaleString()}`, bg:"rgba(245,158,11,0.2)",  border:"#e5a03a" },
           ].map((c,i) => (
             <div key={i} style={{ background:c.bg, borderRadius:8, padding:"12px 14px",
               borderLeft:`3px solid ${c.border}` }}>
               <div style={{ fontSize:18, fontWeight:800, color:"#fff" }}>{c.value}</div>
-              <div style={{ fontSize:10, color:"#9ca3af", marginTop:2 }}>{c.label}</div>
+              <div style={{ fontSize:10, color:"#9aa1b9", marginTop:2 }}>{c.label}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Tabs */}
-      <div style={{ display:"flex", borderBottom:"2px solid #e2e8f0",
+      <div style={{ display:"flex", borderBottom:"2px solid #e6e9f2",
         marginBottom:20, flexWrap:"wrap" }}>
         {TABS.map(t => (
           <div key={t.key} onClick={() => setTab(t.key)}
             style={{ padding:"10px 22px", fontWeight:700, fontSize:13, cursor:"pointer",
-              borderBottom: tab===t.key ? "3px solid #14b8a6" : "3px solid transparent",
-              marginBottom:-2, color: tab===t.key ? "#1e293b" : "#64748b",
-              background: t.key==="add-sale" && tab!==t.key ? "#f0fdf4" : "transparent",
+              borderBottom: tab===t.key ? "3px solid #8b5cf6" : "3px solid transparent",
+              marginBottom:-2, color: tab===t.key ? "#0f1535" : "#6b7392",
+              background: t.key==="add-sale" && tab!==t.key ? "#f0faf5" : "transparent",
               borderRadius: t.key==="add-sale" ? "6px 6px 0 0" : 0 }}>
             {t.label}
           </div>

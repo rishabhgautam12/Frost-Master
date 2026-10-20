@@ -48,12 +48,12 @@ export default function WarehouseStockEditor({ rows, onChange, warehouseOptions 
   };
 
   return (
-    <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: 12 }}>
+    <div style={{ background: "#f7f8fc", border: "1px solid #e6e9f2", borderRadius: 8, padding: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: "#475569", textTransform: "uppercase" }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#4a5272", textTransform: "uppercase" }}>
           Warehouse Stock
         </div>
-        <div style={{ fontSize: 11, fontWeight: 800, color: "#0f172a" }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#0f1535" }}>
           Total: {warehouseTotal(rows)}
         </div>
       </div>
@@ -86,7 +86,7 @@ export default function WarehouseStockEditor({ rows, onChange, warehouseOptions 
           <button
             type="button"
             onClick={() => removeRow(index)}
-            style={{ border: "none", borderRadius: 6, background: "#fee2e2", color: "#991b1b", fontWeight: 800, cursor: "pointer" }}
+            style={{ border: "none", borderRadius: 6, background: "#fdeceb", color: "#a33a35", fontWeight: 800, cursor: "pointer" }}
           >
             x
           </button>

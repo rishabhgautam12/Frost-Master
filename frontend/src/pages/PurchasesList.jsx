@@ -60,7 +60,7 @@ function PurchaseModal({
     <Modal open={!!purchase} onClose={onClose} wide title={`Purchase Details - ${purchase.purchaseNo}`}>
       <div>
         <div style={{ display:"flex", justifyContent:"space-between", gap:10, alignItems:"center", marginBottom:14 }}>
-          <div style={{ color:"#64748b", fontSize:12 }}>
+          <div style={{ color:"#6b7392", fontSize:12 }}>
             {purchase.vendor?.name || "Vendor"} · {new Date(purchase.date).toLocaleDateString("en-IN")}
           </div>
           <div style={{ display:"flex", gap:8 }}>
@@ -73,13 +73,13 @@ function PurchaseModal({
 
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:16 }}>
           {[
-            ["Subtotal", money(totals.subtotal), "#1e293b"],
-            ["Transport", money(totals.transport), "#64748b"],
-            ["Total GST", money(totals.gst), "#f59e0b"],
-            ["Grand Total", money(totals.grand), "#111827"],
+            ["Subtotal", money(totals.subtotal), "#0f1535"],
+            ["Transport", money(totals.transport), "#6b7392"],
+            ["Total GST", money(totals.gst), "#e5a03a"],
+            ["Grand Total", money(totals.grand), "#0f1535"],
           ].map(([label, value, color]) => (
-            <div key={label} style={{ background:"#f8fafc", border:"1px solid #e2e8f0", borderRadius:8, padding:"12px 14px" }}>
-              <div style={{ fontSize:10, color:"#64748b", textTransform:"uppercase", fontWeight:800 }}>{label}</div>
+            <div key={label} style={{ background:"#f7f8fc", border:"1px solid #e6e9f2", borderRadius:8, padding:"12px 14px" }}>
+              <div style={{ fontSize:10, color:"#6b7392", textTransform:"uppercase", fontWeight:800 }}>{label}</div>
               <div style={{ marginTop:4, color, fontWeight:800, fontSize:16 }}>{value}</div>
             </div>
           ))}
@@ -99,39 +99,39 @@ function PurchaseModal({
 
         <div style={{ marginBottom:16 }}>
           <div style={{ fontWeight:800, fontSize:13, marginBottom:8 }}>Purchased Items</div>
-          <div style={{ border:"1px solid #e2e8f0", borderRadius:8, overflowX:"auto" }}>
-            <div style={{ display:"grid", gridTemplateColumns:"minmax(190px,2fr) 90px 130px 70px 90px 105px 78px 95px 88px 100px", minWidth:1140, background:"#f8fafc", padding:"8px 10px", fontSize:11, fontWeight:800 }}>
+          <div style={{ border:"1px solid #e6e9f2", borderRadius:8, overflowX:"auto" }}>
+            <div style={{ display:"grid", gridTemplateColumns:"minmax(190px,2fr) 90px 130px 70px 90px 105px 78px 95px 88px 100px", minWidth:1140, background:"#f7f8fc", padding:"8px 10px", fontSize:11, fontWeight:800 }}>
               {["Product","Model","Warehouse","Qty","Rate","Billing Rate","GST %","Transport","Trans GST","Total"].map(h => <div key={h} style={{ padding:"0 4px" }}>{h}</div>)}
             </div>
             {items.map((it, idx) => {
               const row = calcItem(it);
               return (
-                <div key={idx} style={{ display:"grid", gridTemplateColumns:"minmax(190px,2fr) 90px 130px 70px 90px 105px 78px 95px 88px 100px", minWidth:1140, padding:"8px 10px", borderTop:"1px solid #f1f5f9", alignItems:"start" }}>
+                <div key={idx} style={{ display:"grid", gridTemplateColumns:"minmax(190px,2fr) 90px 130px 70px 90px 105px 78px 95px 88px 100px", minWidth:1140, padding:"8px 10px", borderTop:"1px solid #f1f3f9", alignItems:"start" }}>
                   <div style={{ padding:"7px 4px 0", fontWeight:700 }}>{it.productName || "Item"}</div>
                   <div style={{ padding:"7px 4px 0", fontFamily:"monospace", color:"#0ea5e9", fontSize:11 }}>{it.modelNumber || "-"}</div>
                   <div style={{ padding:"0 4px" }}>
                     {warehouseOptions.length ? (
                       <select disabled={disabled} value={it.warehouse || ""} onChange={(e) => setItem(idx, "warehouse", e.target.value)}
-                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db", borderRadius:6, background:"#f9fafb", fontSize:12, ...mutedInput }}>
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec", borderRadius:6, background:"#fafbfe", fontSize:12, ...mutedInput }}>
                         {it.warehouse && !warehouseOptions.some(w => w.name === it.warehouse) && <option value={it.warehouse}>{it.warehouse}</option>}
                         {warehouseOptions.map(w => <option key={w._id} value={w.name}>{w.name}</option>)}
                       </select>
                     ) : (
                       <input disabled={disabled} value={it.warehouse || ""} onChange={(e) => setItem(idx, "warehouse", e.target.value)}
-                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box", ...mutedInput }} />
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, boxSizing:"border-box", ...mutedInput }} />
                     )}
                   </div>
-                  <div style={{ padding:"0 4px" }}><input type="number" min="1" disabled={disabled} value={it.qty} onChange={(e) => setItem(idx, "qty", e.target.value)} style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box", ...mutedInput }} /></div>
-                  <div style={{ padding:"0 4px" }}><input type="number" min="0" disabled={disabled} value={it.rate} onChange={(e) => setItem(idx, "rate", e.target.value)} style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box", ...mutedInput }} /></div>
-                  <div style={{ padding:"0 4px" }}><input type="number" min="0" disabled={disabled} value={it.billingRate} onChange={(e) => setItem(idx, "billingRate", e.target.value)} style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box", ...mutedInput }} /></div>
+                  <div style={{ padding:"0 4px" }}><input type="number" min="1" disabled={disabled} value={it.qty} onChange={(e) => setItem(idx, "qty", e.target.value)} style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, boxSizing:"border-box", ...mutedInput }} /></div>
+                  <div style={{ padding:"0 4px" }}><input type="number" min="0" disabled={disabled} value={it.rate} onChange={(e) => setItem(idx, "rate", e.target.value)} style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, boxSizing:"border-box", ...mutedInput }} /></div>
+                  <div style={{ padding:"0 4px" }}><input type="number" min="0" disabled={disabled} value={it.billingRate} onChange={(e) => setItem(idx, "billingRate", e.target.value)} style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, boxSizing:"border-box", ...mutedInput }} /></div>
                   <div style={{ padding:"0 4px" }}>
-                    <select disabled={disabled} value={it.gstRate} onChange={(e) => setItem(idx, "gstRate", e.target.value)} style={{ width:"100%", padding:"7px 4px", border:"1px solid #d1d5db", borderRadius:6, background:"#f9fafb", fontSize:12, ...mutedInput }}>
+                    <select disabled={disabled} value={it.gstRate} onChange={(e) => setItem(idx, "gstRate", e.target.value)} style={{ width:"100%", padding:"7px 4px", border:"1px solid #dde1ec", borderRadius:6, background:"#fafbfe", fontSize:12, ...mutedInput }}>
                       {["0","5","9","12","18","28"].map(r => <option key={r} value={r}>{r}%</option>)}
                     </select>
                   </div>
-                  <div style={{ padding:"0 4px" }}><input type="number" min="0" disabled={disabled} value={it.transportAmount} onChange={(e) => setItem(idx, "transportAmount", e.target.value)} style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box", ...mutedInput }} /></div>
+                  <div style={{ padding:"0 4px" }}><input type="number" min="0" disabled={disabled} value={it.transportAmount} onChange={(e) => setItem(idx, "transportAmount", e.target.value)} style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, boxSizing:"border-box", ...mutedInput }} /></div>
                   <div style={{ padding:"0 4px" }}>
-                    <select disabled={disabled} value={it.transportGstRate} onChange={(e) => setItem(idx, "transportGstRate", e.target.value)} style={{ width:"100%", padding:"7px 4px", border:"1px solid #d1d5db", borderRadius:6, background:"#f9fafb", fontSize:12, ...mutedInput }}>
+                    <select disabled={disabled} value={it.transportGstRate} onChange={(e) => setItem(idx, "transportGstRate", e.target.value)} style={{ width:"100%", padding:"7px 4px", border:"1px solid #dde1ec", borderRadius:6, background:"#fafbfe", fontSize:12, ...mutedInput }}>
                       {["0","5","12","18","28"].map(r => <option key={r} value={r}>{r}%</option>)}
                     </select>
                   </div>
@@ -148,18 +148,18 @@ function PurchaseModal({
               <div style={{ fontWeight:800, fontSize:13 }}>Payments</div>
               {editMode && <Btn sm color="blue" onClick={addPayment}>+ Add Payment</Btn>}
             </div>
-            <div style={{ border:"1px solid #e2e8f0", borderRadius:8, overflow:"hidden" }}>
+            <div style={{ border:"1px solid #e6e9f2", borderRadius:8, overflow:"hidden" }}>
               {payments.length === 0 ? (
-                <div style={{ padding:12, color:"#64748b", fontSize:12 }}>No payment recorded.</div>
+                <div style={{ padding:12, color:"#6b7392", fontSize:12 }}>No payment recorded.</div>
               ) : payments.map((p, idx) => (
-                <div key={p._id || idx} style={{ display:"grid", gridTemplateColumns:"120px 1fr 135px 1fr 34px", gap:8, padding:10, borderTop:idx ? "1px solid #f1f5f9" : "none" }}>
+                <div key={p._id || idx} style={{ display:"grid", gridTemplateColumns:"120px 1fr 135px 1fr 34px", gap:8, padding:10, borderTop:idx ? "1px solid #f1f3f9" : "none" }}>
                   <FormSelect disabled={disabled} value={p.paymentMode} onChange={(e) => setPayment(idx, "paymentMode", e.target.value)}>
                     {["Cash","UPI","Bank Transfer","Cheque"].map(m => <option key={m}>{m}</option>)}
                   </FormSelect>
                   <FormInput type="number" disabled={disabled} value={p.amount} onChange={(e) => setPayment(idx, "amount", e.target.value)} />
                   <FormInput type="date" disabled={disabled} value={p.date} onChange={(e) => setPayment(idx, "date", e.target.value)} />
                   <FormInput disabled={disabled} placeholder="Notes" value={p.notes || ""} onChange={(e) => setPayment(idx, "notes", e.target.value)} />
-                  {editMode ? <button onClick={() => removePayment(idx)} style={{ border:0, borderRadius:6, background:"#fee2e2", color:"#991b1b", cursor:"pointer" }}>x</button> : <span />}
+                  {editMode ? <button onClick={() => removePayment(idx)} style={{ border:0, borderRadius:6, background:"#fdeceb", color:"#a33a35", cursor:"pointer" }}>x</button> : <span />}
                 </div>
               ))}
             </div>
@@ -168,9 +168,9 @@ function PurchaseModal({
             <FormGroup label="Notes">
               <FormInput disabled={disabled} style={mutedInput} value={form.notes} onChange={setF("notes")} placeholder="Any notes..." />
             </FormGroup>
-            <div style={{ background:"#f8fafc", borderRadius:8, padding:16, fontSize:13 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}><span>Amount Paid</span><strong style={{ color:"#16a34a" }}>{money(paid)}</strong></div>
-              <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}><span>Outstanding</span><strong style={{ color:due > 0 ? "#ef4444" : "#94a3b8" }}>{money(due)}</strong></div>
+            <div style={{ background:"#f7f8fc", borderRadius:8, padding:16, fontSize:13 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}><span>Amount Paid</span><strong style={{ color:"#1f9d6b" }}>{money(paid)}</strong></div>
+              <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}><span>Outstanding</span><strong style={{ color:due > 0 ? "#e0524c" : "#9aa1b9" }}>{money(due)}</strong></div>
             </div>
           </div>
         </div>
@@ -316,14 +316,14 @@ export default function PurchasesList({ navigate }) {
       {toast && <SuccessToast msg={toast} />}
       <div style={{ display: "flex", gap: 14, marginBottom: 18, flexWrap: "wrap" }}>
         {[
-          { label: "Total Purchases", value: purchases.length, color: "#3b82f6" },
-          { label: "Total Amount", value: money(total), color: "#8b5cf6" },
-          { label: "Amount Paid", value: money(paid), color: "#16a34a" },
-          { label: "Outstanding", value: money(total - paid), color: "#ef4444" },
+          { label: "Total Purchases", value: purchases.length, color: "#5a8be8" },
+          { label: "Total Amount", value: money(total), color: "#d946ef" },
+          { label: "Amount Paid", value: money(paid), color: "#1f9d6b" },
+          { label: "Outstanding", value: money(total - paid), color: "#e0524c" },
         ].map((c, i) => (
-          <div key={i} style={{ background: "#fff", borderRadius: 8, padding: "12px 16px", borderLeft: `4px solid ${c.color}`, border: "1px solid #e2e8f0", minWidth: 140 }}>
+          <div key={i} style={{ background: "#fff", borderRadius: 8, padding: "12px 16px", borderLeft: `4px solid ${c.color}`, border: "1px solid #e6e9f2", minWidth: 140 }}>
             <div style={{ fontSize: 20, fontWeight: 800 }}>{c.value}</div>
-            <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{c.label}</div>
+            <div style={{ fontSize: 10, color: "#6b7392", marginTop: 2 }}>{c.label}</div>
           </div>
         ))}
       </div>
@@ -356,8 +356,8 @@ export default function PurchasesList({ navigate }) {
               ) : purchases.map((p) => {
                 const due = Math.max(0, (p.grandTotal || 0) - (p.amountPaid || 0));
                 return (
-                  <tr key={p._id} onClick={() => openPurchase(p)} style={{ borderBottom: "1px solid #f1f5f9", cursor:"pointer" }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = "#f0fdfa"}
+                  <tr key={p._id} onClick={() => openPurchase(p)} style={{ borderBottom: "1px solid #f1f3f9", cursor:"pointer" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "#f5f3ff"}
                     onMouseLeave={(e) => e.currentTarget.style.background = ""}>
                     <Td style={{ fontFamily: "monospace", color: "#0ea5e9" }}>{p.purchaseNo}</Td>
                     <Td>{new Date(p.date).toLocaleDateString("en-IN")}</Td>
@@ -365,13 +365,13 @@ export default function PurchasesList({ navigate }) {
                     <Td style={{ fontFamily: "monospace", fontSize: 11 }}>{p.invoiceNo || "-"}</Td>
                     <Td>{p.items?.length || 0}</Td>
                     <Td style={{ fontWeight: 700 }}>{money(p.grandTotal)}</Td>
-                    <Td style={{ color: "#16a34a" }}>{money(p.amountPaid || 0)}</Td>
-                    <Td style={{ color: due > 0 ? "#ef4444" : "#94a3b8", fontWeight: 700 }}>{due > 0 ? money(due) : "-"}</Td>
+                    <Td style={{ color: "#1f9d6b" }}>{money(p.amountPaid || 0)}</Td>
+                    <Td style={{ color: due > 0 ? "#e0524c" : "#9aa1b9", fontWeight: 700 }}>{due > 0 ? money(due) : "-"}</Td>
                     <Td>
                       {p.payments?.length ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                           {p.payments.map((payment, idx) => (
-                            <div key={payment._id || idx} style={{ fontSize: 11, color: "#475569" }}>
+                            <div key={payment._id || idx} style={{ fontSize: 11, color: "#4a5272" }}>
                               <strong>{payment.paymentMode}</strong>: {money(payment.amount)}
                             </div>
                           ))}

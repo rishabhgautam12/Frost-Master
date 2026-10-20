@@ -157,7 +157,7 @@ export default function CustomerList({ navigate }) {
 
       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:14 }}>
         <Btn color="teal" onClick={openAdd}>+ Add Customer</Btn>
-        <span style={{ fontSize:12, color:"#64748b" }}>{customers.length} customers</span>
+        <span style={{ fontSize:12, color:"#6b7392" }}>{customers.length} customers</span>
       </div>
 
       <SearchBar>
@@ -179,8 +179,8 @@ export default function CustomerList({ navigate }) {
                 : customers.map(c => {
                   const due = c.totalBilled - c.totalReceived;
                   return (
-                    <tr key={c._id} style={{ borderBottom:"1px solid #f1f5f9" }}
-                      onMouseEnter={e=>e.currentTarget.style.background="#f0fdfa"}
+                    <tr key={c._id} style={{ borderBottom:"1px solid #f1f3f9" }}
+                      onMouseEnter={e=>e.currentTarget.style.background="#f5f3ff"}
                       onMouseLeave={e=>e.currentTarget.style.background=""}>
                       <Td style={{ fontWeight:700 }}>
                         <span onClick={() => navigate(`customer-profile:${c._id}`)}
@@ -197,10 +197,10 @@ export default function CustomerList({ navigate }) {
                       </Td>
                       <Td>{c.city||"—"}</Td>
                       <Td style={{ fontWeight:700 }}>₹{c.totalBilled.toLocaleString()}</Td>
-                      <Td style={{ color:"#16a34a", fontWeight:700 }}>
+                      <Td style={{ color:"#1f9d6b", fontWeight:700 }}>
                         ₹{c.totalReceived.toLocaleString()}
                       </Td>
-                      <Td style={{ color:due>0?"#ef4444":"#94a3b8", fontWeight:700 }}>
+                      <Td style={{ color:due>0?"#e0524c":"#9aa1b9", fontWeight:700 }}>
                         {due>0 ? `₹${due.toLocaleString()}` : "—"}
                       </Td>
                       <Td>

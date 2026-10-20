@@ -33,9 +33,9 @@ function QuickAddCustomer({ onSaved, onCancel }) {
   };
 
   return (
-    <div style={{ background:"#f0fdf4", border:"1px solid #86efac", borderRadius:10,
+    <div style={{ background:"#f0faf5", border:"1px solid #a8e2c6", borderRadius:10,
       padding:18, marginBottom:16 }}>
-      <div style={{ fontWeight:700, fontSize:13, color:"#166534", marginBottom:14 }}>
+      <div style={{ fontWeight:700, fontSize:13, color:"#13734d", marginBottom:14 }}>
         ➕ Add New Customer
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
@@ -231,7 +231,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
       <PageTitle>{isQuotation ? "Create Quotation" : isOrder ? "Create Order" : "Create Sale / Invoice"}</PageTitle>
       {toast && <SuccessToast msg={toast} />}
 
-      <div style={{ background:"#fff", borderRadius:10, padding:28, border:"1px solid #e2e8f0" }}>
+      <div style={{ background:"#fff", borderRadius:10, padding:28, border:"1px solid #e6e9f2" }}>
 
         {/* Sale type / payment / date */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))", gap:12, marginBottom:20 }}>
@@ -280,9 +280,9 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                   }}>+ New</Btn>
                 </div>
                 {selectedCustomer && (
-                  <div style={{ marginTop:6, fontSize:11, color:"#64748b",
-                    background:"#f0fdf4", padding:"6px 10px", borderRadius:6,
-                    border:"1px solid #86efac" }}>
+                  <div style={{ marginTop:6, fontSize:11, color:"#6b7392",
+                    background:"#f0faf5", padding:"6px 10px", borderRadius:6,
+                    border:"1px solid #a8e2c6" }}>
                     ✅ {selectedCustomer.name} · {selectedCustomer.phone}
                     {selectedCustomer.email && ` · ${selectedCustomer.email}`}
                     {selectedCustomer.city  && ` · ${selectedCustomer.city}`}
@@ -312,19 +312,19 @@ export default function CreateSale({ navigate, mode = "sale" }) {
 
         <div style={{ marginBottom:20 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-              <div style={{ fontWeight:800, fontSize:13, color:"#1e293b" }}>{isOrder || isQuotation ? "Advance Payment Entries" : "Payment Entries"}</div>
+              <div style={{ fontWeight:800, fontSize:13, color:"#0f1535" }}>{isOrder || isQuotation ? "Advance Payment Entries" : "Payment Entries"}</div>
               <Btn sm color="blue" onClick={addPayment}>+ Add {isOrder || isQuotation ? "Advance" : "Payment"}</Btn>
             </div>
-            <div style={{ border:"1px solid #e2e8f0", borderRadius:8, overflow:"hidden" }}>
+            <div style={{ border:"1px solid #e6e9f2", borderRadius:8, overflow:"hidden" }}>
               {payments.map((payment, i) => (
-                <div key={i} style={{ display:"grid", gridTemplateColumns:"150px 1fr 150px 1.4fr 36px", gap:8, padding:10, borderTop:i ? "1px solid #f1f5f9" : "none", alignItems:"center" }}>
+                <div key={i} style={{ display:"grid", gridTemplateColumns:"150px 1fr 150px 1.4fr 36px", gap:8, padding:10, borderTop:i ? "1px solid #f1f3f9" : "none", alignItems:"center" }}>
                   <FormSelect value={payment.paymentMode} onChange={e => setPayment(i, "paymentMode", e.target.value)}>
                     {["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(value => <option key={value}>{value}</option>)}
                   </FormSelect>
                   <FormInput type="number" placeholder="Amount" disabled={payment.paymentMode === "Credit"} value={payment.amount} onChange={e => setPayment(i, "amount", e.target.value)} />
                   <FormInput type="date" value={payment.date} onChange={e => setPayment(i, "date", e.target.value)} />
                   <FormInput placeholder="Payment notes / reference" value={payment.notes} onChange={e => setPayment(i, "notes", e.target.value)} />
-                  <button type="button" onClick={() => removePayment(i)} style={{ border:"none", borderRadius:6, background:"#fee2e2", color:"#991b1b", height:34, cursor:"pointer", fontWeight:800 }}>x</button>
+                  <button type="button" onClick={() => removePayment(i)} style={{ border:"none", borderRadius:6, background:"#fdeceb", color:"#a33a35", height:34, cursor:"pointer", fontWeight:800 }}>x</button>
                 </div>
               ))}
             </div>
@@ -332,15 +332,15 @@ export default function CreateSale({ navigate, mode = "sale" }) {
 
         {/* Items */}
         <div style={{ marginBottom:20 }}>
-          <div style={{ fontWeight:700, fontSize:13, marginBottom:10, color:"#1e293b" }}>
+          <div style={{ fontWeight:700, fontSize:13, marginBottom:10, color:"#0f1535" }}>
             📦 {documentName} Items
           </div>
 
-          <div style={{ background:"#fff", border:"1px solid #e2e8f0", borderRadius:8, overflowX:"auto" }}>
+          <div style={{ background:"#fff", border:"1px solid #e6e9f2", borderRadius:8, overflowX:"auto" }}>
             {/* Table header */}
             <div style={{ display:"grid",
               gridTemplateColumns:SALE_ITEM_GRID, minWidth:SALE_ITEM_MIN_WIDTH,
-              gap:0, background:"#f8fafc", padding:"8px 10px",
+              gap:0, background:"#f7f8fc", padding:"8px 10px",
               fontSize:11, fontWeight:700, color:"#374155" }}>
               {["Product","Model No.","Warehouse","Qty","Rate","Billing Rate","Disc. %","GST %","Transport","Trans GST","Total",""].map(h => (
                 <div key={h} style={{ padding:"0 4px" }}>{h}</div>
@@ -353,7 +353,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
               const isNewForm = newProductRow === i;
 
               return (
-                <div key={i} style={{ borderTop:"1px solid #f1f5f9" }}>
+                <div key={i} style={{ borderTop:"1px solid #f1f3f9" }}>
                   {/* Row */}
                   <div style={{ display:"grid",
                     gridTemplateColumns:SALE_ITEM_GRID, minWidth:SALE_ITEM_MIN_WIDTH,
@@ -364,8 +364,8 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                       <div style={{ display:"flex", gap:5, minWidth:0 }}>
                         <select value={it.product}
                           onChange={e => setItem(i, "product", e.target.value)}
-                          style={{ flex:1, width:0, minWidth:0, padding:"7px 8px", border:"1px solid #d1d5db",
-                            borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                          style={{ flex:1, width:0, minWidth:0, padding:"7px 8px", border:"1px solid #dde1ec",
+                            borderRadius:6, fontSize:12, background:"#fafbfe" }}>
                           <option value="">Select product</option>
                           {products.map(p => (
                             <option key={p._id} value={p._id}>
@@ -378,9 +378,9 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                           onClick={() => setNewProductRow(isNewForm ? null : i)}
                           style={{
                             padding:"6px 8px", borderRadius:6,
-                            border:`1px solid ${isNewForm ? "#ef4444" : "#10b981"}`,
-                            background: isNewForm ? "#fee2e2" : "#f0fdf4",
-                            color: isNewForm ? "#991b1b" : "#166534",
+                            border:`1px solid ${isNewForm ? "#e0524c" : "#10b981"}`,
+                            background: isNewForm ? "#fdeceb" : "#f0faf5",
+                            color: isNewForm ? "#a33a35" : "#13734d",
                             cursor:"pointer", fontSize:11, fontWeight:700,
                             whiteSpace:"nowrap", flexShrink:0,
                           }}>
@@ -392,7 +392,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                         onChange={e => setItem(i, "description", e.target.value)}
                         placeholder="Product description (optional)"
                         rows={2}
-                        style={{ width:"100%", marginTop:6, padding:"6px 8px", border:"1px solid #d1d5db", borderRadius:6, fontSize:11, resize:"vertical", boxSizing:"border-box", background:"#fff" }}
+                        style={{ width:"100%", marginTop:6, padding:"6px 8px", border:"1px solid #dde1ec", borderRadius:6, fontSize:11, resize:"vertical", boxSizing:"border-box", background:"#fff" }}
                       />
                     </div>
 
@@ -404,7 +404,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
 
                     <div style={{ padding:"0 4px" }}>
                       <select value={it.warehouse || "Main Warehouse"} onChange={e => setItem(i, "warehouse", e.target.value)}
-                        style={{ width:"100%", padding:"7px 5px", border:"1px solid #d1d5db", borderRadius:6, fontSize:11, background:"#f9fafb" }}>
+                        style={{ width:"100%", padding:"7px 5px", border:"1px solid #dde1ec", borderRadius:6, fontSize:11, background:"#fafbfe" }}>
                         {warehouses.length ? warehouses.map(w => <option key={w._id} value={w.name}>{w.name}</option>) : <option>Main Warehouse</option>}
                       </select>
                     </div>
@@ -413,7 +413,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                     <div style={{ padding:"0 4px" }}>
                       <input type="number" min="1" value={it.qty}
                         onChange={e => setItem(i, "qty", e.target.value)}
-                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db",
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec",
                           borderRadius:6, fontSize:12, textAlign:"center", boxSizing:"border-box" }} />
                     </div>
 
@@ -421,24 +421,24 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                     <div style={{ padding:"0 4px" }}>
                       <input type="number" value={it.rate}
                         onChange={e => setItem(i, "rate", e.target.value)}
-                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db",
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec",
                           borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
                     </div>
 
                     <div style={{ padding:"0 4px" }}>
                       <input type="number" value={it.billingRate}
                         onChange={e => setItem(i, "billingRate", e.target.value)} placeholder="Taxable"
-                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
                     </div>
 
                     {/* Discount */}
                     <div style={{ padding:"0 4px" }}>
                       <input type="number" min="0" max="100" step="0.01" value={it.discount}
                         onChange={e => setItem(i, "discount", e.target.value)}
-                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db",
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec",
                           borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
                       {c.discountAmount > 0 && (
-                        <div style={{ fontSize:9, color:"#f59e0b", marginTop:3 }}>
+                        <div style={{ fontSize:9, color:"#e5a03a", marginTop:3 }}>
                           -₹{c.discountAmount.toFixed(2)}
                         </div>
                       )}
@@ -448,8 +448,8 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                     <div style={{ padding:"0 4px" }}>
                       <select value={it.gstRate}
                         onChange={e => setItem(i, "gstRate", e.target.value)}
-                        style={{ width:"100%", padding:"7px 4px", border:"1px solid #d1d5db",
-                          borderRadius:6, fontSize:12, background:"#f9fafb", boxSizing:"border-box" }}>
+                        style={{ width:"100%", padding:"7px 4px", border:"1px solid #dde1ec",
+                          borderRadius:6, fontSize:12, background:"#fafbfe", boxSizing:"border-box" }}>
                         {["0","5","9","12","18","28"].map(r => (
                           <option key={r} value={r}>{r}%</option>
                         ))}
@@ -459,18 +459,18 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                     <div style={{ padding:"0 4px" }}>
                       <input type="number" min="0" value={it.transportAmount}
                         onChange={e => setItem(i, "transportAmount", e.target.value)} placeholder="0"
-                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
+                        style={{ width:"100%", padding:"7px 6px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, boxSizing:"border-box" }} />
                     </div>
 
                     <div style={{ padding:"0 4px" }}>
                       <select value={it.transportGstRate} onChange={e => setItem(i, "transportGstRate", e.target.value)}
-                        style={{ width:"100%", padding:"7px 4px", border:"1px solid #d1d5db", borderRadius:6, fontSize:12, background:"#f9fafb" }}>
+                        style={{ width:"100%", padding:"7px 4px", border:"1px solid #dde1ec", borderRadius:6, fontSize:12, background:"#fafbfe" }}>
                         {["0","5","12","18","28"].map(r => <option key={r} value={r}>{r}%</option>)}
                       </select>
                     </div>
 
                     {/* Total */}
-                    <div style={{ padding:"0 4px", fontWeight:700, color:"#16a34a",
+                    <div style={{ padding:"0 4px", fontWeight:700, color:"#1f9d6b",
                       fontSize:12 }}>
                       ₹{c.total.toFixed(2)}
                     </div>
@@ -478,7 +478,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                     {/* Remove */}
                     <div style={{ padding:"0 4px" }}>
                       <button onClick={() => removeItem(i)}
-                        style={{ background:"#fee2e2", color:"#991b1b", border:"none",
+                        style={{ background:"#fdeceb", color:"#a33a35", border:"none",
                           borderRadius:4, padding:"5px 8px", cursor:"pointer",
                           fontSize:11, width:"100%" }}>✕</button>
                     </div>
@@ -498,7 +498,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
               );
             })}
 
-            <div style={{ padding:"10px 14px", borderTop:"1px solid #f1f5f9" }}>
+            <div style={{ padding:"10px 14px", borderTop:"1px solid #f1f3f9" }}>
               <Btn color="blue" sm onClick={addItem}>+ Add Item</Btn>
             </div>
           </div>
@@ -512,45 +512,45 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                 value={form.notes} onChange={set("notes")} />
             </FormGroup>
           </div>
-          <div style={{ background:"#f8fafc", borderRadius:8, padding:16, fontSize:13 }}>
+          <div style={{ background:"#f7f8fc", borderRadius:8, padding:16, fontSize:13 }}>
             <div style={{ fontWeight:700, marginBottom:10 }}>Invoice Summary</div>
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}>
               <span>Subtotal</span><span>₹{totals.subtotal.toFixed(2)}</span>
             </div>
-            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#64748b" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#6b7392" }}>
               <span>Transport</span><span>₹{totals.transport.toFixed(2)}</span>
             </div>
-            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#f59e0b" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#e5a03a" }}>
               <span>Discount</span>
               <span>-₹{totals.discount.toFixed(2)}</span>
             </div>
             {form.isInterState ? (
               <div style={{ display:"flex", justifyContent:"space-between",
-                padding:"4px 0", color:"#f59e0b" }}>
+                padding:"4px 0", color:"#e5a03a" }}>
                 <span>IGST</span><span>₹{igst.toFixed(2)}</span>
               </div>
             ) : (
               <>
                 <div style={{ display:"flex", justifyContent:"space-between",
-                  padding:"4px 0", color:"#8b5cf6" }}>
+                  padding:"4px 0", color:"#d946ef" }}>
                   <span>CGST</span><span>₹{cgst.toFixed(2)}</span>
                 </div>
                 <div style={{ display:"flex", justifyContent:"space-between",
-                  padding:"4px 0", color:"#ec4899" }}>
+                  padding:"4px 0", color:"#f472b6" }}>
                   <span>SGST</span><span>₹{sgst.toFixed(2)}</span>
                 </div>
               </>
             )}
             <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0",
-              borderTop:"2px solid #e2e8f0", fontWeight:800, fontSize:15, color:"#1e293b" }}>
+              borderTop:"2px solid #e6e9f2", fontWeight:800, fontSize:15, color:"#0f1535" }}>
               <span>Grand Total</span><span>₹{totals.total.toFixed(2)}</span>
             </div>
             <div style={{ display:"flex", justifyContent:"space-between",
-              padding:"4px 0", color:"#16a34a" }}>
+              padding:"4px 0", color:"#1f9d6b" }}>
               <span>Amount Paid</span><span>₹{totalPaid.toFixed(2)}</span>
             </div>
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0",
-              color:due>0?"#ef4444":"#94a3b8", fontWeight:700 }}>
+              color:due>0?"#e0524c":"#9aa1b9", fontWeight:700 }}>
               <span>Amount Due</span><span>₹{due.toFixed(2)}</span>
             </div>
           </div>

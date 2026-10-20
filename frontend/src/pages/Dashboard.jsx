@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, LoadingSpinner } from "../components/Shared";
 import { dashboardAPI } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import "./Dashboard.css";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -14,6 +15,15 @@ const shortMoney = (value = 0) => {
   return `₹${n}`;
 };
 
+const KPI_ICONS = {
+  teal:   <><path d="M3 17l6-6 4 4 8-8" /><path d="M14 7h7v7" /></>,
+  green:  <><rect x="2" y="6" width="20" height="13" rx="3" /><circle cx="12" cy="12.5" r="2.6" /><path d="M6 10v.01M18 15v.01" /></>,
+  red:    <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  purple: <><circle cx="9" cy="20" r="1.4" /><circle cx="18" cy="20" r="1.4" /><path d="M2 3h3l2.6 11.4a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.6L21 7H6" /></>,
+  blue:   <><path d="M21 8 12 3 3 8l9 5 9-5z" /><path d="M3 8v8l9 5 9-5V8" /><path d="M12 13v8" /></>,
+  cyan:   <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></>,
+};
+
 function KPI({ label, value, sub, accent, tone, onClick }) {
   return (
     <button
@@ -22,7 +32,11 @@ function KPI({ label, value, sub, accent, tone, onClick }) {
       onClick={onClick}
       type="button"
     >
-      <span className={`dash-kpi-mark dash-kpi-mark-${tone}`} />
+      <span className={`dash-kpi-mark dash-kpi-mark-${tone}`}>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          {KPI_ICONS[tone]}
+        </svg>
+      </span>
       <span className="dash-kpi-label">{label}</span>
       <strong className="dash-kpi-value">{value}</strong>
       <span className="dash-kpi-sub">{sub}</span>
@@ -78,12 +92,12 @@ function RevenueAreaChart({ data }) {
       <svg className="dash-area-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Monthly revenue chart">
         <defs>
           <linearGradient id="dashRevenueFill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#0f766e" stopOpacity="0.26" />
-            <stop offset="100%" stopColor="#0f766e" stopOpacity="0.02" />
+            <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.26" />
+            <stop offset="100%" stopColor="#7c3aed" stopOpacity="0.02" />
           </linearGradient>
           <linearGradient id="dashRevenueLine" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="#0f766e" />
-            <stop offset="100%" stopColor="#2563eb" />
+            <stop offset="0%" stopColor="#7c3aed" />
+            <stop offset="100%" stopColor="#d946ef" />
           </linearGradient>
         </defs>
         {gridLines.map((line, i) => (
@@ -143,7 +157,7 @@ function DonutChart({ slices }) {
   return (
     <div className="dash-donut-wrap">
       <svg className="dash-donut" viewBox="0 0 120 120" role="img" aria-label="Sale status chart">
-        <circle cx="60" cy="60" r={radius} fill="none" stroke="#e2e8f0" strokeWidth="18" />
+        <circle cx="60" cy="60" r={radius} fill="none" stroke="#e6e9f2" strokeWidth="18" />
         {slices.map((slice) => {
           const dash = (slice.value / total) * circumference;
           const strokeDashoffset = -offset;
@@ -196,6 +210,7 @@ function RankRow({ index, label, value, max, color, sub }) {
 }
 
 export default function Dashboard({ navigate }) {
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -215,11 +230,11 @@ export default function Dashboard({ navigate }) {
       orders: item.orders || 0,
       received: item.received || 0,
     }));
-    const statusColors = { Paid: "#16a34a", Partial: "#f59e0b", Pending: "#ef4444" };
+    const statusColors = { Paid: "#1f9d6b", Partial: "#e5a03a", Pending: "#e0524c" };
     const statusSlices = (data.paymentStatusBreakdown || []).map((item) => ({
       label: item._id || "Unknown",
       value: item.count || 0,
-      color: statusColors[item._id] || "#64748b",
+      color: statusColors[item._id] || "#6b7392",
     }));
     const maxProduct = Math.max(...(data.topProducts || []).map((p) => p.totalRevenue || 0), 1);
     const maxVendor = Math.max(...(data.vendorOutstanding || []).map((v) => v.outstanding || 0), 1);
@@ -249,13 +264,16 @@ export default function Dashboard({ navigate }) {
   const duePct = stats.monthlyRevenue ? Math.round(((stats.monthlyDue || 0) / stats.monthlyRevenue) * 100) : 0;
   const receivedPct = stats.monthlyRevenue ? Math.round(((stats.monthlyReceived || 0) / stats.monthlyRevenue) * 100) : 0;
   const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const firstName = (user?.name || user?.username || "").trim().split(/\s+/)[0];
 
   return (
     <main className="dashboard-page">
       <section className="dash-hero">
         <div>
-          <span className="dash-eyebrow">Business Overview</span>
-          <h1>Dashboard</h1>
+          <span className="dash-eyebrow">Business Overview · Dashboard</span>
+          <h1>{greeting}{firstName ? `, ${firstName}` : ""} <span className="dash-wave">👋</span></h1>
           <p>{today} · Revenue, stock aur payments ka live snapshot.</p>
         </div>
         <div className={growth === null ? "dash-growth dash-growth-neutral" : growth >= 0 ? "dash-growth dash-growth-up" : "dash-growth dash-growth-down"}>
@@ -265,12 +283,12 @@ export default function Dashboard({ navigate }) {
       </section>
 
       <section className="dash-kpi-grid">
-        <KPI label="Month Revenue" value={money(stats.monthlyRevenue)} sub={`${stats.monthlySalesCount || 0} orders`} accent="#0f766e" tone="teal" onClick={() => navigate("sales-list")} />
-        <KPI label="Received" value={money(stats.monthlyReceived)} sub={`${receivedPct}% collected`} accent="#16a34a" tone="green" />
-        <KPI label="Due Amount" value={money(stats.monthlyDue)} sub={`${duePct}% pending`} accent="#ef4444" tone="red" onClick={() => navigate("sales-list")} />
-        <KPI label="Purchases" value={money(stats.monthlyPurchases)} sub="this month" accent="#7c3aed" tone="purple" onClick={() => navigate("purchases-list")} />
-        <KPI label="Products" value={stats.totalProducts || 0} sub="active inventory" accent="#2563eb" tone="blue" onClick={() => navigate("product-list")} />
-        <KPI label="Customers" value={stats.totalCustomers || 0} sub="registered" accent="#0891b2" tone="cyan" onClick={() => navigate("customer-list")} />
+        <KPI label="Month Revenue" value={money(stats.monthlyRevenue)} sub={`${stats.monthlySalesCount || 0} orders`} accent="#7c3aed" tone="teal" onClick={() => navigate("sales-list")} />
+        <KPI label="Received" value={money(stats.monthlyReceived)} sub={`${receivedPct}% collected`} accent="#1f9d6b" tone="green" />
+        <KPI label="Due Amount" value={money(stats.monthlyDue)} sub={`${duePct}% pending`} accent="#e0524c" tone="red" onClick={() => navigate("sales-list")} />
+        <KPI label="Purchases" value={money(stats.monthlyPurchases)} sub="this month" accent="#c026d3" tone="purple" onClick={() => navigate("purchases-list")} />
+        <KPI label="Products" value={stats.totalProducts || 0} sub="active inventory" accent="#0ea5e9" tone="blue" onClick={() => navigate("product-list")} />
+        <KPI label="Customers" value={stats.totalCustomers || 0} sub="registered" accent="#2a9bb5" tone="cyan" onClick={() => navigate("customer-list")} />
       </section>
 
       <section className="dash-main-grid">
@@ -313,7 +331,7 @@ export default function Dashboard({ navigate }) {
                   label={product.name || "Product"}
                   value={product.totalRevenue || 0}
                   max={prepared.maxProduct}
-                  color={["#0f766e", "#2563eb", "#7c3aed", "#16a34a", "#f59e0b", "#db2777"][index] || "#64748b"}
+                  color={["#7c3aed", "#4a76db", "#c026d3", "#1f9d6b", "#e5a03a", "#ec4899"][index] || "#6b7392"}
                   sub={`${product.totalQty || 0} qty sold`}
                 />
               ))}
@@ -409,7 +427,7 @@ export default function Dashboard({ navigate }) {
                   label={vendor.name}
                   value={vendor.outstanding || 0}
                   max={prepared.maxVendor}
-                  color="#ef4444"
+                  color="#e0524c"
                 />
               ))}
             </div>

@@ -67,15 +67,15 @@ export default function QuickAddProduct({ mode="purchase", vendorId, defaultRate
 
   return (
     <div style={{
-      background:    mode === "purchase" ? "#eff6ff" : "#f0fdf4",
-      border:        `1px solid ${mode === "purchase" ? "#bfdbfe" : "#86efac"}`,
+      background:    mode === "purchase" ? "#f2f6fe" : "#f0faf5",
+      border:        `1px solid ${mode === "purchase" ? "#cddcf7" : "#a8e2c6"}`,
       borderRadius:  10,
       padding:       16,
       marginBottom:  12,
     }}>
       {/* Header */}
       <div style={{ fontWeight:700, fontSize:13,
-        color: mode === "purchase" ? "#1e40af" : "#166534",
+        color: mode === "purchase" ? "#34509f" : "#13734d",
         marginBottom:12 }}>
         {mode === "purchase" ? "📦 Add New Product to Purchase" : "📦 Add New Product to Sell"}
       </div>
@@ -83,8 +83,8 @@ export default function QuickAddProduct({ mode="purchase", vendorId, defaultRate
       {/* Margin preview */}
       {margin !== null && (
         <div style={{
-          background: +margin >= 0 ? "#dcfce7" : "#fee2e2",
-          border: `1px solid ${+margin >= 0 ? "#86efac" : "#fca5a5"}`,
+          background: +margin >= 0 ? "#e3f5ec" : "#fdeceb",
+          border: `1px solid ${+margin >= 0 ? "#a8e2c6" : "#f3b8b4"}`,
           borderRadius:7, padding:"8px 12px", marginBottom:12, fontSize:11,
         }}>
           💡 Margin: <strong>{margin}%</strong> &nbsp;|&nbsp;

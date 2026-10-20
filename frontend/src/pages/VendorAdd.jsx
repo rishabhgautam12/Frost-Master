@@ -32,7 +32,7 @@ export default function VendorAdd({ navigate }) {
     <div style={{ maxWidth:680, margin:"auto" }}>
       <PageTitle>Create New Vendor</PageTitle>
       {toast && <SuccessToast msg={toast} />}
-      <div style={{ background:"#fff", borderRadius:10, padding:28, border:"1px solid #e2e8f0" }}>
+      <div style={{ background:"#fff", borderRadius:10, padding:28, border:"1px solid #e6e9f2" }}>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
           <FormGroup label="Vendor Name *">
             <FormInput placeholder="e.g. Rohan Sharma" value={form.name} onChange={set("name")} />
@@ -64,7 +64,7 @@ export default function VendorAdd({ navigate }) {
         </FormGroup>
         <FormGroup label="Notes">
           <textarea placeholder="Any notes..." rows={2} value={form.notes} onChange={set("notes")}
-            style={{ width:"100%", padding:"9px 12px", border:"1px solid #d1d5db", borderRadius:7, fontSize:13, outline:"none", background:"#f9fafb", boxSizing:"border-box", resize:"vertical" }} />
+            style={{ width:"100%", padding:"9px 12px", border:"1px solid #dde1ec", borderRadius:7, fontSize:13, outline:"none", background:"#fafbfe", boxSizing:"border-box", resize:"vertical" }} />
         </FormGroup>
         <div style={{ display:"flex", gap:10, marginTop:20 }}>
           <Btn color="cancel" onClick={() => navigate("vendor-list")}>Cancel</Btn>

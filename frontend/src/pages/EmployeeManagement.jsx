@@ -7,9 +7,9 @@ import { employeeAPI, salesAPI } from "../services/api";
 import TransactionDetailsModal from "../components/TransactionDetailsModal";
 
 const STATUSES = [
-  { key: "Present", label: "Present", bg: "#a7f3d0", border: "#059669", color: "#064e3b" },
+  { key: "Present", label: "Present", bg: "#c6ecd9", border: "#059669", color: "#064e3b" },
   { key: "Absent", label: "Absent", bg: "#fecdd3", border: "#e11d48", color: "#881337" },
-  { key: "Half Day", label: "Half Day", bg: "linear-gradient(90deg,#a7f3d0 0 50%,#fde68a 50% 100%)", border: "#d97706", color: "#78350f" },
+  { key: "Half Day", label: "Half Day", bg: "linear-gradient(90deg,#c6ecd9 0 50%,#fde68a 50% 100%)", border: "#d97706", color: "#78350f" },
   { key: "Paid Leave", label: "Paid Leave", bg: "#c7d2fe", border: "#4f46e5", color: "#312e81" },
 ];
 
@@ -51,7 +51,7 @@ function fullCycleLabel(month) {
 }
 
 function statusStyle(status) {
-  return STATUSES.find((s) => s.key === status) || { bg: "#fff", border: "#94a3b8", color: "#64748b" };
+  return STATUSES.find((s) => s.key === status) || { bg: "#fff", border: "#9aa1b9", color: "#6b7392" };
 }
 
 function buildCalendar(days, month) {
@@ -483,7 +483,7 @@ export default function EmployeeManagement({ user }) {
       }
     };
     const text = (value, x, y, opts = {}) => {
-      ctx.fillStyle = opts.color || "#0f172a";
+      ctx.fillStyle = opts.color || "#0f1535";
       ctx.font = `${opts.weight || 400} ${opts.size || 14}px Segoe UI, Arial`;
       ctx.textAlign = opts.align || "left";
       ctx.fillText(String(value), x, y);
@@ -503,13 +503,13 @@ export default function EmployeeManagement({ user }) {
       text(str, x, y, { ...opts, size, weight });
     };
 
-    rect(0, 0, width, height, "#f8fafc");
-    rect(0, 0, width, 100, "#134e4a");
+    rect(0, 0, width, height, "#f7f8fc");
+    rect(0, 0, width, 100, "#4c1d95");
     text(detail.employee.name, padding, 38, { color: "#fff", size: 22, weight: 800 });
     text(`${detail.employee.role || "Employee"} - ${detail.employee.warehouse?.name || ""}`, padding, 62, { color: "#d1fae5", size: 12, weight: 600 });
-    if (detail.employee.notes) text(`Notes: ${detail.employee.notes}`, padding, 84, { color: "#ccfbf1", size: 11 });
-    rect(width - 176, 26, 70, 22, "#dbeafe");
-    text(monthLabel(month), width - 141, 42, { color: "#1e40af", size: 11, weight: 800, align: "center" });
+    if (detail.employee.notes) text(`Notes: ${detail.employee.notes}`, padding, 84, { color: "#ede9fe", size: 11 });
+    rect(width - 176, 26, 70, 22, "#e5edfc");
+    text(monthLabel(month), width - 141, 42, { color: "#34509f", size: 11, weight: 800, align: "center" });
 
     const cardY = 122;
     const cardH = 118;
@@ -517,29 +517,29 @@ export default function EmployeeManagement({ user }) {
     const cardW = (calendarW - cardGap * 3) / 4;
     const statCardDefs = [
       {
-        label: "Total Due", accent: "#0f766e", value: money(salary.dueAmount), valueColor: "#0f766e",
+        label: "Total Due", accent: "#7c3aed", value: money(salary.dueAmount), valueColor: "#7c3aed",
         sub: `Prev ${money(salary.openingBalance || 0)} + month ${money(salary.totalEarnings ?? salary.salaryEarned)}`,
       },
       {
-        label: "Advance Balance", accent: "#2563eb", value: money(salary.advanceAmount || 0), valueColor: "#2563eb",
+        label: "Advance Balance", accent: "#4a76db", value: money(salary.advanceAmount || 0), valueColor: "#4a76db",
         sub: `Opening advance ${money(salary.openingAdvance || 0)}`,
       },
       {
-        label: "Month Salary", accent: "#0f172a", value: money(salary.salaryEarned), valueColor: "#0f172a",
+        label: "Month Salary", accent: "#0f1535", value: money(salary.salaryEarned), valueColor: "#0f1535",
         sub: `Payable ${money(salary.grossDue ?? salary.salaryEarned)} - Paid ${money(salary.totalPaid)}`,
       },
       {
-        label: "Monthly Incentive", accent: "#15803d", value: money(salary.incentiveEarned || 0), valueColor: "#15803d",
+        label: "Monthly Incentive", accent: "#17855a", value: money(salary.incentiveEarned || 0), valueColor: "#17855a",
         sub: `${(salary.incentiveSales || []).length} sale${(salary.incentiveSales || []).length === 1 ? "" : "s"}`,
       },
     ];
     statCardDefs.forEach((card, idx) => {
       const x = calendarLeft + idx * (cardW + cardGap);
-      rect(x, cardY, cardW, cardH, "#fff", "#cbd5e1");
+      rect(x, cardY, cardW, cardH, "#fff", "#d9deea");
       rect(x, cardY, cardW, 3, card.accent);
-      fitText(card.label, x + 14, cardY + 26, cardW - 28, { color: "#64748b", size: 10, weight: 700, minSize: 8 });
+      fitText(card.label, x + 14, cardY + 26, cardW - 28, { color: "#6b7392", size: 10, weight: 700, minSize: 8 });
       fitText(card.value, x + 14, cardY + 60, cardW - 28, { color: card.valueColor, size: 20, weight: 800, minSize: 13 });
-      fitText(card.sub, x + 14, cardY + 88, cardW - 28, { color: "#64748b", size: 9, minSize: 8 });
+      fitText(card.sub, x + 14, cardY + 88, cardW - 28, { color: "#6b7392", size: 9, minSize: 8 });
     });
 
     text(`<`, padding + 12, titleY, { size: 24, weight: 800 });
@@ -554,9 +554,9 @@ export default function EmployeeManagement({ user }) {
       const x = calendarLeft + col * cellW;
       const y = calendarTop + row * rowH;
       const status = day ? statusStyle(day.status) : null;
-      const fill = day ? (day.status === "Half Day" ? "#a7f3d0" : status.bg) : "#fff";
-      rect(x, y, cellW, rowH, fill, "#94a3b8");
-      if (day?.status === "Half Day") rect(x + cellW / 2, y, cellW / 2, rowH, "#fde68a", "#94a3b8");
+      const fill = day ? (day.status === "Half Day" ? "#c6ecd9" : status.bg) : "#fff";
+      rect(x, y, cellW, rowH, fill, "#9aa1b9");
+      if (day?.status === "Half Day") rect(x + cellW / 2, y, cellW / 2, rowH, "#fde68a", "#9aa1b9");
       if (day) text(Number(day.date.slice(-2)), x + cellW / 2, y + 42, { size: 16, align: "center" });
     });
 
@@ -564,43 +564,43 @@ export default function EmployeeManagement({ user }) {
     STATUSES.forEach((status) => {
       ctx.beginPath();
       ctx.arc(legendX + 8, statsTop - 34, 8, 0, Math.PI * 2);
-      ctx.fillStyle = status.key === "Half Day" ? "#a7f3d0" : status.bg;
+      ctx.fillStyle = status.key === "Half Day" ? "#c6ecd9" : status.bg;
       ctx.fill();
       ctx.strokeStyle = status.border;
       ctx.stroke();
-      text(status.label, legendX + 22, statsTop - 29, { size: 11, color: "#334155" });
+      text(status.label, legendX + 22, statsTop - 29, { size: 11, color: "#3a4260" });
       legendX += 112;
     });
 
     const statCards = [
-      ["Present", salary.present, "#16a34a"],
-      ["Absent", salary.absent, "#ef4444"],
-      ["Half Day", salary.halfDay, "#f59e0b"],
-      ["Paid Leave", salary.paidLeave, "#64748b"],
+      ["Present", salary.present, "#1f9d6b"],
+      ["Absent", salary.absent, "#e0524c"],
+      ["Half Day", salary.halfDay, "#e5a03a"],
+      ["Paid Leave", salary.paidLeave, "#6b7392"],
     ];
     statCards.forEach(([label, value, color], idx) => {
       const x = padding + idx * ((calendarW - 24) / 4 + 8);
       const w = (calendarW - 24) / 4;
-      rect(x, statsTop, w, 64, "#fff", "#cbd5e1");
+      rect(x, statsTop, w, 64, "#fff", "#d9deea");
       rect(x, statsTop, 4, 64, color);
       text(value, x + 18, statsTop + 28, { size: 18, weight: 900 });
       text(label, x + 18, statsTop + 50, { size: 11, weight: 700, color });
     });
 
-    rect(padding, statsTop + 84, calendarW, 70, "#f1f5f9");
+    rect(padding, statsTop + 84, calendarW, 70, "#f1f3f9");
     text(fullCycleLabel(month), padding + 18, statsTop + 112, { size: 12 });
     text(`total earnings: ${money(salary.totalEarnings ?? salary.salaryEarned)}`, padding + 18, statsTop + 135, { size: 12, weight: 700 });
-    text("VIEW SUMMARY", width - padding - 22, statsTop + 126, { size: 13, weight: 900, color: "#0f766e", align: "right" });
+    text("VIEW SUMMARY", width - padding - 22, statsTop + 126, { size: 13, weight: 900, color: "#7c3aed", align: "right" });
 
     let y = statsTop + 184;
     if (!salary.payments.length) {
-      text("There are no transactions in this cycle.", padding, y, { size: 14, color: "#64748b" });
+      text("There are no transactions in this cycle.", padding, y, { size: 14, color: "#6b7392" });
     } else {
       salary.payments.forEach((payment) => {
-        text(`${new Date(payment.date).toLocaleDateString("en-IN")} - ${payment.paymentMode}`, padding, y, { size: 12, color: "#334155" });
-        text(money(payment.amount), width - padding, y, { size: 12, weight: 900, color: "#16a34a", align: "right" });
-        if (payment.notes) text(`Notes: ${payment.notes}`, padding, y + 22, { size: 11, color: "#64748b" });
-        rect(padding, y + 38, calendarW, 1, "#e2e8f0");
+        text(`${new Date(payment.date).toLocaleDateString("en-IN")} - ${payment.paymentMode}`, padding, y, { size: 12, color: "#3a4260" });
+        text(money(payment.amount), width - padding, y, { size: 12, weight: 900, color: "#1f9d6b", align: "right" });
+        if (payment.notes) text(`Notes: ${payment.notes}`, padding, y + 22, { size: 11, color: "#6b7392" });
+        rect(padding, y + 38, calendarW, 1, "#e6e9f2");
         y += 58;
       });
     }
@@ -640,7 +640,7 @@ export default function EmployeeManagement({ user }) {
 
     const rect = (x, y, w, h, fill) => { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); };
     const text = (value, x, y, opts = {}) => {
-      ctx.fillStyle = opts.color || "#0f172a";
+      ctx.fillStyle = opts.color || "#0f1535";
       ctx.font = `${opts.weight || 400} ${opts.size || 13}px Segoe UI, Arial`;
       ctx.textAlign = opts.align || "left";
       ctx.fillText(String(value), x, y);
@@ -653,11 +653,11 @@ export default function EmployeeManagement({ user }) {
       return `${str}…`;
     };
 
-    rect(0, 0, width, height, "#f8fafc");
-    rect(0, 0, width, headerH, "#134e4a");
+    rect(0, 0, width, height, "#f7f8fc");
+    rect(0, 0, width, headerH, "#4c1d95");
     text(detail.employee.name, padding, 34, { color: "#fff", size: 20, weight: 800 });
     text(`${detail.employee.role || "Employee"} - Incentive Sales - ${monthLabel(month)}`, padding, 58, { color: "#d1fae5", size: 12, weight: 600 });
-    text(`Total Incentive: ${money(salary.incentiveEarned || 0)}`, padding, 80, { color: "#a7f3d0", size: 13, weight: 800 });
+    text(`Total Incentive: ${money(salary.incentiveEarned || 0)}`, padding, 80, { color: "#c6ecd9", size: 13, weight: 800 });
 
     const cols = [
       { key: "invoice", label: "Invoice", x: padding, w: 110 },
@@ -670,35 +670,35 @@ export default function EmployeeManagement({ user }) {
       { key: "incentive", label: "Incentive", x: padding + 850, w: 130, align: "right" },
     ];
     let y = tableTop;
-    rect(padding, y, width - padding * 2, headRowH, "#e2e8f0");
+    rect(padding, y, width - padding * 2, headRowH, "#e6e9f2");
     cols.forEach((c) => text(c.label, c.align === "right" ? c.x + c.w - 8 : c.x + 8, y + 20, { size: 11, weight: 800, align: c.align || "left" }));
     y += headRowH;
 
     const byKey = (key) => cols.find((c) => c.key === key);
     if (!rows.length) {
-      text("No incentive-earning sales this month.", padding + 8, y + 24, { size: 12, color: "#64748b" });
+      text("No incentive-earning sales this month.", padding + 8, y + 24, { size: 12, color: "#6b7392" });
       y += rowH;
     } else {
       rows.forEach((sale, idx) => {
         const pct = sale.incentiveBaseAmount ? ((sale.incentiveAmount / sale.incentiveBaseAmount) * 100).toFixed(2) : "0.00";
         const productsLabel = (sale.items || []).map((i) => `${i.productName || "Item"} x${i.qty}`).join(", ") || "-";
-        rect(padding, y, width - padding * 2, rowH, idx % 2 ? "#fff" : "#f1f5f9");
+        rect(padding, y, width - padding * 2, rowH, idx % 2 ? "#fff" : "#f1f3f9");
         text(sale.invoiceNo || "-", byKey("invoice").x + 8, y + 25, { size: 12 });
         text(sale.date ? new Date(sale.date).toLocaleDateString("en-IN") : "-", byKey("date").x + 8, y + 25, { size: 12 });
         text(truncate(sale.customer?.name || sale.customerName || "Walk-in", byKey("customer").w - 16), byKey("customer").x + 8, y + 25, { size: 12 });
         text(truncate(productsLabel, byKey("products").w - 16), byKey("products").x + 8, y + 25, { size: 11 });
-        text(sale.status || "-", byKey("payment").x + 8, y + 25, { size: 11, weight: 700, color: sale.status === "Paid" ? "#15803d" : sale.status === "Partial" ? "#b45309" : "#dc2626" });
+        text(sale.status || "-", byKey("payment").x + 8, y + 25, { size: 11, weight: 700, color: sale.status === "Paid" ? "#17855a" : sale.status === "Partial" ? "#b45309" : "#d0433d" });
         text(money(sale.incentiveBaseAmount), byKey("base").x + byKey("base").w - 8, y + 25, { size: 12, align: "right" });
         text(`${pct}%`, byKey("pct").x + byKey("pct").w - 8, y + 25, { size: 12, align: "right" });
-        text(money(sale.incentiveAmount), byKey("incentive").x + byKey("incentive").w - 8, y + 25, { size: 12, weight: 800, color: "#15803d", align: "right" });
+        text(money(sale.incentiveAmount), byKey("incentive").x + byKey("incentive").w - 8, y + 25, { size: 12, weight: 800, color: "#17855a", align: "right" });
         y += rowH;
       });
     }
 
-    rect(padding, y, width - padding * 2, 1, "#94a3b8");
+    rect(padding, y, width - padding * 2, 1, "#9aa1b9");
     y += 32;
     text("Total Incentive", byKey("pct").x + byKey("pct").w - 8, y, { size: 13, weight: 900, align: "right" });
-    text(money(salary.incentiveEarned || 0), byKey("incentive").x + byKey("incentive").w - 8, y, { size: 15, weight: 900, color: "#15803d", align: "right" });
+    text(money(salary.incentiveEarned || 0), byKey("incentive").x + byKey("incentive").w - 8, y, { size: 15, weight: 900, color: "#17855a", align: "right" });
 
     const a = document.createElement("a");
     a.download = `${safeFileName(detail.employee.name)}-${month}-incentive.png`;
@@ -711,16 +711,16 @@ export default function EmployeeManagement({ user }) {
       key={emp._id}
       onClick={() => setSelectedEmployee(emp)}
       style={{
-        width: "100%", textAlign: "left", background: selectedEmployee?._id === emp._id ? "#eff6ff" : "#fff",
-        border: `1px solid ${selectedEmployee?._id === emp._id ? "#93c5fd" : "#e2e8f0"}`,
+        width: "100%", textAlign: "left", background: selectedEmployee?._id === emp._id ? "#f2f6fe" : "#fff",
+        border: `1px solid ${selectedEmployee?._id === emp._id ? "#93c5fd" : "#e6e9f2"}`,
         borderRadius: 8, padding: 14, cursor: "pointer", marginBottom: 10,
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-        <div style={{ fontWeight: 800, color: "#0f172a" }}>{emp.name}</div>
+        <div style={{ fontWeight: 800, color: "#0f1535" }}>{emp.name}</div>
         <Badge color={emp.status === "Inactive" ? "red" : "green"}>{emp.status}</Badge>
       </div>
-      <div style={{ color: "#64748b", fontSize: 11, marginTop: 3 }}>{emp.role || "Employee"} - {money(emp.monthlySalary)}/month</div>
+      <div style={{ color: "#6b7392", fontSize: 11, marginTop: 3 }}>{emp.role || "Employee"} - {money(emp.monthlySalary)}/month</div>
       {isAdmin && (
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
           <button
@@ -732,7 +732,7 @@ export default function EmployeeManagement({ user }) {
               border: "none",
               borderRadius: 7,
               padding: "8px 14px",
-              background: emp.status === "Inactive" ? "#16a34a" : "#ef4444",
+              background: emp.status === "Inactive" ? "#1f9d6b" : "#e0524c",
               color: "#fff",
               fontSize: 12,
               fontWeight: 900,
@@ -759,10 +759,10 @@ export default function EmployeeManagement({ user }) {
         marginBottom: 14, flexWrap: "wrap",
       }}>
         <div>
-          <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 900, color: "#0f172a", fontFamily: "Georgia,serif" }}>
+          <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 900, color: "#0f1535", fontFamily: "var(--font-display)" }}>
             Employee Attendance & Salary
           </div>
-          <div style={{ color: "#64748b", fontSize: 12, marginTop: 2 }}>
+          <div style={{ color: "#6b7392", fontSize: 12, marginTop: 2 }}>
             Warehouse-wise employee mapping, monthly attendance and salary due.
           </div>
         </div>
@@ -774,22 +774,22 @@ export default function EmployeeManagement({ user }) {
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "480px minmax(0, 1fr)", gap: 24, alignItems: "start" }}>
         <div>
-          <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 20, marginBottom: 16 }}>
+          <div style={{ background: "#fff", border: "1px solid #e6e9f2", borderRadius: 8, padding: 20, marginBottom: 16 }}>
             <FormGroup label="Select Warehouse">
               <FormSelect value={selectedWarehouse} onChange={(e) => setSelectedWarehouse(e.target.value)}>
                 {warehouses.map((w) => <option key={w._id} value={w._id}>{w.name}</option>)}
               </FormSelect>
               {selectedWarehouseData?.location && (
-                <div style={{ color: "#64748b", fontSize: 11, marginTop: 5 }}>{selectedWarehouseData.location}</div>
+                <div style={{ color: "#6b7392", fontSize: 11, marginTop: 5 }}>{selectedWarehouseData.location}</div>
               )}
               {selectedWarehouseData?.notes && (
-                <div style={{ color: "#94a3b8", fontSize: 11, marginTop: 3 }}>{selectedWarehouseData.notes}</div>
+                <div style={{ color: "#9aa1b9", fontSize: 11, marginTop: 3 }}>{selectedWarehouseData.notes}</div>
               )}
             </FormGroup>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14 }}>
               <div>
-                <div style={{ fontWeight: 900, color: "#1e293b", fontSize: 16 }}>{employees.length} Active Employees</div>
-                <div style={{ color: "#64748b", fontSize: 11, marginTop: 2 }}>Manage this warehouse team</div>
+                <div style={{ fontWeight: 900, color: "#0f1535", fontSize: 16 }}>{employees.length} Active Employees</div>
+                <div style={{ color: "#6b7392", fontSize: 11, marginTop: 2 }}>Manage this warehouse team</div>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
@@ -815,8 +815,8 @@ export default function EmployeeManagement({ user }) {
           ) : detailLoading || !salary ? (
             <LoadingSpinner />
           ) : (
-            <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
-              <div style={{ background: "#134e4a", color: "#fff", padding: isMobile ? "18px 18px 76px" : "20px 24px" }}>
+            <div style={{ background: "#fff", border: "1px solid #e6e9f2", borderRadius: 8, overflow: "hidden" }}>
+              <div style={{ background: "#4c1d95", color: "#fff", padding: isMobile ? "18px 18px 76px" : "20px 24px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                   <div>
                     <div style={{ fontSize: 22, fontWeight: 800 }}>{detail.employee.name}</div>
@@ -843,7 +843,7 @@ export default function EmployeeManagement({ user }) {
                   </div>
                 </div>
                 {detail.employee.notes && (
-                  <div style={{ marginTop: 10, color: "#ccfbf1", fontSize: 12 }}>
+                  <div style={{ marginTop: 10, color: "#ede9fe", fontSize: 12 }}>
                     Notes: {detail.employee.notes}
                   </div>
                 )}
@@ -857,31 +857,31 @@ export default function EmployeeManagement({ user }) {
                   gap: 12,
                 }}>
                   <StatCard
-                    accent="#0f766e"
+                    accent="#7c3aed"
                     label="Total Due"
                     value={money(salary.dueAmount)}
-                    valueColor="#0f766e"
+                    valueColor="#7c3aed"
                     sub={`Previous due ${money(salary.openingBalance || 0)} + this month ${money(salary.totalEarnings ?? salary.salaryEarned)}`}
                   />
                   <StatCard
-                    accent="#2563eb"
+                    accent="#4a76db"
                     label="Advance Balance"
                     value={money(salary.advanceAmount || 0)}
-                    valueColor="#2563eb"
+                    valueColor="#4a76db"
                     sub={`Opening advance ${money(salary.openingAdvance || 0)}; future salary adjusts automatically`}
                   />
                   <StatCard
-                    accent="#0f172a"
+                    accent="#0f1535"
                     label="Month Salary"
                     value={money(salary.salaryEarned)}
-                    valueColor="#0f172a"
+                    valueColor="#0f1535"
                     sub={`Payable ${money(salary.grossDue ?? salary.salaryEarned)} - Paid ${money(salary.totalPaid)}`}
                   />
                   <StatCard
-                    accent="#15803d"
+                    accent="#17855a"
                     label="Monthly Incentive"
                     value={money(salary.incentiveEarned || 0)}
-                    valueColor="#15803d"
+                    valueColor="#17855a"
                     sub={`${(salary.incentiveSales || []).length} sale${(salary.incentiveSales || []).length === 1 ? "" : "s"} · Total earnings ${money(salary.totalEarnings ?? salary.salaryEarned)} · tap to view`}
                     onClick={() => setIncentiveModalOpen(true)}
                   />
@@ -897,11 +897,11 @@ export default function EmployeeManagement({ user }) {
                       onChange={(e) => e.target.value && setMonth(e.target.value)}
                       aria-label="Select attendance month"
                       style={{
-                        border: "1px solid #cbd5e1",
+                        border: "1px solid #d9deea",
                         borderRadius: 7,
                         padding: "6px 8px",
                         background: "#fff",
-                        color: "#334155",
+                        color: "#3a4260",
                         fontWeight: 700,
                         cursor: "pointer",
                       }}
@@ -913,7 +913,7 @@ export default function EmployeeManagement({ user }) {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", textAlign: "center", fontWeight: 600, marginBottom: 8 }}>
                   {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => <div key={d}>{d}</div>)}
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderTop: "1px solid #94a3b8", borderLeft: "1px solid #94a3b8" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderTop: "1px solid #9aa1b9", borderLeft: "1px solid #9aa1b9" }}>
                   {calendarCells.map((day, idx) => {
                     const style = day ? statusStyle(day.status) : null;
                     return (
@@ -925,10 +925,10 @@ export default function EmployeeManagement({ user }) {
                         style={{
                           minHeight: isMobile ? 80 : 70,
                           border: "none",
-                          borderRight: "1px solid #94a3b8",
-                          borderBottom: "1px solid #94a3b8",
+                          borderRight: "1px solid #9aa1b9",
+                          borderBottom: "1px solid #9aa1b9",
                           background: day ? style.bg : "#fff",
-                          color: day ? "#111827" : "#cbd5e1",
+                          color: day ? "#0f1535" : "#d9deea",
                           cursor: day && canMarkAttendance ? "pointer" : "default",
                           fontSize: isMobile ? 24 : 18,
                         }}
@@ -949,36 +949,36 @@ export default function EmployeeManagement({ user }) {
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 18 }}>
-                  <MiniStat label="Present" value={salary.present} color="#16a34a" />
-                  <MiniStat label="Absent" value={salary.absent} color="#ef4444" />
-                  <MiniStat label="Half Day" value={salary.halfDay} color="#f59e0b" />
-                  <MiniStat label="Paid Leave" value={salary.paidLeave} color="#64748b" />
+                  <MiniStat label="Present" value={salary.present} color="#1f9d6b" />
+                  <MiniStat label="Absent" value={salary.absent} color="#e0524c" />
+                  <MiniStat label="Half Day" value={salary.halfDay} color="#e5a03a" />
+                  <MiniStat label="Paid Leave" value={salary.paidLeave} color="#6b7392" />
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f1f5f9", padding: 16, borderRadius: 8, gap: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f1f3f9", padding: 16, borderRadius: 8, gap: 10 }}>
                   <div>
                     <div style={{ fontSize: isMobile ? 18 : 14 }}>{fullCycleLabel(month)}</div>
                     <div style={{ fontSize: isMobile ? 18 : 14 }}>Total: {money(salary.salaryEarned)}</div>
                   </div>
                   <button onClick={() => alert(`Present: ${salary.present}\nAbsent: ${salary.absent}\nHalf Day: ${salary.halfDay}\nPaid Leave: ${salary.paidLeave}\nPrevious Due: ${money(salary.openingBalance || 0)}\nOpening Advance: ${money(salary.openingAdvance || 0)}\nThis Month: ${money(salary.salaryEarned)}\nPaid: ${money(salary.totalPaid)}\nDue: ${money(salary.dueAmount)}\nAdvance Balance: ${money(salary.advanceAmount || 0)}`)}
-                    style={{ border: "none", background: "transparent", color: "#0f766e", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
+                    style={{ border: "none", background: "transparent", color: "#7c3aed", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
                     VIEW SUMMARY
                   </button>
                 </div>
 
-                <div style={{ marginTop: 14, color: "#64748b", fontSize: 13 }}>
+                <div style={{ marginTop: 14, color: "#6b7392", fontSize: 13 }}>
                   {salary.payments.length === 0 ? "There are no transactions in this cycle." : salary.payments.map((p) => (
-                    <div key={p._id} style={{ padding: "9px 0", borderBottom: "1px solid #e2e8f0" }}>
+                    <div key={p._id} style={{ padding: "9px 0", borderBottom: "1px solid #e6e9f2" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                         <span>{new Date(p.date).toLocaleDateString("en-IN")} - {p.paymentMode}</span>
                         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <strong style={{ color: "#16a34a" }}>{money(p.amount)}</strong>
+                          <strong style={{ color: "#1f9d6b" }}>{money(p.amount)}</strong>
                           {canEdit && !attendanceLocked && <Btn sm color="blue" onClick={() => openEditPayment(p)}>Edit</Btn>}
                           {isAdmin && !attendanceLocked && <Btn sm color="red" onClick={() => deletePayment(p)}>Delete</Btn>}
                         </span>
                       </div>
                       {p.notes && (
-                        <div style={{ marginTop: 4, color: "#475569", fontSize: 12 }}>
+                        <div style={{ marginTop: 4, color: "#4a5272", fontSize: 12 }}>
                           Notes: {p.notes}
                         </div>
                       )}
@@ -1008,8 +1008,8 @@ export default function EmployeeManagement({ user }) {
             display: isMobile ? "flex" : "none",
             position: "fixed", right: 22, bottom: 28, zIndex: 2000,
             alignItems: "center", gap: 12, border: "none", borderRadius: 999,
-            background: "#0f766e", color: "#fff", padding: "15px 24px",
-            fontWeight: 900, letterSpacing: 1, boxShadow: "0 8px 24px rgba(15,118,110,0.35)",
+            background: "#7c3aed", color: "#fff", padding: "15px 24px",
+            fontWeight: 900, letterSpacing: 1, boxShadow: "0 8px 24px rgba(124,58,237,0.35)",
           }}>
           Rs. ADD PAYMENT
         </button>
@@ -1045,9 +1045,9 @@ export default function EmployeeManagement({ user }) {
                   type="button"
                   onClick={() => setAttendanceStatus(attendancePicker.date, "")}
                   style={{
-                    border: "2px solid #64748b",
-                    background: "#f8fafc",
-                    color: "#334155",
+                    border: "2px solid #6b7392",
+                    background: "#f7f8fc",
+                    color: "#3a4260",
                     borderRadius: 8,
                     padding: "18px 14px",
                     fontWeight: 900,
@@ -1055,12 +1055,12 @@ export default function EmployeeManagement({ user }) {
                     textAlign: "left",
                   }}
                 >
-                  <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", border: "1px solid #64748b", background: "#fff", marginRight: 8, verticalAlign: -2 }} />
+                  <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", border: "1px solid #6b7392", background: "#fff", marginRight: 8, verticalAlign: -2 }} />
                   Remove Attendance
                 </button>
               )}
             </div>
-            <div style={{ color: "#64748b", fontSize: 12, marginTop: 14 }}>
+            <div style={{ color: "#6b7392", fontSize: 12, marginTop: 14 }}>
               Select a status or remove the current attendance. Then click Save Attendance on the page to persist it.
             </div>
           </div>
@@ -1088,7 +1088,7 @@ export default function EmployeeManagement({ user }) {
           <div style={{ display: "grid", gap: 10 }}>
             {inactiveEmployees.map((emp) => (
               <div key={emp._id} style={{
-                border: "1px solid #e2e8f0",
+                border: "1px solid #e6e9f2",
                 borderRadius: 8,
                 padding: 12,
                 background: "#fff",
@@ -1098,8 +1098,8 @@ export default function EmployeeManagement({ user }) {
                 alignItems: "center",
               }}>
                 <div>
-                  <div style={{ fontWeight: 900, color: "#0f172a" }}>{emp.name}</div>
-                  <div style={{ color: "#64748b", fontSize: 12, marginTop: 3 }}>
+                  <div style={{ fontWeight: 900, color: "#0f1535" }}>{emp.name}</div>
+                  <div style={{ color: "#6b7392", fontSize: 12, marginTop: 3 }}>
                     {emp.role || "Employee"} - {money(emp.monthlySalary)}/month
                   </div>
                 </div>
@@ -1118,9 +1118,9 @@ export default function EmployeeManagement({ user }) {
           <FormGroup label="Role"><FormInput value={employeeForm.role} onChange={(e) => setEmployeeForm((p) => ({ ...p, role: e.target.value }))} placeholder="Loader, Manager, Helper" /></FormGroup>
           {editingEmployee ? (
             <FormGroup label="Monthly Salary">
-              <div style={{ padding: "9px 10px", border: "1px solid #e2e8f0", borderRadius: 6, background: "#f8fafc", color: "#334155", fontSize: 13 }}>
+              <div style={{ padding: "9px 10px", border: "1px solid #e6e9f2", borderRadius: 6, background: "#f7f8fc", color: "#3a4260", fontSize: 13 }}>
                 {money(employeeForm.monthlySalary)}/month
-                <div style={{ color: "#94a3b8", fontSize: 11, marginTop: 3 }}>Use "Change Salary" to update this, with an effective month.</div>
+                <div style={{ color: "#9aa1b9", fontSize: 11, marginTop: 3 }}>Use "Change Salary" to update this, with an effective month.</div>
               </div>
             </FormGroup>
           ) : (
@@ -1129,7 +1129,7 @@ export default function EmployeeManagement({ user }) {
           <FormGroup label="Manufacturing Incentive %"><FormInput type="number" min="0" max="100" step="0.01" value={employeeForm.manufacturingIncentivePercent} onChange={(e) => setEmployeeForm((p) => ({ ...p, manufacturingIncentivePercent: e.target.value }))} /></FormGroup>
           <FormGroup label="Imported Incentive %"><FormInput type="number" min="0" max="100" step="0.01" value={employeeForm.importedIncentivePercent} onChange={(e) => setEmployeeForm((p) => ({ ...p, importedIncentivePercent: e.target.value }))} /></FormGroup>
           {editingEmployee && (
-            <div style={{ gridColumn: isMobile ? "auto" : "1 / -1", color: "#94a3b8", fontSize: 11, marginTop: -8 }}>
+            <div style={{ gridColumn: isMobile ? "auto" : "1 / -1", color: "#9aa1b9", fontSize: 11, marginTop: -8 }}>
               Incentive % changes apply immediately to new sales — no effective month needed.
             </div>
           )}
@@ -1166,19 +1166,19 @@ export default function EmployeeManagement({ user }) {
             <FormGroup label="Note"><FormInput value={salaryChangeForm.note} onChange={(e) => setSalaryChangeForm((p) => ({ ...p, note: e.target.value }))} placeholder="Optional, e.g. Annual increment" /></FormGroup>
           </div>
         </div>
-        <div style={{ color: "#64748b", fontSize: 12, marginBottom: 10 }}>
+        <div style={{ color: "#6b7392", fontSize: 12, marginBottom: 10 }}>
           This salary applies from {salaryChangeForm.effectiveFrom ? monthLabel(salaryChangeForm.effectiveFrom) : "the selected month"} onward. Months before it keep using whatever salary was in effect at the time — past balances will not change.
         </div>
         {(selectedEmployee?.salaryHistory?.length > 0) && (
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontWeight: 800, fontSize: 12, color: "#334155", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.4 }}>Salary History</div>
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+            <div style={{ fontWeight: 800, fontSize: 12, color: "#3a4260", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.4 }}>Salary History</div>
+            <div style={{ border: "1px solid #e6e9f2", borderRadius: 8, overflow: "hidden" }}>
               {[...selectedEmployee.salaryHistory].sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom)).map((entry) => (
-                <div key={entry._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "8px 10px", borderBottom: "1px solid #f1f5f9", fontSize: 12 }}>
+                <div key={entry._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "8px 10px", borderBottom: "1px solid #f1f3f9", fontSize: 12 }}>
                   <div>
                     <strong>{monthLabel(entry.effectiveFrom)}</strong> onward - {money(entry.monthlySalary)}/month
-                    <span style={{ color: "#64748b" }}> · Mfg {entry.manufacturingIncentivePercent || 0}% · Imported {entry.importedIncentivePercent || 0}%</span>
-                    {entry.note && <div style={{ color: "#94a3b8" }}>{entry.note}</div>}
+                    <span style={{ color: "#6b7392" }}> · Mfg {entry.manufacturingIncentivePercent || 0}% · Imported {entry.importedIncentivePercent || 0}%</span>
+                    {entry.note && <div style={{ color: "#9aa1b9" }}>{entry.note}</div>}
                   </div>
                   {isAdmin && <Btn sm color="red" onClick={() => deleteSalaryHistoryEntry(entry)}>Delete</Btn>}
                 </div>
@@ -1198,10 +1198,10 @@ export default function EmployeeManagement({ user }) {
           <EmptyState text="No incentive-earning sales this month." />
         ) : (
           <>
-            <div style={{ maxHeight: 440, overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 8 }}>
+            <div style={{ maxHeight: 440, overflowY: "auto", border: "1px solid #e6e9f2", borderRadius: 8 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                 <thead>
-                  <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
+                  <tr style={{ background: "#f1f3f9", textAlign: "left" }}>
                     <th style={thStyle}>Invoice</th>
                     <th style={thStyle}>Date</th>
                     <th style={thStyle}>Customer</th>
@@ -1217,7 +1217,7 @@ export default function EmployeeManagement({ user }) {
                     const pct = sale.incentiveBaseAmount ? ((sale.incentiveAmount / sale.incentiveBaseAmount) * 100).toFixed(2) : "0.00";
                     const productsLabel = (sale.items || []).map((i) => `${i.productName || "Item"} x${i.qty}`).join(", ") || "-";
                     return (
-                      <tr key={sale._id} style={{ borderTop: "1px solid #e2e8f0" }}>
+                      <tr key={sale._id} style={{ borderTop: "1px solid #e6e9f2" }}>
                         <td style={tdStyle}>
                           <button
                             type="button"
@@ -1234,15 +1234,15 @@ export default function EmployeeManagement({ user }) {
                         <td style={tdStyle}><Badge color={saleStatusColor[sale.status] || "gray"}>{sale.status || "-"}</Badge></td>
                         <td style={{ ...tdStyle, textAlign: "right" }}>{money(sale.incentiveBaseAmount)}</td>
                         <td style={{ ...tdStyle, textAlign: "right" }}>{pct}%</td>
-                        <td style={{ ...tdStyle, textAlign: "right", color: "#15803d", fontWeight: 800 }}>{money(sale.incentiveAmount)}</td>
+                        <td style={{ ...tdStyle, textAlign: "right", color: "#17855a", fontWeight: 800 }}>{money(sale.incentiveAmount)}</td>
                       </tr>
                     );
                   })}
                 </tbody>
                 <tfoot>
-                  <tr style={{ borderTop: "2px solid #cbd5e1" }}>
+                  <tr style={{ borderTop: "2px solid #d9deea" }}>
                     <td style={{ ...tdStyle, fontWeight: 900 }} colSpan={7}>Total Incentive</td>
-                    <td style={{ ...tdStyle, textAlign: "right", color: "#15803d", fontWeight: 900 }}>{money(salary.incentiveEarned || 0)}</td>
+                    <td style={{ ...tdStyle, textAlign: "right", color: "#17855a", fontWeight: 900 }}>{money(salary.incentiveEarned || 0)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -1268,7 +1268,7 @@ export default function EmployeeManagement({ user }) {
         <FormGroup label="Date"><FormInput type="date" value={paymentForm.date} onChange={(e) => setPaymentForm((p) => ({ ...p, date: e.target.value }))} /></FormGroup>
         <FormGroup label="Notes"><FormInput value={paymentForm.notes} onChange={(e) => setPaymentForm((p) => ({ ...p, notes: e.target.value }))} /></FormGroup>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-          <div style={{ color: "#64748b", fontSize: 12 }}>
+          <div style={{ color: "#6b7392", fontSize: 12 }}>
             Current due: {money(salary?.dueAmount || 0)} · Advance: {money(salary?.advanceAmount || 0)}<br />
             You may pay more than the current due; the extra amount will be stored as advance.
           </div>
@@ -1289,35 +1289,35 @@ function StatCard({ label, value, valueColor, sub, accent, onClick }) {
     <div
       onClick={onClick}
       style={{
-        background: "#fff", border: "1px solid #e2e8f0", borderTop: `3px solid ${accent}`,
+        background: "#fff", border: "1px solid #e6e9f2", borderTop: `3px solid ${accent}`,
         borderRadius: 8, padding: 16, boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
         cursor: onClick ? "pointer" : "default",
       }}
     >
-      <div style={{ color: "#64748b", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
+      <div style={{ color: "#6b7392", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
         {label}
       </div>
       <div style={{ color: valueColor, fontSize: 26, fontWeight: 800, lineHeight: 1.15 }}>{value}</div>
-      <div style={{ color: "#64748b", fontSize: 12, marginTop: 6 }}>{sub}</div>
+      <div style={{ color: "#6b7392", fontSize: 12, marginTop: 6 }}>{sub}</div>
     </div>
   );
 }
 
 function MiniStat({ label, value, color }) {
   return (
-    <div style={{ border: "1px solid #e2e8f0", borderLeft: `4px solid ${color}`, borderRadius: 8, padding: 12, background: "#fff" }}>
-      <div style={{ fontSize: 22, fontWeight: 900, color: "#0f172a" }}>{value}</div>
-      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>{label}</div>
+    <div style={{ border: "1px solid #e6e9f2", borderLeft: `4px solid ${color}`, borderRadius: 8, padding: 12, background: "#fff" }}>
+      <div style={{ fontSize: 22, fontWeight: 900, color: "#0f1535" }}>{value}</div>
+      <div style={{ fontSize: 11, color: "#6b7392", fontWeight: 700 }}>{label}</div>
     </div>
   );
 }
 
 function PanelButton({ children, color = "teal", onClick }) {
   const palette = {
-    teal: { background: "#0d9488", color: "#fff", border: "#0d9488" },
+    teal: { background: "#7c3aed", color: "#fff", border: "#7c3aed" },
     blue: { background: "#0ea5e9", color: "#fff", border: "#0ea5e9" },
-    red: { background: "#ef4444", color: "#fff", border: "#ef4444" },
-    slate: { background: "#f8fafc", color: "#334155", border: "#cbd5e1" },
+    red: { background: "#e0524c", color: "#fff", border: "#e0524c" },
+    slate: { background: "#f7f8fc", color: "#3a4260", border: "#d9deea" },
   };
   const tone = palette[color] || palette.teal;
   return (
@@ -1349,12 +1349,12 @@ const navBtn = {
   height: 38,
   border: "none",
   background: "transparent",
-  color: "#111827",
+  color: "#0f1535",
   fontSize: 34,
   cursor: "pointer",
   lineHeight: 1,
 };
 
-const thStyle = { padding: "9px 10px", fontSize: 11, fontWeight: 800, color: "#334155", textTransform: "uppercase", letterSpacing: 0.3 };
-const tdStyle = { padding: "8px 10px", color: "#1e293b" };
+const thStyle = { padding: "9px 10px", fontSize: 11, fontWeight: 800, color: "#3a4260", textTransform: "uppercase", letterSpacing: 0.3 };
+const tdStyle = { padding: "8px 10px", color: "#0f1535" };
 const saleStatusColor = { Paid: "green", Partial: "yellow", Pending: "red", Cancelled: "gray" };

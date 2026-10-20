@@ -142,13 +142,13 @@ function PermissionGrid({ perms, onChange }) {
     <div>
       {/* Select All / None */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center" }}>
-        <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>Quick Select:</span>
+        <span style={{ fontSize: 11, color: "#6b7392", fontWeight: 700 }}>Quick Select:</span>
         <button onClick={() => toggleAll(true)}
-          style={{ fontSize: 11, padding: "3px 10px", border: "1px solid #16a34a", background: allOn ? "#16a34a" : "#f0fdf4", color: allOn ? "#fff" : "#16a34a", borderRadius: 20, cursor: "pointer", fontWeight: 700 }}>
+          style={{ fontSize: 11, padding: "3px 10px", border: "1px solid #1f9d6b", background: allOn ? "#1f9d6b" : "#f0faf5", color: allOn ? "#fff" : "#1f9d6b", borderRadius: 20, cursor: "pointer", fontWeight: 700 }}>
           ✅ All Access
         </button>
         <button onClick={() => toggleAll(false)}
-          style={{ fontSize: 11, padding: "3px 10px", border: "1px solid #ef4444", background: allOff ? "#ef4444" : "#fef2f2", color: allOff ? "#fff" : "#ef4444", borderRadius: 20, cursor: "pointer", fontWeight: 700 }}>
+          style={{ fontSize: 11, padding: "3px 10px", border: "1px solid #e0524c", background: allOff ? "#e0524c" : "#fef2f2", color: allOff ? "#fff" : "#e0524c", borderRadius: 20, cursor: "pointer", fontWeight: 700 }}>
           🚫 No Access
         </button>
       </div>
@@ -158,11 +158,11 @@ function PermissionGrid({ perms, onChange }) {
           const keys    = groupPerms.map(p => p.key);
           const allGrOn = keys.every(k => perms[k]);
           return (
-            <div key={group} style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+            <div key={group} style={{ border: "1px solid #e6e9f2", borderRadius: 8, overflow: "hidden" }}>
               {/* Group header */}
-              <div style={{ background: "#f8fafc", padding: "7px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: 11, fontWeight: 800, color: "#1e293b", textTransform: "uppercase" }}>{group}</span>
-                <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", fontSize: 10, color: "#64748b", fontWeight: 600 }}>
+              <div style={{ background: "#f7f8fc", padding: "7px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #e6e9f2" }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: "#0f1535", textTransform: "uppercase" }}>{group}</span>
+                <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", fontSize: 10, color: "#6b7392", fontWeight: 600 }}>
                   All
                   <input type="checkbox" checked={allGrOn}
                     onChange={e => toggleGroup(keys, e.target.checked)}
@@ -171,12 +171,12 @@ function PermissionGrid({ perms, onChange }) {
               </div>
               {/* Perm rows */}
               {groupPerms.map(({ key, label }) => (
-                <label key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", borderBottom: "1px solid #f1f5f9", background: perms[key] ? "#f0fdf4" : "#fff", transition: "background 0.1s" }}>
-                  <span style={{ fontSize: 12, color: perms[key] ? "#15803d" : "#64748b", fontWeight: perms[key] ? 600 : 400 }}>
+                <label key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", borderBottom: "1px solid #f1f3f9", background: perms[key] ? "#f0faf5" : "#fff", transition: "background 0.1s" }}>
+                  <span style={{ fontSize: 12, color: perms[key] ? "#17855a" : "#6b7392", fontWeight: perms[key] ? 600 : 400 }}>
                     {perms[key] ? "✅" : "⬜"} {label}
                   </span>
                   <div onClick={() => toggle(key)}
-                    style={{ width: 38, height: 20, borderRadius: 20, background: perms[key] ? "#16a34a" : "#d1d5db", position: "relative", cursor: "pointer", transition: "background 0.2s", flexShrink: 0 }}>
+                    style={{ width: 38, height: 20, borderRadius: 20, background: perms[key] ? "#1f9d6b" : "#dde1ec", position: "relative", cursor: "pointer", transition: "background 0.2s", flexShrink: 0 }}>
                     <div style={{ position: "absolute", top: 2, left: perms[key] ? 20 : 2, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} />
                   </div>
                 </label>
@@ -309,13 +309,13 @@ export default function StaffManagement() {
       <PageTitle>Staff Management</PageTitle>
       {toast && <SuccessToast msg={toast} />}
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, borderBottom: "1px solid #e2e8f0" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, borderBottom: "1px solid #e6e9f2" }}>
         {[
           { key: "staff", label: "Staff Members" },
           { key: "activity", label: `Activity Log (${logs.length})` },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            style={{ padding: "10px 14px", border: "none", borderBottom: activeTab === tab.key ? "3px solid #0ea5e9" : "3px solid transparent", background: "transparent", color: activeTab === tab.key ? "#0f172a" : "#64748b", cursor: "pointer", fontWeight: 800, fontSize: 12 }}>
+            style={{ padding: "10px 14px", border: "none", borderBottom: activeTab === tab.key ? "3px solid #0ea5e9" : "3px solid transparent", background: "transparent", color: activeTab === tab.key ? "#0f1535" : "#6b7392", cursor: "pointer", fontWeight: 800, fontSize: 12 }}>
             {tab.label}
           </button>
         ))}
@@ -326,14 +326,14 @@ export default function StaffManagement() {
       {/* Summary */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12, marginBottom: 18 }}>
         {[
-          { label: "Total Staff",   value: staff.length,                                color: "#3b82f6", icon: "👥" },
-          { label: "Active",        value: staff.filter(s => s.isActive).length,        color: "#16a34a", icon: "✅" },
-          { label: "Inactive",      value: staff.filter(s => !s.isActive).length,       color: "#ef4444", icon: "🚫" },
-          { label: "Full Access",   value: staff.filter(s => permCount(s) === ALL_PERM_KEYS.length).length, color: "#8b5cf6", icon: "🔓" },
+          { label: "Total Staff",   value: staff.length,                                color: "#5a8be8", icon: "👥" },
+          { label: "Active",        value: staff.filter(s => s.isActive).length,        color: "#1f9d6b", icon: "✅" },
+          { label: "Inactive",      value: staff.filter(s => !s.isActive).length,       color: "#e0524c", icon: "🚫" },
+          { label: "Full Access",   value: staff.filter(s => permCount(s) === ALL_PERM_KEYS.length).length, color: "#d946ef", icon: "🔓" },
         ].map((c, i) => (
-          <div key={i} style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #e2e8f0", borderLeft: `4px solid ${c.color}` }}>
-            <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>{c.icon} {c.label}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", marginTop: 4 }}>{c.value}</div>
+          <div key={i} style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #e6e9f2", borderLeft: `4px solid ${c.color}` }}>
+            <div style={{ fontSize: 11, color: "#6b7392", fontWeight: 700 }}>{c.icon} {c.label}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#0f1535", marginTop: 4 }}>{c.value}</div>
           </div>
         ))}
       </div>
@@ -354,24 +354,24 @@ export default function StaffManagement() {
             </thead>
             <tbody>
               {staff.length === 0 ? (
-                <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>
+                <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#9aa1b9" }}>
                   No staff members yet. Click "Add Staff Member" to create one.
                 </td></tr>
               ) : staff.map(u => (
-                <tr key={u.id} style={{ borderBottom: "1px solid #f1f5f9", background: !u.isActive ? "#fafafa" : "" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#f0fdfa"}
+                <tr key={u.id} style={{ borderBottom: "1px solid #f1f3f9", background: !u.isActive ? "#fafafa" : "" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#f5f3ff"}
                   onMouseLeave={e => e.currentTarget.style.background = !u.isActive ? "#fafafa" : ""}>
                   <Td style={{ fontWeight: 700 }}>
                     {u.name}
-                    {!u.isActive && <span style={{ marginLeft: 6, fontSize: 10, color: "#94a3b8" }}>(Inactive)</span>}
+                    {!u.isActive && <span style={{ marginLeft: 6, fontSize: 10, color: "#9aa1b9" }}>(Inactive)</span>}
                   </Td>
                   <Td style={{ fontFamily: "monospace", color: "#0ea5e9" }}>@{u.username}</Td>
                   <Td>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ flex: 1, height: 6, background: "#e2e8f0", borderRadius: 10, overflow: "hidden", minWidth: 60 }}>
-                        <div style={{ height: "100%", background: "#16a34a", borderRadius: 10, width: `${(permCount(u) / ALL_PERM_KEYS.length) * 100}%` }} />
+                      <div style={{ flex: 1, height: 6, background: "#e6e9f2", borderRadius: 10, overflow: "hidden", minWidth: 60 }}>
+                        <div style={{ height: "100%", background: "#1f9d6b", borderRadius: 10, width: `${(permCount(u) / ALL_PERM_KEYS.length) * 100}%` }} />
                       </div>
-                      <span style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: 11, color: "#6b7392", whiteSpace: "nowrap" }}>
                         {permCount(u)}/{ALL_PERM_KEYS.length}
                       </span>
                     </div>
@@ -379,7 +379,7 @@ export default function StaffManagement() {
                   <Td>
                     <Badge color={u.isActive ? "green" : "gray"}>{u.isActive ? "Active" : "Inactive"}</Badge>
                   </Td>
-                  <Td style={{ color: "#64748b" }}>
+                  <Td style={{ color: "#6b7392" }}>
                     {new Date(u.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                   </Td>
                   <Td>
@@ -398,7 +398,7 @@ export default function StaffManagement() {
       ) : (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ color: "#64748b", fontSize: 12 }}>
+            <div style={{ color: "#6b7392", fontSize: 12 }}>
               Complete audit trail of staff and admin actions, newest first.
             </div>
             <Btn sm color="blue" onClick={loadLogs}>Refresh</Btn>
@@ -414,26 +414,26 @@ export default function StaffManagement() {
                 </thead>
                 <tbody>
                   {logs.length === 0 ? (
-                    <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>
+                    <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#9aa1b9" }}>
                       No activity has been recorded yet.
                     </td></tr>
                   ) : logs.map(log => (
-                    <tr key={log._id} style={{ borderBottom: "1px solid #f1f5f9" }}
-                      onMouseEnter={e => e.currentTarget.style.background = "#f0fdfa"}
+                    <tr key={log._id} style={{ borderBottom: "1px solid #f1f3f9" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#f5f3ff"}
                       onMouseLeave={e => e.currentTarget.style.background = ""}>
-                      <Td style={{ color: "#475569", whiteSpace: "nowrap" }}>{formatDateTime(log.createdAt)}</Td>
+                      <Td style={{ color: "#4a5272", whiteSpace: "nowrap" }}>{formatDateTime(log.createdAt)}</Td>
                       <Td>
-                        <div style={{ fontWeight: 800, color: "#0f172a" }}>{log.actor?.name || "-"}</div>
-                        <div style={{ fontSize: 11, color: "#64748b" }}>@{log.actor?.username || "-"} - {log.actor?.role || "-"}</div>
+                        <div style={{ fontWeight: 800, color: "#0f1535" }}>{log.actor?.name || "-"}</div>
+                        <div style={{ fontSize: 11, color: "#6b7392" }}>@{log.actor?.username || "-"} - {log.actor?.role || "-"}</div>
                       </Td>
                       <Td><Badge color={ACTION_COLORS[log.action] || "gray"}>{log.action}</Badge></Td>
                       <Td>
-                        <div style={{ fontWeight: 700, color: "#1e293b" }}>{log.entityType}</div>
-                        <div style={{ color: "#64748b", fontSize: 11 }}>{log.entityLabel || "-"}</div>
+                        <div style={{ fontWeight: 700, color: "#0f1535" }}>{log.entityType}</div>
+                        <div style={{ color: "#6b7392", fontSize: 11 }}>{log.entityLabel || "-"}</div>
                       </Td>
                       <Td>
-                        <div style={{ color: "#1e293b", fontWeight: 600 }}>{log.summary}</div>
-                        <div style={{ color: "#64748b", fontSize: 11 }}>{changeSummary(log.changes)}</div>
+                        <div style={{ color: "#0f1535", fontWeight: 600 }}>{log.summary}</div>
+                        <div style={{ color: "#6b7392", fontSize: 11 }}>{changeSummary(log.changes)}</div>
                       </Td>
                       <Td>
                         <Btn sm color="blue" onClick={() => setSelectedLog(log)}>View</Btn>
@@ -464,7 +464,7 @@ export default function StaffManagement() {
           </FormGroup>
         </div>
 
-        <div style={{ marginBottom: 8, fontWeight: 700, fontSize: 12, color: "#1e293b" }}>
+        <div style={{ marginBottom: 8, fontWeight: 700, fontSize: 12, color: "#0f1535" }}>
           🔐 Set Permissions
         </div>
         <PermissionGrid perms={addPerms} onChange={setAddPerms} />
@@ -487,7 +487,7 @@ export default function StaffManagement() {
           </FormGroup>
           <FormGroup label="Username">
             <FormInput value={`@${editUser?.username}`} disabled
-              style={{ background: "#f1f5f9", color: "#94a3b8", cursor: "not-allowed" }} />
+              style={{ background: "#f1f3f9", color: "#9aa1b9", cursor: "not-allowed" }} />
           </FormGroup>
           <FormGroup label="New Password">
             <FormInput type="password" placeholder="Leave blank to keep current"
@@ -497,17 +497,17 @@ export default function StaffManagement() {
           <FormGroup label="Account Status">
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
               <div onClick={() => setEditActive(v => !v)}
-                style={{ width: 44, height: 24, borderRadius: 24, background: editActive ? "#16a34a" : "#d1d5db", position: "relative", cursor: "pointer", transition: "background 0.2s" }}>
+                style={{ width: 44, height: 24, borderRadius: 24, background: editActive ? "#1f9d6b" : "#dde1ec", position: "relative", cursor: "pointer", transition: "background 0.2s" }}>
                 <div style={{ position: "absolute", top: 3, left: editActive ? 23 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} />
               </div>
-              <span style={{ fontSize: 12, fontWeight: 700, color: editActive ? "#16a34a" : "#ef4444" }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: editActive ? "#1f9d6b" : "#e0524c" }}>
                 {editActive ? "Active" : "Inactive"}
               </span>
             </div>
           </FormGroup>
         </div>
 
-        <div style={{ marginBottom: 8, fontWeight: 700, fontSize: 12, color: "#1e293b" }}>
+        <div style={{ marginBottom: 8, fontWeight: 700, fontSize: 12, color: "#0f1535" }}>
           🔐 Manage Permissions
         </div>
         <PermissionGrid perms={editPerms} onChange={setEditPerms} />
@@ -531,14 +531,14 @@ export default function StaffManagement() {
                 { label: "Action", value: selectedLog.action },
                 { label: "Record", value: `${selectedLog.entityType} - ${selectedLog.entityLabel || "-"}` },
               ].map((item) => (
-                <div key={item.label} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: 12 }}>
-                  <div style={{ fontSize: 10, color: "#64748b", fontWeight: 800, textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
-                  <div style={{ color: "#1e293b", fontWeight: 700, fontSize: 12 }}>{item.value}</div>
+                <div key={item.label} style={{ background: "#f7f8fc", border: "1px solid #e6e9f2", borderRadius: 8, padding: 12 }}>
+                  <div style={{ fontSize: 10, color: "#6b7392", fontWeight: 800, textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
+                  <div style={{ color: "#0f1535", fontWeight: 700, fontSize: 12 }}>{item.value}</div>
                 </div>
               ))}
             </div>
 
-            <div style={{ marginBottom: 10, color: "#1e293b", fontWeight: 800 }}>{selectedLog.summary}</div>
+            <div style={{ marginBottom: 10, color: "#0f1535", fontWeight: 800 }}>{selectedLog.summary}</div>
 
             <TableWrap>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -549,14 +549,14 @@ export default function StaffManagement() {
                 </thead>
                 <tbody>
                   {(selectedLog.changes || []).length === 0 ? (
-                    <tr><td colSpan={3} style={{ padding: 24, textAlign: "center", color: "#94a3b8" }}>
+                    <tr><td colSpan={3} style={{ padding: 24, textAlign: "center", color: "#9aa1b9" }}>
                       No field-level changes captured.
                     </td></tr>
                   ) : selectedLog.changes.map((change, i) => (
-                    <tr key={`${change.field}-${i}`} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                      <Td style={{ fontWeight: 800, color: "#0f172a", width: 160 }}>{change.field}</Td>
-                      <Td style={{ maxWidth: 280, wordBreak: "break-word", color: "#991b1b" }}>{formatValue(change.before)}</Td>
-                      <Td style={{ maxWidth: 280, wordBreak: "break-word", color: "#166534" }}>{formatValue(change.after)}</Td>
+                    <tr key={`${change.field}-${i}`} style={{ borderBottom: "1px solid #f1f3f9" }}>
+                      <Td style={{ fontWeight: 800, color: "#0f1535", width: 160 }}>{change.field}</Td>
+                      <Td style={{ maxWidth: 280, wordBreak: "break-word", color: "#a33a35" }}>{formatValue(change.before)}</Td>
+                      <Td style={{ maxWidth: 280, wordBreak: "break-word", color: "#13734d" }}>{formatValue(change.after)}</Td>
                     </tr>
                   ))}
                 </tbody>

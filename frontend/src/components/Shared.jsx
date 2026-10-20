@@ -1,35 +1,40 @@
 // Shared UI components used across all pages
 
 export const PageTitle = ({ children }) => (
-  <div style={{ width: "100%", maxWidth: "100%", fontSize: 22, fontWeight: 700, color: "#1e293b", textAlign: "center", marginBottom: 18, fontFamily: "Georgia,serif", overflowWrap: "anywhere" }}>
-    {children}
+  <div style={{ width: "100%", maxWidth: "100%", display: "flex", alignItems: "center", gap: 12, marginBottom: 20, overflowWrap: "anywhere", animation: "fm-fade-up 0.35s ease both" }}>
+    <span style={{ width: 6, alignSelf: "stretch", minHeight: 28, borderRadius: 999, background: "linear-gradient(180deg, #a78bfa, #7c3aed)", flexShrink: 0 }} />
+    <span style={{ fontSize: 22, fontWeight: 800, color: "#0f1535", letterSpacing: "-0.02em", lineHeight: 1.25, fontFamily: "var(--font-display)" }}>
+      {children}
+    </span>
   </div>
 );
 
 export const Btn = ({ children, onClick, color = "teal", sm, disabled }) => {
   const colors = {
-    green:  { background: "#16a34a", color: "#fff" },
-    blue:   { background: "#0ea5e9", color: "#fff" },
-    teal:   { background: "#0d9488", color: "#fff" },
-    gold:   { background: "#0f766e", color: "#fff" },
-    red:    { background: "#ef4444", color: "#fff" },
-    cancel: { background: "#f1f5f9", color: "#475569", border: "1px solid #e2e8f0" },
-    purple: { background: "#7c3aed", color: "#fff" },
+    green:  { background: "#1f9d6b", color: "#fff", boxShadow: "0 4px 12px -4px rgba(31,157,107,0.45)" },
+    blue:   { background: "#0ea5e9", color: "#fff", boxShadow: "0 4px 12px -4px rgba(59,143,217,0.45)" },
+    teal:   { background: "linear-gradient(135deg, #8b5cf6, #7c3aed 55%, #9333ea)", color: "#fff", boxShadow: "0 4px 12px -4px rgba(124,58,237,0.5)" },
+    gold:   { background: "linear-gradient(135deg, #7c3aed, #db2777)", color: "#fff", boxShadow: "0 4px 12px -4px rgba(60,76,184,0.5)" },
+    red:    { background: "#e0524c", color: "#fff", boxShadow: "0 4px 12px -4px rgba(224,82,76,0.45)" },
+    cancel: { background: "#fff", color: "#4a5272", border: "1px solid #dde1ec" },
+    purple: { background: "#c026d3", color: "#fff", boxShadow: "0 4px 12px -4px rgba(122,92,224,0.45)" },
   };
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.filter = "brightness(1.06)"; }}
+      onMouseLeave={e => { e.currentTarget.style.filter = "none"; }}
       style={{
-        padding: sm ? "5px 10px" : "8px 16px",
-        borderRadius: 6, fontWeight: 700,
-        fontSize: sm ? 11 : 12,
+        padding: sm ? "5px 12px" : "9px 18px",
+        borderRadius: sm ? 8 : 10, fontWeight: 700,
+        fontSize: sm ? 11.5 : 12.5,
         cursor: disabled ? "not-allowed" : "pointer",
         border: "none",
-        display: "inline-flex", alignItems: "center", gap: 5,
-        justifyContent: "center", whiteSpace: "nowrap", minHeight: sm ? 29 : 34,
-        transition: "all 0.15s",
-        opacity: disabled ? 0.6 : 1,
+        display: "inline-flex", alignItems: "center", gap: 6,
+        justifyContent: "center", whiteSpace: "nowrap", minHeight: sm ? 30 : 38,
+        letterSpacing: "0.01em",
+        opacity: disabled ? 0.55 : 1,
         ...colors[color],
       }}
     >
@@ -39,7 +44,7 @@ export const Btn = ({ children, onClick, color = "teal", sm, disabled }) => {
 };
 
 export const SearchBar = ({ children }) => (
-  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", background: "#fff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0", marginBottom: 16 }}>
+  <div className="fm-searchbar" style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", background: "#fff", padding: "14px 16px", borderRadius: 14, border: "1px solid #e6e9f2", boxShadow: "var(--shadow-xs)", marginBottom: 18 }}>
     {children}
   </div>
 );
@@ -50,68 +55,72 @@ export const Input = ({ placeholder, type = "text", style = {}, value, onChange 
     placeholder={placeholder}
     value={value}
     onChange={onChange}
-    style={{ maxWidth: "100%", padding: "7px 11px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 12, background: "#f9fafb", outline: "none", boxSizing: "border-box", ...style }}
+    style={{ maxWidth: "100%", padding: "9px 13px", border: "1px solid #dde1ec", borderRadius: 10, fontSize: 12.5, background: "#fafbfe", outline: "none", boxSizing: "border-box", minHeight: 38, ...style }}
   />
 );
 
 export const TableWrap = ({ children }) => (
-  <div style={{ width: "100%", maxWidth: "100%", minWidth: 0, background: "#fff", borderRadius: 8, overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", overflowX: "auto" }}>
+  <div style={{ width: "100%", maxWidth: "100%", minWidth: 0, background: "#fff", borderRadius: 14, overflow: "hidden", border: "1px solid #e6e9f2", boxShadow: "var(--shadow-sm)", overflowX: "auto" }}>
     {children}
   </div>
 );
 
 export const Th = ({ children }) => (
-  <th style={{ padding: "10px 12px", textAlign: "left", fontWeight: 700, color: "#ecfeff", fontSize: 11.5, whiteSpace: "nowrap", background: "#0f766e" }}>
+  <th style={{ padding: "12px 14px", textAlign: "left", fontWeight: 700, color: "#6b7392", fontSize: 11, whiteSpace: "nowrap", background: "#f8f9fd" }}>
     {children}
   </th>
 );
 
 export const Td = ({ children, style = {}, onClick }) => (
-  <td onClick={onClick} style={{ padding: "10px 12px", color: "#334155", verticalAlign: "middle", ...style }}>
+  <td onClick={onClick} style={{ padding: "12px 14px", color: "#3a4260", verticalAlign: "middle", ...style }}>
     {children}
   </td>
 );
 
 export const Badge = ({ children, color = "green" }) => {
   const colors = {
-    green:  { background: "#dcfce7", color: "#166534" },
-    red:    { background: "#fee2e2", color: "#991b1b" },
-    yellow: { background: "#fef3c7", color: "#92400e" },
-    blue:   { background: "#dbeafe", color: "#1e40af" },
-    gray:   { background: "#f1f5f9", color: "#475569" },
-    purple: { background: "#ede9fe", color: "#5b21b6" },
+    green:  { background: "#e3f5ec", color: "#13734d", dot: "#1f9d6b" },
+    red:    { background: "#fdeceb", color: "#a33a35", dot: "#e0524c" },
+    yellow: { background: "#fdf1dc", color: "#8a5a12", dot: "#e5a03a" },
+    blue:   { background: "#e5edfc", color: "#34509f", dot: "#5a8be8" },
+    gray:   { background: "#f1f3f9", color: "#4a5272", dot: "#9aa1b9" },
+    purple: { background: "#fae8ff", color: "#86198f", dot: "#d946ef" },
   };
+  const { dot, ...c } = colors[color] || colors.gray;
   return (
-    <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 20, fontSize: 10, fontWeight: 700, ...colors[color] }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 999, fontSize: 10.5, fontWeight: 700, lineHeight: 1.5, whiteSpace: "nowrap", ...c }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: dot, flexShrink: 0 }} />
       {children}
     </span>
   );
 };
 
 export const StatsGrid = ({ cards }) => (
-  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 14, marginBottom: 20 }}>
+  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 14, marginBottom: 20 }}>
     {cards.map((c, i) => (
-      <div key={i} style={{ background: "#fff", borderRadius: 10, padding: 16, border: "1px solid #e2e8f0", borderLeft: `4px solid ${c.color}` }}>
-        <div style={{ fontSize: 24, fontWeight: 800, color: "#1e293b" }}>{c.value}</div>
-        <div style={{ fontSize: 11, color: "#64748b", marginTop: 3 }}>{c.label}</div>
+      <div key={i} style={{ position: "relative", overflow: "hidden", background: "#fff", borderRadius: 14, padding: "16px 18px", border: "1px solid #e6e9f2", boxShadow: "var(--shadow-sm)" }}>
+        <span style={{ position: "absolute", top: -26, right: -26, width: 78, height: 78, borderRadius: "50%", background: c.color, opacity: 0.1 }} />
+        <span style={{ display: "block", width: 28, height: 5, borderRadius: 999, background: c.color, marginBottom: 12 }} />
+        <div style={{ position: "relative", fontSize: "clamp(17px, 4.4vw, 24px)", fontWeight: 800, color: "#0f1535", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere", lineHeight: 1.2 }}>{c.value}</div>
+        <div style={{ fontSize: 11.5, color: "#6b7392", marginTop: 3, fontWeight: 600 }}>{c.label}</div>
       </div>
     ))}
   </div>
 );
 
 export const FormGroup = ({ label, children }) => (
-  <div style={{ marginBottom: 14, minWidth: 0 }}>
-    <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 5 }}>{label}</label>
+  <div style={{ marginBottom: 16, minWidth: 0 }}>
+    <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#4a5272", marginBottom: 6 }}>{label}</label>
     {children}
   </div>
 );
 
 export const FormInput = (props) => (
-  <input {...props} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 13, outline: "none", background: "#f9fafb", boxSizing: "border-box", ...props.style }} />
+  <input {...props} style={{ width: "100%", padding: "10px 13px", border: "1px solid #dde1ec", borderRadius: 10, fontSize: 13, outline: "none", background: "#fafbfe", boxSizing: "border-box", minHeight: 40, ...props.style }} />
 );
 
 export const FormSelect = ({ children, ...props }) => (
-  <select {...props} style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 13, outline: "none", background: "#f9fafb", boxSizing: "border-box" }}>
+  <select {...props} style={{ width: "100%", padding: "10px 13px", border: "1px solid #dde1ec", borderRadius: 10, fontSize: 13, outline: "none", background: "#fafbfe", boxSizing: "border-box", minHeight: 40 }}>
     {children}
   </select>
 );
@@ -119,11 +128,11 @@ export const FormSelect = ({ children, ...props }) => (
 export const Modal = ({ open, onClose, title, children, wide, className }) => {
   if (!open) return null;
   return (
-    <div className={className} onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 28, width: wide ? 1120 : 520, maxWidth: "95vw", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: "#1e293b", fontFamily: "Georgia,serif" }}>{title}</div>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#64748b" }}>✕</button>
+    <div className={className} onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(15,21,53,0.38)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div className="fm-modal-panel" onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 18, padding: 28, width: wide ? 1120 : 520, maxWidth: "95vw", maxHeight: "90vh", overflowY: "auto", boxShadow: "var(--shadow-lg)", border: "1px solid #e6e9f2", animation: "fm-fade-up 0.22s ease both" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid #eef0f6" }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#0f1535", letterSpacing: "-0.01em", fontFamily: "var(--font-display)" }}>{title}</div>
+          <button onClick={onClose} aria-label="Close" style={{ background: "#f1f3f9", border: "none", width: 32, height: 32, borderRadius: 10, fontSize: 14, cursor: "pointer", color: "#6b7392", flexShrink: 0, display: "grid", placeItems: "center" }}>✕</button>
         </div>
         {children}
       </div>
@@ -134,13 +143,13 @@ export const Modal = ({ open, onClose, title, children, wide, className }) => {
 export const DetailRow = ({ open, cols, data }) => {
   if (!open) return null;
   return (
-    <tr style={{ background: "#f8fafc" }}>
+    <tr style={{ background: "#f8f9fd" }}>
       <td colSpan={cols}>
-        <div style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+        <div style={{ padding: 18, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
           {data.map((d, i) => (
             <div key={i}>
-              <label style={{ fontSize: 10, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase" }}>{d.label}</label>
-              <p style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 600, marginTop: 2 }}>{d.value}</p>
+              <label style={{ fontSize: 10.5, color: "#9aa1b9", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>{d.label}</label>
+              <p style={{ fontSize: 13, color: "#0f1535", fontWeight: 600, marginTop: 3 }}>{d.value}</p>
             </div>
           ))}
         </div>
@@ -150,28 +159,28 @@ export const DetailRow = ({ open, cols, data }) => {
 };
 
 export const LoadingSpinner = () => (
-  <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-    <div style={{ width: 36, height: 36, borderRadius: "50%", border: "4px solid #e2e8f0", borderTopColor: "#14b8a6", animation: "spin 0.8s linear infinite" }} />
-    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  <div style={{ display: "flex", justifyContent: "center", padding: 44 }}>
+    <div style={{ width: 34, height: 34, borderRadius: "50%", border: "3.5px solid #ede9fe", borderTopColor: "#7c3aed", animation: "spin 0.8s linear infinite" }} />
   </div>
 );
 
 export const ErrorMsg = ({ message, onRetry }) => (
-  <div style={{ background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: 8, padding: "14px 18px", color: "#991b1b", fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+  <div style={{ background: "#fdeceb", border: "1px solid #f6cfcc", borderRadius: 12, padding: "14px 18px", color: "#a33a35", fontSize: 13, fontWeight: 600, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
     <span>⚠️ {message}</span>
     {onRetry && <Btn sm color="red" onClick={onRetry}>Retry</Btn>}
   </div>
 );
 
 export const EmptyState = ({ icon = "📭", text }) => (
-  <div style={{ textAlign: "center", padding: 60, color: "#94a3b8" }}>
-    <div style={{ fontSize: 40 }}>{icon}</div>
-    <div style={{ marginTop: 10, fontSize: 14 }}>{text || "No data found"}</div>
+  <div style={{ textAlign: "center", padding: "56px 20px", color: "#9aa1b9" }}>
+    <div style={{ width: 72, height: 72, margin: "0 auto", borderRadius: 22, background: "linear-gradient(135deg, #f5f3ff, #ede9fe)", display: "grid", placeItems: "center", fontSize: 32 }}>{icon}</div>
+    <div style={{ marginTop: 14, fontSize: 14, fontWeight: 600, color: "#6b7392" }}>{text || "No data found"}</div>
   </div>
 );
 
 export const SuccessToast = ({ msg }) => (
-  <div style={{ position: "fixed", bottom: 24, right: 24, background: "#16a34a", color: "#fff", padding: "12px 20px", borderRadius: 8, fontWeight: 700, fontSize: 13, zIndex: 99999, boxShadow: "0 4px 20px rgba(0,0,0,0.2)" }}>
-    ✅ {msg}
+  <div style={{ position: "fixed", bottom: 24, right: 24, background: "#fff", color: "#13734d", padding: "12px 18px 12px 14px", borderRadius: 14, fontWeight: 700, fontSize: 13, zIndex: 99999, boxShadow: "var(--shadow-lg)", border: "1px solid #c6ecd9", display: "flex", alignItems: "center", gap: 10, animation: "fm-fade-up 0.25s ease both" }}>
+    <span style={{ width: 26, height: 26, borderRadius: 8, background: "#e3f5ec", display: "grid", placeItems: "center", fontSize: 13 }}>✅</span>
+    {msg}
   </div>
 );

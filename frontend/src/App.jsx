@@ -59,11 +59,11 @@ function getLabel(page) {
 
 function AccessDenied() {
   return (
-    <div style={{ textAlign: "center", padding: 80, color: "#64748b" }}>
-      <div style={{ fontSize: 52 }}>🔒</div>
-      <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", marginTop: 12 }}>Access Denied</div>
-      <div style={{ fontSize: 13, marginTop: 6 }}>You don't have permission to view this page.</div>
-      <div style={{ fontSize: 13, marginTop: 4, color: "#94a3b8" }}>Contact your administrator for access.</div>
+    <div style={{ maxWidth: 440, margin: "48px auto", textAlign: "center", padding: "44px 32px", background: "#fff", border: "1px solid #e6e9f2", borderRadius: 20, boxShadow: "var(--shadow-sm)" }}>
+      <div style={{ width: 72, height: 72, margin: "0 auto", borderRadius: 22, background: "linear-gradient(135deg, #f5f3ff, #ede9fe)", display: "grid", placeItems: "center", fontSize: 32 }}>🔒</div>
+      <div style={{ fontSize: 19, fontWeight: 800, color: "#0f1535", marginTop: 18, letterSpacing: "-0.01em" }}>Access Denied</div>
+      <div style={{ fontSize: 13.5, marginTop: 8, color: "#6b7392" }}>You don't have permission to view this page.</div>
+      <div style={{ fontSize: 12.5, marginTop: 4, color: "#9aa1b9" }}>Contact your administrator for access.</div>
     </div>
   );
 }
@@ -82,6 +82,8 @@ export default function App() {
     }, 1400);
     return () => clearTimeout(t);
   }, [justLoggedIn]);
+
+  useEffect(() => { window.scrollTo(0, 0); }, [page]);
 
   if (loading)    return <AuthLoadingScreen />;
   if (!user)      return <LoginPage />;
@@ -106,17 +108,8 @@ export default function App() {
   const customerProfileId = page.startsWith("customer-profile:") ? page.split(":")[1] : null;
 
   return (
-    <div style={{ fontFamily: "'Segoe UI',sans-serif", background: "#f8fafc", minHeight: "100vh", fontSize: 13 }}>
-      <Navbar page={page} navigate={setPage} user={user} onLogout={logout} />
-
-      {/* Breadcrumb */}
-      <div style={{ padding: "8px 20px", fontSize: 12, color: "#666", background: "#eef6f5", borderBottom: "1px solid #d7e5e4" }}>
-        <span style={{ color: "#0ea5e9", cursor: "pointer" }} onClick={() => setPage("dashboard")}>Home</span>
-        {" / "}
-        <span>{getLabel(page)}</span>
-      </div>
-
-      <div style={{ padding: "20px", minWidth: 0, maxWidth: "100vw", overflowX: "hidden" }}>
+    <Navbar page={page} navigate={setPage} user={user} onLogout={logout} label={getLabel(page)}>
+      <div style={{ minWidth: 0, maxWidth: "100%" }}>
         {/* Dashboard — always visible to any logged-in user */}
         {page === "dashboard"        && <Dashboard navigate={setPage} />}
 
@@ -160,6 +153,6 @@ export default function App() {
         {page === "report-graphs"    && <Guard perm="reports_graphs">  <ReportGraphs   /></Guard>}
         {page === "report-growth"    && <Guard perm="reports_graphs">  <ReportGrowth   /></Guard>}
       </div>
-    </div>
+    </Navbar>
   );
 }

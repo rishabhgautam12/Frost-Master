@@ -27,25 +27,25 @@ function OrderAdvanceModal({ order, onClose, onDone, isAdmin: adminRole, onEditP
   };
   return <Modal open wide title={`Advance Payments - ${order.orderNo}`} onClose={onClose}>
     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:10, marginBottom:16 }}>
-      {[["Order Total",order.grandTotal,"#0f172a"],["Applied to Order",order.amountPaid,"#15803d"],["Remaining",remaining,"#dc2626"],["Extra Advance",customerAdvance,"#7c3aed"]].map(([label,value,color]) => <div key={label} style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8,padding:12}}><div style={{fontSize:10,fontWeight:800,color:"#64748b",textTransform:"uppercase"}}>{label}</div><div style={{fontSize:19,fontWeight:900,color,marginTop:4}}>₹{(+value||0).toLocaleString("en-IN")}</div></div>)}
+      {[["Order Total",order.grandTotal,"#0f1535"],["Applied to Order",order.amountPaid,"#17855a"],["Remaining",remaining,"#d0433d"],["Extra Advance",customerAdvance,"#c026d3"]].map(([label,value,color]) => <div key={label} style={{background:"#f7f8fc",border:"1px solid #e6e9f2",borderRadius:8,padding:12}}><div style={{fontSize:10,fontWeight:800,color:"#6b7392",textTransform:"uppercase"}}>{label}</div><div style={{fontSize:19,fontWeight:900,color,marginTop:4}}>₹{(+value||0).toLocaleString("en-IN")}</div></div>)}
     </div>
     <div style={{ fontWeight:800, marginBottom:8 }}>Advance Payment History</div>
     <RefundHistory record={order} />
-    <div style={{ maxHeight:220, overflowY:"auto", border:"1px solid #e2e8f0", borderRadius:8, marginBottom:16 }}>
-      {payments.length ? payments.map((payment,index) => <div key={payment._id||index} style={{display:"grid",gridTemplateColumns:"115px 120px 1fr 120px",gap:8,padding:10,borderBottom:"1px solid #e2e8f0",alignItems:"center"}}><span>{new Date(payment.date).toLocaleDateString("en-IN")}</span><Badge color="green">{payment.paymentMode}</Badge><span style={{color:"#64748b"}}>{payment.notes||"-"}<small style={{display:"block"}}>Recorded by {payment.recordedByName||"Staff"}</small>{+payment.advanceAmount>0&&<small style={{display:"block",color:"#7c3aed",fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString("en-IN")} moved to advance</small>}{isAdmin&&payment._id&&<span style={{display:"flex",gap:6,marginTop:5}}><Btn sm color="blue" onClick={()=>onEditPayment(payment)}>Edit Payment</Btn><Btn sm color="red" onClick={()=>onDeletePayment(payment)}>Delete</Btn></span>}</span><strong style={{textAlign:"right",color:"#15803d"}}>₹{(+payment.amount||0).toLocaleString("en-IN")}</strong></div>) : <div style={{padding:24,textAlign:"center",color:"#94a3b8"}}>No advance payments recorded.</div>}
+    <div style={{ maxHeight:220, overflowY:"auto", border:"1px solid #e6e9f2", borderRadius:8, marginBottom:16 }}>
+      {payments.length ? payments.map((payment,index) => <div key={payment._id||index} style={{display:"grid",gridTemplateColumns:"115px 120px 1fr 120px",gap:8,padding:10,borderBottom:"1px solid #e6e9f2",alignItems:"center"}}><span>{new Date(payment.date).toLocaleDateString("en-IN")}</span><Badge color="green">{payment.paymentMode}</Badge><span style={{color:"#6b7392"}}>{payment.notes||"-"}<small style={{display:"block"}}>Recorded by {payment.recordedByName||"Staff"}</small>{+payment.advanceAmount>0&&<small style={{display:"block",color:"#c026d3",fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString("en-IN")} moved to advance</small>}{isAdmin&&payment._id&&<span style={{display:"flex",gap:6,marginTop:5}}><Btn sm color="blue" onClick={()=>onEditPayment(payment)}>Edit Payment</Btn><Btn sm color="red" onClick={()=>onDeletePayment(payment)}>Delete</Btn></span>}</span><strong style={{textAlign:"right",color:"#17855a"}}>₹{(+payment.amount||0).toLocaleString("en-IN")}</strong></div>) : <div style={{padding:24,textAlign:"center",color:"#9aa1b9"}}>No advance payments recorded.</div>}
     </div>
-    {order.status === "Open" ? <div style={{background:"#f0fdf4",border:"1px solid #86efac",borderRadius:8,padding:14}}>
-      <div style={{fontWeight:800,color:"#166534",marginBottom:10}}>Add Another Advance Payment</div>
+    {order.status === "Open" ? <div style={{background:"#f0faf5",border:"1px solid #a8e2c6",borderRadius:8,padding:14}}>
+      <div style={{fontWeight:800,color:"#13734d",marginBottom:10}}>Add Another Advance Payment</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:10}}>
         <FormGroup label="Amount"><FormInput type="number" min="0" value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))} /></FormGroup>
         <FormGroup label="Payment Method"><FormSelect value={form.method} onChange={e=>setForm(p=>({...p,method:e.target.value}))}>{["Cash","UPI","Card","Bank Transfer","Cheque"].map(method=><option key={method}>{method}</option>)}</FormSelect></FormGroup>
         <FormGroup label="Payment Date"><FormInput type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))} /></FormGroup>
         <FormGroup label="Notes / Reference"><FormInput value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} /></FormGroup>
       </div>
-      {+form.amount > remaining && <div style={{color:"#7c3aed",marginBottom:10,fontWeight:700}}>₹{(+form.amount-remaining).toLocaleString("en-IN")} extra will be stored as customer advance.</div>}
-      {error && <div style={{color:"#dc2626",marginBottom:10}}>{error}</div>}
+      {+form.amount > remaining && <div style={{color:"#c026d3",marginBottom:10,fontWeight:700}}>₹{(+form.amount-remaining).toLocaleString("en-IN")} extra will be stored as customer advance.</div>}
+      {error && <div style={{color:"#d0433d",marginBottom:10}}>{error}</div>}
       <div style={{display:"flex",justifyContent:"flex-end",gap:8}}><Btn color="cancel" onClick={onClose}>Close</Btn><Btn color="green" disabled={saving} onClick={submit}>{saving?"Saving...":"Add Advance Payment"}</Btn></div>
-    </div> : <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",color:"#64748b"}}><span>This order is no longer open; new advances cannot be added.</span><Btn color="cancel" onClick={onClose}>Close</Btn></div>}
+    </div> : <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",color:"#6b7392"}}><span>This order is no longer open; new advances cannot be added.</span><Btn color="cancel" onClick={onClose}>Close</Btn></div>}
   </Modal>;
 }
 
@@ -53,7 +53,7 @@ function OrderPaymentEditModal({ order, payment, onClose, onDone }) {
   const [form,setForm]=useState({amount:String(payment.amount||""),method:payment.paymentMode||"Cash",date:payment.date?new Date(payment.date).toISOString().slice(0,10):today(),notes:payment.notes||""});
   const [saving,setSaving]=useState(false);const [error,setError]=useState("");
   const save=async()=>{if(!(+form.amount>0))return setError("Enter a valid payment amount.");setSaving(true);setError("");try{const response=await salesAPI.updateOrderPayment(order._id,payment._id,{...form,amount:+form.amount});onDone(response);}catch(err){setError(err.message);setSaving(false);}};
-  return <Modal open title={`Edit Advance - ${order.orderNo}`} onClose={onClose}><FormGroup label="Amount"><FormInput type="number" min="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))}/></FormGroup><FormGroup label="Payment Method"><FormSelect value={form.method} onChange={e=>setForm(p=>({...p,method:e.target.value}))}>{["Cash","UPI","Card","Bank Transfer","Cheque"].map(method=><option key={method}>{method}</option>)}</FormSelect></FormGroup><FormGroup label="Date"><FormInput type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></FormGroup><FormGroup label="Notes / Reference"><FormInput value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}/></FormGroup>{error&&<div style={{color:"#dc2626",marginBottom:10}}>{error}</div>}<div style={{display:"flex",justifyContent:"flex-end",gap:8}}><Btn color="cancel" onClick={onClose}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={save}>{saving?"Saving...":"Save Payment"}</Btn></div></Modal>;
+  return <Modal open title={`Edit Advance - ${order.orderNo}`} onClose={onClose}><FormGroup label="Amount"><FormInput type="number" min="0.01" value={form.amount} onChange={e=>setForm(p=>({...p,amount:e.target.value}))}/></FormGroup><FormGroup label="Payment Method"><FormSelect value={form.method} onChange={e=>setForm(p=>({...p,method:e.target.value}))}>{["Cash","UPI","Card","Bank Transfer","Cheque"].map(method=><option key={method}>{method}</option>)}</FormSelect></FormGroup><FormGroup label="Date"><FormInput type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))}/></FormGroup><FormGroup label="Notes / Reference"><FormInput value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}/></FormGroup>{error&&<div style={{color:"#d0433d",marginBottom:10}}>{error}</div>}<div style={{display:"flex",justifyContent:"flex-end",gap:8}}><Btn color="cancel" onClick={onClose}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={save}>{saving?"Saving...":"Save Payment"}</Btn></div></Modal>;
 }
 
 export function OrderEditModal({ order, onClose, onDone, documentName="Order", updateRecord=salesAPI.updateOrder }) {
@@ -118,23 +118,23 @@ export function OrderEditModal({ order, onClose, onDone, documentName="Order", u
   };
 
   return <Modal open wide title={`Edit ${documentName} - ${order.orderNo || order.quotationNo}`} onClose={onClose}>
-    {order.status === "Converted" && <div style={{ background:"#eff6ff", border:"1px solid #bfdbfe", color:"#1d4ed8", borderRadius:7, padding:10, marginBottom:12, fontSize:12 }}>This order has already been converted. Changes here update the original order record only; the linked sale remains unchanged.</div>}
+    {order.status === "Converted" && <div style={{ background:"#f2f6fe", border:"1px solid #cddcf7", color:"#3d63c4", borderRadius:7, padding:10, marginBottom:12, fontSize:12 }}>This order has already been converted. Changes here update the original order record only; the linked sale remains unchanged.</div>}
     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:10 }}>
       <FormGroup label={`${documentName} Date`}><FormInput type="date" value={form.date} onChange={changeForm("date")} /></FormGroup>
       <FormGroup label="Sale Type"><FormSelect value={form.saleType} onChange={changeForm("saleType")}>{["GST Invoice","Cash Sale"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
       {documentName === "Quotation" && <FormGroup label="Payment Mode"><FormSelect value={form.paymentMode} onChange={changeForm("paymentMode")}>{["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>}
       <FormGroup label="Customer"><FormSelect value={form.customer} onChange={e => { const customer=customers.find(item=>item._id===e.target.value); const party=partyDetailsFromCustomer(customer); setForm(p => ({...p, customer:e.target.value, customerName:"", invoiceDetails:{...(p.invoiceDetails||{}),billTo:party,shipTo:{...party}}})); }}><option value="">Select customer</option>{customers.map(c => <option key={c._id} value={c._id}>{c.name} - {c.phone}</option>)}</FormSelect></FormGroup>
       <FormGroup label="Sale Made By (Employee)"><FormSelect value={form.salesEmployee} onChange={changeForm("salesEmployee")}><option value="">Select employee</option>{employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name} (M: {employee.manufacturingIncentivePercent || 0}% / I: {employee.importedIncentivePercent || 0}%)</option>)}</FormSelect></FormGroup>
-      {documentName === "Quotation" ? <FormGroup label="Advance Paid"><FormInput type="number" min="0" max={total || undefined} value={form.amountPaid} onChange={changeForm("amountPaid")} /></FormGroup> : <FormGroup label="Advance payments (read-only)"><div style={{padding:10,background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:7}}><strong>₹{(order.payments?.length ? order.payments.reduce((sum,p)=>sum+(+p.amount||0),0) : (+order.amountPaid||0)).toLocaleString("en-IN")}</strong><div style={{fontSize:11,color:"#475569",marginTop:5}}>Use Advances to add payments. Admins can edit or delete individual payments there.</div></div></FormGroup>}
+      {documentName === "Quotation" ? <FormGroup label="Advance Paid"><FormInput type="number" min="0" max={total || undefined} value={form.amountPaid} onChange={changeForm("amountPaid")} /></FormGroup> : <FormGroup label="Advance payments (read-only)"><div style={{padding:10,background:"#f0faf5",border:"1px solid #c6ecd9",borderRadius:7}}><strong>₹{(order.payments?.length ? order.payments.reduce((sum,p)=>sum+(+p.amount||0),0) : (+order.amountPaid||0)).toLocaleString("en-IN")}</strong><div style={{fontSize:11,color:"#4a5272",marginTop:5}}>Use Advances to add payments. Admins can edit or delete individual payments there.</div></div></FormGroup>}
     </div>
     <label style={{ display:"flex", gap:7, alignItems:"center", marginBottom:12, fontWeight:700 }}><input type="checkbox" checked={form.isInterState} onChange={changeForm("isInterState")} /> Inter-state {documentName.toLowerCase()}</label>
     <InvoiceDetailsFields value={form.invoiceDetails} onChange={invoiceDetails => setForm(prev => ({ ...prev, invoiceDetails }))} />
-    <div style={{ overflowX:"auto", border:"1px solid #e2e8f0", borderRadius:8, marginBottom:14 }}>
+    <div style={{ overflowX:"auto", border:"1px solid #e6e9f2", borderRadius:8, marginBottom:14 }}>
       <div style={{ minWidth:1180 }}>
-        <div style={{ display:"grid", gridTemplateColumns:"190px 130px 130px 60px 85px 85px 70px 65px 85px 75px 85px 35px", gap:6, padding:8, background:"#f8fafc", fontSize:10, fontWeight:800 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"190px 130px 130px 60px 85px 85px 70px 65px 85px 75px 85px 35px", gap:6, padding:8, background:"#f7f8fc", fontSize:10, fontWeight:800 }}>
           {["Product","Description","Warehouse","Qty","Rate","Billing Rate","Disc. %","GST %","Transport","Trans. GST %","Total",""].map(x => <div key={x}>{x}</div>)}
         </div>
-        {items.map((item, index) => <div key={index} style={{ display:"grid", gridTemplateColumns:"190px 130px 130px 60px 85px 85px 70px 65px 85px 75px 85px 35px", gap:6, padding:8, borderTop:"1px solid #e2e8f0", alignItems:"start" }}>
+        {items.map((item, index) => <div key={index} style={{ display:"grid", gridTemplateColumns:"190px 130px 130px 60px 85px 85px 70px 65px 85px 75px 85px 35px", gap:6, padding:8, borderTop:"1px solid #e6e9f2", alignItems:"start" }}>
           <select value={item.product} onChange={e => changeItem(index,"product",e.target.value)} style={{ padding:6, minWidth:0 }}><option value="">Select product</option>{products.map(p => <option key={p._id} value={p._id}>{p.name} | {p.modelNumber}</option>)}</select>
           <textarea rows="2" value={item.description} onChange={e => changeItem(index,"description",e.target.value)} style={{ padding:6, resize:"vertical" }} />
           <input value={item.warehouse} onChange={e => changeItem(index,"warehouse",e.target.value)} />
@@ -143,14 +143,14 @@ export function OrderEditModal({ order, onClose, onDone, documentName="Order", u
           <input type="number" min="0" value={item.transportAmount} onChange={e => changeItem(index,"transportAmount",e.target.value)} style={{ minWidth:0, padding:6 }} />
           <select value={item.transportGstRate} onChange={e => changeItem(index,"transportGstRate",e.target.value)}>{[0,5,12,18,28].map(x => <option key={x} value={x}>{x}%</option>)}</select>
           <strong style={{ paddingTop:7 }}>₹{itemTotal(item).toFixed(2)}</strong>
-          <button onClick={() => removeItem(index)} style={{ border:0, background:"#fee2e2", color:"#991b1b", height:30, cursor:"pointer" }}>×</button>
+          <button onClick={() => removeItem(index)} style={{ border:0, background:"#fdeceb", color:"#a33a35", height:30, cursor:"pointer" }}>×</button>
         </div>)}
         <div style={{ padding:8 }}><Btn sm color="blue" onClick={addItem}>+ Add Item</Btn></div>
       </div>
     </div>
-    <FormGroup label="Notes"><textarea rows="3" value={form.notes} onChange={changeForm("notes")} style={{ width:"100%", padding:9, border:"1px solid #d1d5db", borderRadius:7, boxSizing:"border-box" }} /></FormGroup>
+    <FormGroup label="Notes"><textarea rows="3" value={form.notes} onChange={changeForm("notes")} style={{ width:"100%", padding:9, border:"1px solid #dde1ec", borderRadius:7, boxSizing:"border-box" }} /></FormGroup>
     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10 }}><strong>{documentName} Total: ₹{total.toLocaleString("en-IN", { maximumFractionDigits:2 })}</strong><div style={{ display:"flex", gap:8 }}><Btn color="cancel" onClick={onClose}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={save}>{saving ? "Saving..." : "Save Changes"}</Btn></div></div>
-    {error && <div style={{ color:"#dc2626", marginTop:10 }}>{error}</div>}
+    {error && <div style={{ color:"#d0433d", marginTop:10 }}>{error}</div>}
   </Modal>;
 }
 
@@ -219,15 +219,15 @@ export default function OrdersList({ navigate }) {
         <TableWrap><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead><tr>{["Order No.", "Order Date", "Customer", "Items", "Total", "Advance Paid", "Status", "Converted Sale", "Actions"].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
           <tbody>{orders.map(order => (
-            <tr key={order._id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+            <tr key={order._id} style={{ borderBottom: "1px solid #f1f3f9" }}>
               <Td style={{ fontWeight: 800 }}>{order.orderNo}</Td>
               <Td>{new Date(order.date).toLocaleDateString("en-IN")}</Td>
               <Td>{order.customer?.name || order.customerName || "Walk-in"}</Td>
-              <Td>{(order.items || []).map((item, index) => <div key={item._id || index} style={{ marginBottom:4 }}><strong>{item.productName || item.product?.name}</strong>{item.description && <div style={{ color:"#64748b", fontSize:10.5, whiteSpace:"pre-wrap" }}>{item.description}</div>}</div>)}</Td>
+              <Td>{(order.items || []).map((item, index) => <div key={item._id || index} style={{ marginBottom:4 }}><strong>{item.productName || item.product?.name}</strong>{item.description && <div style={{ color:"#6b7392", fontSize:10.5, whiteSpace:"pre-wrap" }}>{item.description}</div>}</div>)}</Td>
               <Td style={{ fontWeight: 800 }}>₹{(+order.grandTotal || 0).toLocaleString("en-IN")}</Td>
-              <Td style={{ color:"#15803d", fontWeight:800 }}>₹{(+order.amountPaid || 0).toLocaleString("en-IN")}</Td>
+              <Td style={{ color:"#17855a", fontWeight:800 }}>₹{(+order.amountPaid || 0).toLocaleString("en-IN")}</Td>
               <Td><Badge color={statusColor[order.status] || "gray"}>{order.status}</Badge>{!!order.refunds?.length && <div style={{color:"#b45309",fontWeight:700,marginTop:5}}>Refunded ₹{order.refunds.reduce((sum,r)=>sum+r.amount,0).toLocaleString("en-IN")}</div>}</Td>
-              <Td>{order.convertedSale ? <button type="button" onClick={() => openConvertedSale(order.convertedSale)} style={{background:"none",border:"none",padding:0,color:"#0284c7",fontWeight:800,cursor:"pointer",textAlign:"left",textDecoration:"underline",textUnderlineOffset:3}}>{order.convertedSale.invoiceNo}<span style={{display:"block",fontWeight:500,color:"#475569",textDecoration:"none",marginTop:3}}>({new Date(order.convertedSale.date).toLocaleDateString("en-IN")})</span></button> : "-"}</Td>
+              <Td>{order.convertedSale ? <button type="button" onClick={() => openConvertedSale(order.convertedSale)} style={{background:"none",border:"none",padding:0,color:"#0284c7",fontWeight:800,cursor:"pointer",textAlign:"left",textDecoration:"underline",textUnderlineOffset:3}}>{order.convertedSale.invoiceNo}<span style={{display:"block",fontWeight:500,color:"#4a5272",textDecoration:"none",marginTop:3}}>({new Date(order.convertedSale.date).toLocaleDateString("en-IN")})</span></button> : "-"}</Td>
               <Td><div style={{ display:"flex", gap:6, flexWrap:"wrap" }}><Btn sm color="purple" onClick={() => setAdvanceOrder(order)}>Advances ({order.payments?.length || 0})</Btn><Btn sm color="red" onClick={() => setRefundOrder(order)}>Refunds</Btn><Btn sm color="teal" onClick={() => setViewing(order)}>View Details</Btn><Btn sm color="blue" disabled={!!order.refunds?.length} onClick={() => setEditing(order)}>Edit Details</Btn>{order.status === "Open" && <Btn sm color="green" onClick={() => openConvert(order)}>Convert to Sale</Btn>}</div></Td>
             </tr>
           ))}</tbody>
@@ -235,10 +235,10 @@ export default function OrdersList({ navigate }) {
       )}
 
       <Modal open={!!converting} onClose={() => !saving && setConverting(null)} title={`Convert ${converting?.orderNo || "Order"} to Sale`}>
-        <div style={{ color: "#64748b", fontSize: 12, marginBottom: 14 }}>The order will remain in this list with its original date. The new sale will use the date below.</div>
+        <div style={{ color: "#6b7392", fontSize: 12, marginBottom: 14 }}>The order will remain in this list with its original date. The new sale will use the date below.</div>
         <FormGroup label="Sale Date"><FormInput type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} /></FormGroup>
         <FormGroup label="Payment Mode"><FormSelect value={form.paymentMode} onChange={e => setForm(p => ({ ...p, paymentMode: e.target.value }))}>{["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
-        {converting?.amountPaid > 0 && <div style={{ background:"#f0fdf4", border:"1px solid #86efac", color:"#166534", padding:10, borderRadius:7, marginBottom:10 }}>Order advance already received: <strong>₹{(+converting.amountPaid).toLocaleString("en-IN")}</strong></div>}
+        {converting?.amountPaid > 0 && <div style={{ background:"#f0faf5", border:"1px solid #a8e2c6", color:"#13734d", padding:10, borderRadius:7, marginBottom:10 }}>Order advance already received: <strong>₹{(+converting.amountPaid).toLocaleString("en-IN")}</strong></div>}
         <FormGroup label="Additional Amount Paid During Conversion"><FormInput type="number" min="0" value={form.amountPaid} onChange={e => setForm(p => ({ ...p, amountPaid: e.target.value }))} placeholder="0" /></FormGroup>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}><Btn color="cancel" onClick={() => setConverting(null)}>Cancel</Btn><Btn color="green" disabled={saving} onClick={convert}>{saving ? "Converting..." : "Convert to Sale"}</Btn></div>
       </Modal>

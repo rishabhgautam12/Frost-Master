@@ -36,13 +36,13 @@ export default function ReportGrowth() {
       <PageTitle>Increase in Sales & Growth</PageTitle>
 
       {rows.length === 0 ? (
-        <div style={{ background:"#fff", borderRadius:10, padding:60, textAlign:"center", color:"#94a3b8", border:"1px solid #e2e8f0" }}>
+        <div style={{ background:"#fff", borderRadius:10, padding:60, textAlign:"center", color:"#9aa1b9", border:"1px solid #e6e9f2" }}>
           <div style={{ fontSize:40 }}>📊</div>
           <div style={{ marginTop:10 }}>No sales data yet. Start creating sales to see growth trends.</div>
         </div>
       ) : (
         <>
-          <div style={{ background:"#f0fdfa", border:"1px solid #ccfbf1", borderRadius:8, padding:"10px 16px", marginBottom:14, fontSize:12, color:"#92400e" }}>
+          <div style={{ background:"#f5f3ff", border:"1px solid #ede9fe", borderRadius:8, padding:"10px 16px", marginBottom:14, fontSize:12, color:"#8a5a12" }}>
             ℹ️ Month-over-month comparison based on actual sales in MongoDB.
           </div>
           <TableWrap>
@@ -52,16 +52,16 @@ export default function ReportGrowth() {
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <tr key={i} style={{ borderBottom:"1px solid #f1f5f9" }}
-                    onMouseEnter={e => e.currentTarget.style.background="#f0fdfa"}
+                  <tr key={i} style={{ borderBottom:"1px solid #f1f3f9" }}
+                    onMouseEnter={e => e.currentTarget.style.background="#f5f3ff"}
                     onMouseLeave={e => e.currentTarget.style.background=""}>
                     <Td style={{ fontWeight:700 }}>{r.month}</Td>
                     <Td style={{ fontWeight:700 }}>₹{r.revenue.toLocaleString()}</Td>
                     <Td>{r.orders}</Td>
-                    <Td style={{ color: r.change === null ? "#94a3b8" : r.change >= 0 ? "#16a34a" : "#ef4444", fontWeight:700 }}>
+                    <Td style={{ color: r.change === null ? "#9aa1b9" : r.change >= 0 ? "#1f9d6b" : "#e0524c", fontWeight:700 }}>
                       {r.change === null ? "—" : `${r.change >= 0 ? "+" : ""}₹${r.change.toLocaleString()}`}
                     </Td>
-                    <Td style={{ color: r.pct === null ? "#94a3b8" : +r.pct >= 0 ? "#16a34a" : "#ef4444", fontWeight:700 }}>
+                    <Td style={{ color: r.pct === null ? "#9aa1b9" : +r.pct >= 0 ? "#1f9d6b" : "#e0524c", fontWeight:700 }}>
                       {r.pct === null ? "—" : `${+r.pct >= 0 ? "+" : ""}${r.pct}%`}
                     </Td>
                     <Td>₹{r.orders > 0 ? Math.round(r.revenue / r.orders).toLocaleString() : "—"}</Td>
@@ -70,7 +70,7 @@ export default function ReportGrowth() {
                 ))}
               </tbody>
               <tfoot>
-                <tr style={{ background:"#eef6f5", fontWeight:700 }}>
+                <tr style={{ background:"#f5f3ff", fontWeight:700 }}>
                   <td style={{ padding:"10px 12px" }}>TOTAL ({rows.length} months)</td>
                   <td style={{ padding:"10px 12px", fontWeight:800 }}>₹{rows.reduce((s,r) => s+r.revenue,0).toLocaleString()}</td>
                   <td style={{ padding:"10px 12px" }}>{rows.reduce((s,r) => s+r.orders,0)}</td>

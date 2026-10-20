@@ -61,11 +61,11 @@ export default function ProductAdd({ navigate }) {
       <PageTitle>Add New Product</PageTitle>
       {toast && <SuccessToast msg={toast} />}
 
-      <div style={{ background:"#fff", borderRadius:10, padding:28, border:"1px solid #e2e8f0" }}>
+      <div style={{ background:"#fff", borderRadius:10, padding:28, border:"1px solid #e6e9f2" }}>
 
         {/* Live margin preview */}
         {margin !== null && (
-          <div style={{ background: +margin >= 0 ? "#dcfce7":"#fee2e2", border:`1px solid ${+margin>=0?"#86efac":"#fca5a5"}`, borderRadius:8, padding:"10px 16px", marginBottom:16, fontSize:12 }}>
+          <div style={{ background: +margin >= 0 ? "#e3f5ec":"#fdeceb", border:`1px solid ${+margin>=0?"#a8e2c6":"#f3b8b4"}`, borderRadius:8, padding:"10px 16px", marginBottom:16, fontSize:12 }}>
             💡 Profit Margin: <strong>{margin}%</strong> &nbsp;|&nbsp;
             Buy ₹{form.purchasePrice} → Sell ₹{form.sellingPrice} → Profit <strong>₹{(+form.sellingPrice - +form.purchasePrice).toFixed(0)}</strong>/unit
           </div>
@@ -118,7 +118,7 @@ export default function ProductAdd({ navigate }) {
 
         <FormGroup label="Description (optional)">
           <textarea placeholder="Write a short description..." rows={2} value={form.description} onChange={set("description")}
-            style={{ width:"100%", padding:"9px 12px", border:"1px solid #d1d5db", borderRadius:7, fontSize:13, outline:"none", background:"#f9fafb", boxSizing:"border-box", resize:"vertical" }} />
+            style={{ width:"100%", padding:"9px 12px", border:"1px solid #dde1ec", borderRadius:7, fontSize:13, outline:"none", background:"#fafbfe", boxSizing:"border-box", resize:"vertical" }} />
         </FormGroup>
 
         <div style={{ display:"flex", gap:10, marginTop:20 }}>

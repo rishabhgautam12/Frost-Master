@@ -1,88 +1,158 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useId, useRef } from "react";
+import "./Navbar.css";
 
 const navConfig = [
   {
-    label: "Vendor", key: "vendors",
+    label: "Vendors", key: "vendors", icon: "truck",
     items: [
-      { label: "➕ Create New Vendor", page: "vendor-add",    perm: "vendors_create" },
-      { label: "📋 View All Vendors",  page: "vendor-list",   perm: "vendors_view"   },
-      { label: "📒 Vendor Ledger",     page: "vendor-ledger", perm: "vendors_view"   },
-      { label: "💸 Vendor Payout",     page: "vendor-payout", perm: "vendors_edit"   },
+      { label: "Create New Vendor", page: "vendor-add",    perm: "vendors_create" },
+      { label: "View All Vendors",  page: "vendor-list",   perm: "vendors_view"   },
+      { label: "Vendor Ledger",     page: "vendor-ledger", perm: "vendors_view"   },
+      { label: "Vendor Payout",     page: "vendor-payout", perm: "vendors_edit"   },
     ],
   },
   {
-    label: "Products (Inventory)", key: "products",
+    label: "Products", key: "products", icon: "box",
     items: [
-      { label: "➕ Add Product",    page: "product-add",   perm: "products_create" },
-      { label: "📦 View Products",  page: "product-list",  perm: "products_view"   },
-      { label: "📊 Product Stocks", page: "product-stock", perm: "products_stock"  },
+      { label: "Add Product",    page: "product-add",   perm: "products_create" },
+      { label: "View Products",  page: "product-list",  perm: "products_view"   },
+      { label: "Product Stocks", page: "product-stock", perm: "products_stock"  },
     ],
   },
   {
-    label: "Customers", key: "customers",
+    label: "Customers", key: "customers", icon: "users",
     items: [
-      { label: "👤 View Customers", page: "customer-list", perm: "customers_view"   },
-      { label: "➕ Add Customer",   page: "customer-add",  perm: "customers_create" },
+      { label: "View Customers", page: "customer-list", perm: "customers_view"   },
+      { label: "Add Customer",   page: "customer-add",  perm: "customers_create" },
     ],
   },
   {
-    label: "Employees", key: "employees",
+    label: "Employees", key: "employees", icon: "calendar",
     items: [
       { label: "Attendance & Salary", page: "employee-management", perm: "employees_view" },
     ],
   },
   {
-    label: "Sales", key: "sales",
+    label: "Sales", key: "sales", icon: "receipt",
     items: [
-      { label: "Quotations",               page: "quotations-list",  perm: "sales_view"       },
-      { label: "All Orders",               page: "orders-list",     perm: "sales_view"       },
-      { label: "📋 All Sales",             page: "sales-list",      perm: "sales_view"       },
-      { label: "Staff Sales Report",       page: "staff-sales-report", perm: "reports_sales" },
+      { label: "Quotations",         page: "quotations-list",    perm: "sales_view"    },
+      { label: "All Orders",         page: "orders-list",        perm: "sales_view"    },
+      { label: "All Sales",          page: "sales-list",         perm: "sales_view"    },
+      { label: "Staff Sales Report", page: "staff-sales-report", perm: "reports_sales" },
     ],
   },
   {
-    label: "Complaints", key: "complaints",
+    label: "Complaints", key: "complaints", icon: "message",
     items: [
       { label: "Active Complaints", page: "complaints-active", perm: "complaints_view" },
       { label: "Solved Complaints", page: "complaints-solved", perm: "complaints_view" },
     ],
   },
   {
-    label: "Purchase", key: "purchase",
+    label: "Purchase", key: "purchase", icon: "cart",
     items: [
-      { label: "🛒 Create Purchase",       page: "purchase-create", perm: "purchases_create" },
-      { label: "📦 All Purchases",         page: "purchases-list",  perm: "purchases_view"   },
-      { label: "🧮 GST Report",            page: "gst-report",      perm: "reports_gst"      },
+      { label: "Create Purchase", page: "purchase-create", perm: "purchases_create" },
+      { label: "All Purchases",   page: "purchases-list",  perm: "purchases_view"   },
+      { label: "GST Report",      page: "gst-report",      perm: "reports_gst"      },
     ],
   },
   {
-    label: "Reports", key: "reports",
+    label: "Reports", key: "reports", icon: "chart",
     items: [
-      { label: "📈 Sales Graphs",  page: "report-graphs", perm: "reports_graphs" },
-      { label: "🚀 Growth Report", page: "report-growth", perm: "reports_graphs" },
-      { label: "Staff Sales",     page: "staff-sales-report", perm: "reports_sales" },
+      { label: "Sales Graphs",  page: "report-graphs",      perm: "reports_graphs" },
+      { label: "Growth Report", page: "report-growth",      perm: "reports_graphs" },
+      { label: "Staff Sales",   page: "staff-sales-report", perm: "reports_sales"  },
     ],
   },
 ];
 
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== "undefined" ? window.innerWidth < 768 : false
-  );
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
-  }, []);
-  return isMobile;
+const ICONS = {
+  grid: <><rect x="3" y="3" width="7" height="9" rx="2" /><rect x="14" y="3" width="7" height="5" rx="2" /><rect x="14" y="12" width="7" height="9" rx="2" /><rect x="3" y="16" width="7" height="5" rx="2" /></>,
+  truck: <><path d="M3 6h11v10H3z" /><path d="M14 9h4l3 3.5V16h-7" /><circle cx="7" cy="18" r="2" /><circle cx="17.5" cy="18" r="2" /></>,
+  box: <><path d="M21 8 12 3 3 8l9 5 9-5z" /><path d="M3 8v8l9 5 9-5V8" /><path d="M12 13v8" /></>,
+  users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>,
+  calendar: <><rect x="3" y="4" width="18" height="18" rx="3" /><path d="M16 2v4M8 2v4M3 10h18" /><path d="m9 16 2 2 4-4" /></>,
+  receipt: <><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z" /><path d="M9 7h6M9 11h6M9 15h4" /></>,
+  message: <><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><path d="M8 9h8M8 13h5" /></>,
+  cart: <><circle cx="9" cy="20" r="1.4" /><circle cx="19" cy="20" r="1.4" /><path d="M1.5 2h3.5l2.7 12.4a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 2-1.6L22.5 6H6" /></>,
+  chart: <><path d="M3 3v18h18" /><path d="m7 15 4-4 3 3 6-7" /></>,
+  shield: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></>,
+  logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></>,
+  menu: <><path d="M4 7h16M4 12h16M4 17h10" /></>,
+  close: <><path d="M18 6 6 18M6 6l12 12" /></>,
+  chevron: <><path d="m6 9 6 6 6-6" /></>,
+  home: <><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z" /></>,
+  more: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
 };
 
-export default function Navbar({ page, navigate, user, onLogout }) {
-  const [open,         setOpen]         = useState(null);
-  const [mobileOpen,   setMobileOpen]   = useState(false);
-  const [mobileExpand, setMobileExpand] = useState(null);
-  const ref      = useRef(null);
-  const isMobile = useIsMobile();
+const Icon = ({ name, size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {ICONS[name]}
+  </svg>
+);
+
+export const LogoMark = ({ size = 38 }) => {
+  // Unique gradient id: a hidden duplicate logo (e.g. display:none panel) must not own the gradient.
+  const gradId = `fmLogoGrad${useId().replace(/:/g, "")}`;
+  return (
+  <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden="true">
+    <defs>
+      <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#a78bfa" />
+        <stop offset="100%" stopColor="#7c3aed" />
+      </linearGradient>
+    </defs>
+    <rect width="40" height="40" rx="12" fill={`url(#${gradId})`} />
+    <g stroke="#fff" strokeWidth="2.4" strokeLinecap="round" fill="none">
+      <path d="M20 9v22M10.5 14.5l19 11M29.5 14.5l-19 11" />
+      <path d="M17 10.8l3 2.6 3-2.6M17 29.2l3-2.6 3 2.6" strokeWidth="1.8" />
+    </g>
+  </svg>
+  );
+};
+
+// Quick-access tabs shown at the bottom of the screen on phones.
+const mobileTabs = [
+  { label: "Home",      page: "dashboard",     icon: "grid" },
+  { label: "Sales",     page: "sales-list",    icon: "receipt", perm: "sales_view"     },
+  { label: "Stock",     page: "product-stock", icon: "box",     perm: "products_stock" },
+  { label: "Customers", page: "customer-list", icon: "users",   perm: "customers_view" },
+];
+
+/*
+ * On phones, data tables are shown as stacked cards (see index.css `.fm-cards`).
+ * This copies each column header onto its cells as data-label so a card can show "Label: value".
+ */
+function labelTables(root) {
+  root.querySelectorAll("table").forEach(table => {
+    const headRow = table.tHead?.rows[table.tHead.rows.length - 1];
+    if (!headRow) return;
+    const labels = [];
+    for (const th of headRow.cells) {
+      for (let i = 0; i < (th.colSpan || 1); i++) labels.push(th.textContent.trim());
+    }
+    if (!labels.some(Boolean)) return;
+    table.classList.add("fm-cards");
+    for (const body of table.tBodies) {
+      for (const row of body.rows) {
+        let col = 0;
+        for (const td of row.cells) {
+          const label = (td.colSpan || 1) === 1 ? labels[col] || "" : "";
+          if (td.getAttribute("data-label") !== label) td.setAttribute("data-label", label);
+          col += td.colSpan || 1;
+        }
+      }
+    }
+  });
+}
+
+const initials = (name = "") =>
+  name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || "").join("") || "U";
+
+export default function Navbar({ page, navigate, user, onLogout, label, children }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [expanded,   setExpanded]   = useState(() => new Set());
+  const contentRef = useRef(null);
 
   // ── Permission check — computed directly from user prop (no context needed) ──
   const isAdmin = user?.role === "admin";
@@ -105,16 +175,36 @@ export default function Navbar({ page, navigate, user, onLogout }) {
     .map(nav => ({ ...nav, items: visibleItems(nav.items) }))
     .filter(nav => nav.items.length > 0);
 
+  // Show only the section holding the current page; close the mobile drawer on navigation.
   useEffect(() => {
-    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(null); };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
+    const active = navConfig.find(nav => nav.items.some(i => i.page === page));
+    if (active) setExpanded(new Set([active.key]));
+    setMobileOpen(false);
+  }, [page]);
+
+  useEffect(() => {
+    const root = contentRef.current;
+    if (!root) return;
+    let frame = 0;
+    const run = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(() => labelTables(root)); };
+    run();
+    const observer = new MutationObserver(run);
+    observer.observe(root, { childList: true, subtree: true, characterData: true });
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
   }, []);
 
   useEffect(() => {
-    setMobileOpen(false);
-    setMobileExpand(null);
-  }, [page]);
+    const onKey = e => { if (e.key === "Escape") setMobileOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  const toggle = (key) =>
+    setExpanded(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
 
   const handleLogout = () => {
     if (confirm("Do you want to Logout?")) onLogout();
@@ -122,171 +212,145 @@ export default function Navbar({ page, navigate, user, onLogout }) {
 
   const goTo = (pg) => {
     navigate(pg);
-    setOpen(null);
     setMobileOpen(false);
-    setMobileExpand(null);
   };
 
+  const displayName = user?.name || user?.username;
+  const today = new Date().toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+
   return (
-    <nav ref={ref} style={{ position: "sticky", top: 0, zIndex: 1000 }}>
-
-      {/* ── Top black bar ── */}
-      <div style={{ background: "#111827", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", height: 52 }}>
-
-        {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ background: "#2dd4bf", color: "#042f2e", fontWeight: 900, fontSize: 14, padding: "4px 10px", borderRadius: 5, letterSpacing: "-0.5px", border: "2px solid rgba(255,255,255,0.9)" }}>
-            🏠 FROST MASTER
+    <div className="fm-shell">
+      {/* ── Sidebar ── */}
+      <aside className={`fm-sidebar ${mobileOpen ? "fm-sidebar-open" : ""}`} aria-label="Main navigation">
+        <div className="fm-brand">
+          <LogoMark size={38} />
+          <div>
+            <strong>Frost Master</strong>
+            <span>Inventory Manager</span>
           </div>
-          {!isMobile && <div style={{ fontSize: 9, color: "#9ca3af" }}>Inventory Manager</div>}
+          <button className="fm-icon-btn fm-sidebar-close" onClick={() => setMobileOpen(false)} aria-label="Close menu">
+            <Icon name="close" />
+          </button>
         </div>
 
-        {/* Desktop right side */}
-        {!isMobile && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 12 }}>
-            <span style={{ color: "#d1d5db" }}>
-              Welcome: <strong style={{ color: "#14b8a6" }}>{user?.name || user?.username}</strong>
-              <span style={{ marginLeft: 6, background: isAdmin ? "#7c3aed" : "#0ea5e9", color: "#fff", fontSize: 9, padding: "2px 8px", borderRadius: 10, fontWeight: 700 }}>
-                {isAdmin ? "ADMIN" : "STAFF"}
-              </span>
-            </span>
-            {isAdmin && (
-              <button onClick={() => goTo("staff-management")}
-                style={{ background: page === "staff-management" ? "#7c3aed" : "rgba(124,58,237,0.18)", border: "1px solid #7c3aed", color: page === "staff-management" ? "#fff" : "#c4b5fd", padding: "5px 14px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
-                👥 Staff
-              </button>
-            )}
-            <button onClick={handleLogout}
-              style={{ background: "none", border: "1px solid #374151", color: "#d1d5db", padding: "5px 12px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
-              ⎋ Logout
-            </button>
-          </div>
-        )}
+        <nav className="fm-nav">
+          <button
+            className={`fm-nav-link ${page === "dashboard" ? "fm-active" : ""}`}
+            onClick={() => goTo("dashboard")}
+          >
+            <span className="fm-nav-icon"><Icon name="grid" /></span>
+            Dashboard
+          </button>
 
-        {/* Mobile right side */}
-        {isMobile && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 11, color: "#14b8a6", fontWeight: 700 }}>
-              {user?.name || user?.username}
-              <span style={{ marginLeft: 5, background: isAdmin ? "#7c3aed" : "#0ea5e9", color: "#fff", fontSize: 8, padding: "1px 5px", borderRadius: 10, fontWeight: 700 }}>
-                {isAdmin ? "ADMIN" : "STAFF"}
-              </span>
-            </span>
-            <button onClick={() => setMobileOpen(v => !v)}
-              style={{ background: "none", border: "1px solid #374151", color: "#d1d5db", width: 36, height: 36, borderRadius: 6, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5, padding: 0 }}>
-              {mobileOpen
-                ? <span style={{ fontSize: 18, lineHeight: 1, color: "#14b8a6" }}>✕</span>
-                : <>
-                    <span style={{ width: 18, height: 2, background: "#d1d5db", borderRadius: 2, display: "block" }} />
-                    <span style={{ width: 18, height: 2, background: "#d1d5db", borderRadius: 2, display: "block" }} />
-                    <span style={{ width: 18, height: 2, background: "#d1d5db", borderRadius: 2, display: "block" }} />
-                  </>
-              }
-            </button>
-          </div>
-        )}
-      </div>
+          <div className="fm-nav-caption">Workspace</div>
 
-      {/* ── Desktop yellow navbar ── */}
-      {!isMobile && (
-        <div style={{ background: "#0f766e", padding: "0 18px", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
-          <ul style={{ display: "flex", flexWrap: "wrap", listStyle: "none", margin: 0, padding: 0, gap: 0 }}>
-
-            {/* Dashboard — always visible */}
-            <li>
-              <button onClick={() => goTo("dashboard")}
-                style={{ padding: "12px 14px", fontWeight: 700, fontSize: 12.5, color: "#ecfeff", cursor: "pointer", border: "none", background: page === "dashboard" ? "rgba(255,255,255,0.16)" : "none", borderRadius: page === "dashboard" ? 4 : 0 }}>
-                📊 Dashboard
-              </button>
-            </li>
-
-            {/* All other nav sections */}
-            {visibleConfig.map(nav => {
-              const isOpen   = open === nav.key;
-              const isActive = nav.items.some(i => i.page === page);
-              return (
-                <li key={nav.key} style={{ position: "relative" }}>
-                  <button
-                    onClick={() => setOpen(isOpen ? null : nav.key)}
-                    onMouseEnter={e => { if (!isActive && !isOpen) e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
-                    onMouseLeave={e => { if (!isActive && !isOpen) e.currentTarget.style.background = "none"; }}
-                    style={{ display: "flex", alignItems: "center", gap: 4, padding: "12px 14px", fontWeight: 700, fontSize: 12.5, color: "#ecfeff", cursor: "pointer", whiteSpace: "nowrap", border: "none", background: isActive || isOpen ? "rgba(255,255,255,0.16)" : "none", borderRadius: isActive || isOpen ? 4 : 0, transition: "background 0.15s" }}>
-                    {nav.label}
-                    <span style={{ fontSize: 9, marginLeft: 2, display: "inline-block", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>▾</span>
-                  </button>
-
-                  {isOpen && (
-                    <div style={{ position: "absolute", top: "100%", left: 0, background: "#fff", minWidth: 220, border: "1px solid #cbd5e1", borderRadius: 4, boxShadow: "0 6px 20px rgba(0,0,0,0.18)", zIndex: 9999 }}>
-                      {nav.items.map((item, i) => (
-                        <a key={i} href="#"
-                          onClick={e => { e.preventDefault(); goTo(item.page); }}
-                          onMouseEnter={e => e.currentTarget.style.background = "#f0fdfa"}
-                          onMouseLeave={e => e.currentTarget.style.background = page === item.page ? "#ccfbf1" : "transparent"}
-                          style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", color: "#0f172a", textDecoration: "none", fontWeight: 600, fontSize: 12.5, borderBottom: i < nav.items.length - 1 ? "1px solid #e2e8f0" : "none", background: page === item.page ? "#ccfbf1" : "transparent" }}>
-                          {item.label}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
-      {/* ── Mobile drawer ── */}
-      {isMobile && mobileOpen && (
-        <div style={{ position: "fixed", top: 52, left: 0, right: 0, bottom: 0, zIndex: 9998 }}>
-          <div onClick={() => setMobileOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }} />
-          <div style={{ position: "relative", zIndex: 1, background: "#0f766e", width: "80%", maxWidth: 300, height: "100%", overflowY: "auto", boxShadow: "4px 0 20px rgba(0,0,0,0.25)", display: "flex", flexDirection: "column" }}>
-
-            <button onClick={() => goTo("dashboard")}
-              style={{ width: "100%", textAlign: "left", padding: "14px 18px", fontWeight: 700, fontSize: 13, color: "#ecfeff", border: "none", borderBottom: "1px solid rgba(255,255,255,0.14)", cursor: "pointer", background: page === "dashboard" ? "rgba(255,255,255,0.16)" : "transparent" }}>
-              📊 Dashboard
-            </button>
-
-            {visibleConfig.map(nav => {
-              const isExpanded = mobileExpand === nav.key;
-              const isActive   = nav.items.some(i => i.page === page);
-              return (
-                <div key={nav.key}>
-                  <button onClick={() => setMobileExpand(isExpanded ? null : nav.key)}
-                    style={{ width: "100%", textAlign: "left", padding: "14px 18px", fontWeight: 700, fontSize: 13, color: "#ecfeff", border: "none", borderBottom: "1px solid rgba(255,255,255,0.14)", cursor: "pointer", background: isActive || isExpanded ? "rgba(255,255,255,0.14)" : "transparent", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span>{nav.label}</span>
-                    <span style={{ fontSize: 10, display: "inline-block", transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
-                  </button>
-                  {isExpanded && (
-                    <div style={{ background: "rgba(15,23,42,0.18)" }}>
-                      {nav.items.map((item, i) => (
-                        <a key={i} href="#"
-                          onClick={e => { e.preventDefault(); goTo(item.page); }}
-                          style={{ display: "block", padding: "12px 28px", color: "#ecfeff", textDecoration: "none", fontWeight: 600, fontSize: 12.5, borderBottom: i < nav.items.length - 1 ? "1px solid rgba(255,255,255,0.12)" : "none", background: page === item.page ? "rgba(255,255,255,0.14)" : "transparent" }}>
-                          {item.label}
-                        </a>
-                      ))}
-                    </div>
-                  )}
+          {visibleConfig.map(nav => {
+            const isOpen   = expanded.has(nav.key);
+            const isActive = nav.items.some(i => i.page === page);
+            return (
+              <div key={nav.key} className={`fm-group ${isOpen ? "fm-group-open" : ""}`}>
+                <button
+                  className={`fm-nav-link ${isActive ? "fm-parent-active" : ""}`}
+                  onClick={() => toggle(nav.key)}
+                  aria-expanded={isOpen}
+                >
+                  <span className="fm-nav-icon"><Icon name={nav.icon} /></span>
+                  <span className="fm-grow">{nav.label}</span>
+                  <span className="fm-chevron"><Icon name="chevron" size={15} /></span>
+                </button>
+                <div className="fm-sub">
+                  <div className="fm-sub-inner">
+                    {nav.items.map(item => (
+                      <a
+                        key={item.page + item.label}
+                        href="#"
+                        className={`fm-sub-link ${page === item.page ? "fm-active" : ""}`}
+                        onClick={e => { e.preventDefault(); goTo(item.page); }}
+                        tabIndex={isOpen ? 0 : -1}
+                      >
+                        {item.label}
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              );
-            })}
+              </div>
+            );
+          })}
 
-            {isAdmin && (
-              <button onClick={() => goTo("staff-management")}
-                style={{ width: "100%", textAlign: "left", padding: "14px 18px", fontWeight: 700, fontSize: 13, color: page === "staff-management" ? "#c4b5fd" : "#ecfeff", border: "none", borderBottom: "1px solid rgba(255,255,255,0.14)", cursor: "pointer", background: page === "staff-management" ? "rgba(124,58,237,0.18)" : "transparent" }}>
-                👥 Staff Management
+          {isAdmin && (
+            <>
+              <div className="fm-nav-caption">Admin</div>
+              <button
+                className={`fm-nav-link ${page === "staff-management" ? "fm-active" : ""}`}
+                onClick={() => goTo("staff-management")}
+              >
+                <span className="fm-nav-icon"><Icon name="shield" /></span>
+                Staff Management
               </button>
-            )}
+            </>
+          )}
+        </nav>
 
-            <div style={{ marginTop: "auto", borderTop: "1px solid rgba(0,0,0,0.15)", padding: 16 }}>
-              <button onClick={handleLogout}
-                style={{ width: "100%", padding: "10px 14px", borderRadius: 7, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)", color: "#ecfeff", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
-                ⎋ Logout
-              </button>
+        <div className="fm-user-card">
+          <div className="fm-avatar">{initials(displayName)}</div>
+          <div className="fm-user-meta">
+            <strong>{displayName}</strong>
+            <span className={isAdmin ? "fm-role fm-role-admin" : "fm-role"}>{isAdmin ? "Admin" : "Staff"}</span>
+          </div>
+          <button className="fm-icon-btn" onClick={handleLogout} title="Logout" aria-label="Logout">
+            <Icon name="logout" />
+          </button>
+        </div>
+      </aside>
+
+      {mobileOpen && <div className="fm-scrim" onClick={() => setMobileOpen(false)} />}
+
+      {/* ── Main column ── */}
+      <div className="fm-main">
+        <header className="fm-topbar">
+          <button className="fm-icon-btn fm-menu-btn" onClick={() => setMobileOpen(true)} aria-label="Open menu">
+            <Icon name="menu" />
+          </button>
+
+          <div className="fm-crumbs">
+            <button onClick={() => goTo("dashboard")} className="fm-crumb-home">
+              <Icon name="home" size={15} />
+              <span>Home</span>
+            </button>
+            <span className="fm-crumb-sep">/</span>
+            <span className="fm-crumb-current">{label}</span>
+          </div>
+
+          <div className="fm-top-right">
+            <span className="fm-date-pill">{today}</span>
+            <div className="fm-top-user">
+              <div className="fm-avatar fm-avatar-sm">{initials(displayName)}</div>
+              <div className="fm-top-user-meta">
+                <strong>{displayName}</strong>
+                <span>{isAdmin ? "Administrator" : "Staff member"}</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </nav>
+        </header>
+
+        <main className="fm-content" ref={contentRef}>
+          {children}
+        </main>
+      </div>
+
+      {/* ── Phone bottom tabs ── */}
+      <nav className="fm-tabbar" aria-label="Quick navigation">
+        {mobileTabs.filter(t => !t.perm || can(t.perm)).map(t => (
+          <button key={t.page} className={`fm-tab ${page === t.page ? "fm-active" : ""}`} onClick={() => goTo(t.page)}>
+            <Icon name={t.icon} size={19} />
+            <span>{t.label}</span>
+          </button>
+        ))}
+        <button className={`fm-tab ${mobileOpen ? "fm-active" : ""}`} onClick={() => setMobileOpen(true)}>
+          <Icon name="more" size={19} />
+          <span>More</span>
+        </button>
+      </nav>
+    </div>
   );
 }

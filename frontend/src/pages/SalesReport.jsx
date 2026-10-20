@@ -29,17 +29,17 @@ export default function SalesReport({ navigate }) {
       <PageTitle>Sales Report</PageTitle>
 
       <StatsGrid cards={[
-        { value:`₹${(summary.totalRevenue||0).toLocaleString()}`, label:"Total Sales",       color:"#14b8a6" },
+        { value:`₹${(summary.totalRevenue||0).toLocaleString()}`, label:"Total Sales",       color:"#8b5cf6" },
         { value: summary.totalSales || 0,                         label:"Orders",            color:"#10b981" },
-        { value:`₹${Math.round((summary.totalRevenue||0) / Math.max(1,summary.totalSales||0)).toLocaleString()}`, label:"Avg Order Value", color:"#3b82f6" },
-        { value:`₹${(summary.totalGST||0).toLocaleString()}`,     label:"Total GST",         color:"#ef4444" },
-        { value:`₹${(summary.totalDue||0).toLocaleString()}`,     label:"Outstanding",       color:"#f59e0b" },
+        { value:`₹${Math.round((summary.totalRevenue||0) / Math.max(1,summary.totalSales||0)).toLocaleString()}`, label:"Avg Order Value", color:"#5a8be8" },
+        { value:`₹${(summary.totalGST||0).toLocaleString()}`,     label:"Total GST",         color:"#e0524c" },
+        { value:`₹${(summary.totalDue||0).toLocaleString()}`,     label:"Outstanding",       color:"#e5a03a" },
       ]} />
 
       <SearchBar>
-        <label style={{ fontSize:11, fontWeight:700, color:"#64748b" }}>From:</label>
+        <label style={{ fontSize:11, fontWeight:700, color:"#6b7392" }}>From:</label>
         <Input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ width:130 }} />
-        <label style={{ fontSize:11, fontWeight:700, color:"#64748b" }}>To:</label>
+        <label style={{ fontSize:11, fontWeight:700, color:"#6b7392" }}>To:</label>
         <Input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ width:130 }} />
         <Btn color="blue" onClick={load}>Generate Report</Btn>
         <Btn color="green" onClick={() => downloadCSV(sales, [
@@ -64,20 +64,20 @@ export default function SalesReport({ navigate }) {
             </thead>
             <tbody>
               {sales.length === 0
-                ? <tr><td colSpan={10} style={{ padding:40, textAlign:"center", color:"#94a3b8" }}>No sales in this period</td></tr>
+                ? <tr><td colSpan={10} style={{ padding:40, textAlign:"center", color:"#9aa1b9" }}>No sales in this period</td></tr>
                 : sales.map(s => (
-                  <tr key={s._id} style={{ borderBottom:"1px solid #f1f5f9" }}
-                    onMouseEnter={e => e.currentTarget.style.background="#f0fdfa"}
+                  <tr key={s._id} style={{ borderBottom:"1px solid #f1f3f9" }}
+                    onMouseEnter={e => e.currentTarget.style.background="#f5f3ff"}
                     onMouseLeave={e => e.currentTarget.style.background=""}>
                     <Td>{new Date(s.date).toLocaleDateString("en-IN")}</Td>
                     <Td style={{ fontFamily:"monospace", color:"#0ea5e9", fontSize:11 }}>{s.invoiceNo}</Td>
                     <Td style={{ fontWeight:700 }}>{s.customer?.name || s.customerName || "Walk-in"}</Td>
                     <Td>{s.items?.length || 0}</Td>
                     <Td>{s.paymentMode}</Td>
-                    <Td style={{ color:"#f59e0b" }}>₹{(s.totalGST||0).toLocaleString()}</Td>
+                    <Td style={{ color:"#e5a03a" }}>₹{(s.totalGST||0).toLocaleString()}</Td>
                     <Td style={{ fontWeight:700 }}>₹{s.grandTotal.toLocaleString()}</Td>
-                    <Td style={{ color:"#16a34a" }}>₹{s.amountPaid.toLocaleString()}</Td>
-                    <Td style={{ color: s.amountDue > 0 ? "#ef4444" : "#94a3b8", fontWeight:700 }}>
+                    <Td style={{ color:"#1f9d6b" }}>₹{s.amountPaid.toLocaleString()}</Td>
+                    <Td style={{ color: s.amountDue > 0 ? "#e0524c" : "#9aa1b9", fontWeight:700 }}>
                       {s.amountDue > 0 ? `₹${s.amountDue.toLocaleString()}` : "—"}
                     </Td>
                     <Td><Badge color={stColor[s.status]||"gray"}>{s.status}</Badge></Td>
@@ -87,11 +87,11 @@ export default function SalesReport({ navigate }) {
             </tbody>
             {sales.length > 0 && (
               <tfoot>
-                <tr style={{ background:"#eef6f5", fontWeight:700 }}>
+                <tr style={{ background:"#f5f3ff", fontWeight:700 }}>
                   <td colSpan={6} style={{ padding:"10px 12px" }}>TOTALS ({sales.length} invoices)</td>
                   <td style={{ padding:"10px 12px", fontWeight:800 }}>₹{(summary.totalRevenue||0).toLocaleString()}</td>
-                  <td style={{ padding:"10px 12px", color:"#16a34a" }}>₹{(summary.totalReceived||0).toLocaleString()}</td>
-                  <td style={{ padding:"10px 12px", color:"#ef4444" }}>₹{(summary.totalDue||0).toLocaleString()}</td>
+                  <td style={{ padding:"10px 12px", color:"#1f9d6b" }}>₹{(summary.totalReceived||0).toLocaleString()}</td>
+                  <td style={{ padding:"10px 12px", color:"#e0524c" }}>₹{(summary.totalDue||0).toLocaleString()}</td>
                   <td></td>
                 </tr>
               </tfoot>

@@ -139,10 +139,10 @@ export default function VendorLedger({ navigate }) {
       {toast && <SuccessToast msg={toast} />}
 
       <StatsGrid cards={[
-        { label:"Total Purchases",   value:`₹${totalPurchaseAmt.toLocaleString()}`, color:"#3b82f6" },
-        { label:"Amount Paid",       value:`₹${totalActualPaid.toLocaleString()}`,  color:"#16a34a" },
-        { label:"Outstanding Due",   value:`₹${totalOutstanding.toLocaleString()}`, color:"#ef4444" },
-        { label:"Pending Invoices",  value:pendingCount,                             color:"#f59e0b" },
+        { label:"Total Purchases",   value:`₹${totalPurchaseAmt.toLocaleString()}`, color:"#5a8be8" },
+        { label:"Amount Paid",       value:`₹${totalActualPaid.toLocaleString()}`,  color:"#1f9d6b" },
+        { label:"Outstanding Due",   value:`₹${totalOutstanding.toLocaleString()}`, color:"#e0524c" },
+        { label:"Pending Invoices",  value:pendingCount,                             color:"#e5a03a" },
       ]} />
 
       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:14,
@@ -161,16 +161,16 @@ export default function VendorLedger({ navigate }) {
 
       <SearchBar>
         <select value={selVendor} onChange={e => setSelVendor(e.target.value)}
-          style={{ padding:"7px 10px", border:"1px solid #d1d5db", borderRadius:6,
-            fontSize:12, background:"#f9fafb" }}>
+          style={{ padding:"7px 10px", border:"1px solid #dde1ec", borderRadius:6,
+            fontSize:12, background:"#fafbfe" }}>
           <option value="all">All Vendors</option>
           {vendors.map(v => (
             <option key={v._id} value={v._id}>{v.name} – {v.company}</option>
           ))}
         </select>
         <select value={selType} onChange={e => setSelType(e.target.value)}
-          style={{ padding:"7px 10px", border:"1px solid #d1d5db", borderRadius:6,
-            fontSize:12, background:"#f9fafb" }}>
+          style={{ padding:"7px 10px", border:"1px solid #dde1ec", borderRadius:6,
+            fontSize:12, background:"#fafbfe" }}>
           {["All","Purchase","Payment","Debit Note","Credit Note","Return"]
             .map(t => <option key={t}>{t}</option>)}
         </select>
@@ -184,21 +184,21 @@ export default function VendorLedger({ navigate }) {
         const vs      = vendorSummary[selVendor];
         const payable = Math.max(0, vs.purchased - vs.paid);
         return (
-          <div style={{ background:"#fff", border:"1px solid #e2e8f0", borderRadius:8,
+          <div style={{ background:"#fff", border:"1px solid #e6e9f2", borderRadius:8,
             padding:"12px 18px", marginBottom:14, display:"flex", gap:32,
             flexWrap:"wrap", fontSize:12, alignItems:"center" }}>
-            <span style={{ fontWeight:800, color:"#1e293b", fontSize:13 }}>{vs.name}</span>
+            <span style={{ fontWeight:800, color:"#0f1535", fontSize:13 }}>{vs.name}</span>
             <span>
               Total Purchased:&nbsp;
               <strong>₹{vs.purchased.toLocaleString()}</strong>
             </span>
             <span>
               Payments Made:&nbsp;
-              <strong style={{ color:"#16a34a" }}>₹{vs.paid.toLocaleString()}</strong>
+              <strong style={{ color:"#1f9d6b" }}>₹{vs.paid.toLocaleString()}</strong>
             </span>
             <span>
               We Owe (Payable):&nbsp;
-              <strong style={{ color:"#ef4444" }}>₹{payable.toLocaleString()}</strong>
+              <strong style={{ color:"#e0524c" }}>₹{payable.toLocaleString()}</strong>
             </span>
             {vs.receivable > 0 && (
               <span>
@@ -223,7 +223,7 @@ export default function VendorLedger({ navigate }) {
             <tbody>
               {entries.length === 0 ? (
                 <tr>
-                  <td colSpan={10} style={{ padding:40, textAlign:"center", color:"#94a3b8" }}>
+                  <td colSpan={10} style={{ padding:40, textAlign:"center", color:"#9aa1b9" }}>
                     No entries found
                   </td>
                 </tr>
@@ -250,8 +250,8 @@ export default function VendorLedger({ navigate }) {
                 // Payment rows: no status badge — they are just payment records
 
                 return (
-                  <tr key={r._id} style={{ borderBottom:"1px solid #f1f5f9" }}
-                    onMouseEnter={e => e.currentTarget.style.background="#f0fdfa"}
+                  <tr key={r._id} style={{ borderBottom:"1px solid #f1f3f9" }}
+                    onMouseEnter={e => e.currentTarget.style.background="#f5f3ff"}
                     onMouseLeave={e => e.currentTarget.style.background=""}>
                     <Td>{new Date(r.date).toLocaleDateString("en-IN")}</Td>
                     <Td style={{ fontWeight:700 }}>{r.vendor?.name || "—"}</Td>
@@ -266,24 +266,24 @@ export default function VendorLedger({ navigate }) {
                       ₹{r.amount.toLocaleString()}
                     </Td>
                     {/* Paid — only Purchase rows show paid amount */}
-                    <Td style={{ color:"#16a34a", fontWeight:700 }}>
+                    <Td style={{ color:"#1f9d6b", fontWeight:700 }}>
                       {isPurchase && effectivePaid > 0
                         ? `₹${effectivePaid.toLocaleString()}`
                         : "—"}
                     </Td>
                     {/* Balance Due — only Purchase rows */}
                     <Td style={{
-                      color: isPurchase && bal > 0 ? "#ef4444" : "#94a3b8",
+                      color: isPurchase && bal > 0 ? "#e0524c" : "#9aa1b9",
                       fontWeight:700
                     }}>
                       {isPurchase && bal > 0 ? `₹${bal.toLocaleString()}` : "—"}
                     </Td>
                     {/* Returns — only Debit/Credit Note / Return rows */}
-                    <Td style={{ color:isReturn?"#0ea5e9":"#94a3b8", fontWeight:700 }}>
+                    <Td style={{ color:isReturn?"#0ea5e9":"#9aa1b9", fontWeight:700 }}>
                       {isReturn ? `₹${r.amount.toLocaleString()}` : "—"}
                     </Td>
                     {/* Status — Purchase gets badge, Payment gets nothing */}
-                    <Td>{statusBadge || <span style={{ color:"#94a3b8", fontSize:11 }}>—</span>}</Td>
+                    <Td>{statusBadge || <span style={{ color:"#9aa1b9", fontSize:11 }}>—</span>}</Td>
                     {/* Action — Pay button only on unsettled Purchase entries */}
                     <Td>
                       {isPurchase && bal > 0 && (
@@ -300,10 +300,10 @@ export default function VendorLedger({ navigate }) {
 
             {/* Footer — clear and correct */}
             <tfoot>
-              <tr style={{ background:"#eef6f5", fontWeight:700 }}>
+              <tr style={{ background:"#f5f3ff", fontWeight:700 }}>
                 <td colSpan={4} style={{ padding:"10px 12px", fontSize:12 }}>
                   TOTAL &nbsp;
-                  <span style={{ fontSize:10, fontWeight:400, color:"#64748b" }}>
+                  <span style={{ fontSize:10, fontWeight:400, color:"#6b7392" }}>
                     ({purchaseEntries.length} purchases · {paymentEntries.length} payments)
                   </span>
                 </td>
@@ -312,11 +312,11 @@ export default function VendorLedger({ navigate }) {
                   ₹{footerPurchaseTotal.toLocaleString()}
                 </td>
                 {/* Total paid — sum of what's actually been paid on each invoice */}
-                <td style={{ padding:"10px 12px", fontWeight:800, color:"#16a34a" }}>
+                <td style={{ padding:"10px 12px", fontWeight:800, color:"#1f9d6b" }}>
                   ₹{footerPaidOnInvoices.toLocaleString()}
                 </td>
                 {/* Outstanding = exact sum of Balance Due column */}
-                <td style={{ padding:"10px 12px", fontWeight:800, color:"#ef4444" }}>
+                <td style={{ padding:"10px 12px", fontWeight:800, color:"#e0524c" }}>
                   {footerBalance > 0 ? `₹${footerBalance.toLocaleString()}` : "—"}
                 </td>
                 {/* Returns total */}
@@ -364,7 +364,7 @@ export default function VendorLedger({ navigate }) {
           <FormInput placeholder="Optional notes" value={form.notes} onChange={set("notes")} />
         </FormGroup>
         {/* Helper text */}
-        <div style={{ marginTop:10, fontSize:11, color:"#64748b", background:"#f8fafc",
+        <div style={{ marginTop:10, fontSize:11, color:"#6b7392", background:"#f7f8fc",
           borderRadius:6, padding:"8px 12px" }}>
           💡 <strong>Purchase</strong> — vendor supplied goods (we owe them) &nbsp;|&nbsp;
           <strong>Payment</strong> — we paid them (reduces what we owe) &nbsp;|&nbsp;

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { PageTitle, StatsGrid, LoadingSpinner, ErrorMsg } from "../components/Shared";
 import { dashboardAPI } from "../services/api";
 
-function BarChart({ data, color = "#14b8a6", height = 140, isMobile = false }) {
+function BarChart({ data, color = "#8b5cf6", height = 140, isMobile = false }) {
   const max = Math.max(...data.map(d => d.num), 1);
 
   return (
@@ -31,7 +31,7 @@ function BarChart({ data, color = "#14b8a6", height = 140, isMobile = false }) {
             style={{
               fontSize: isMobile ? 9 : 10,
               fontWeight: 700,
-              color: "#1e293b",
+              color: "#0f1535",
             }}
           >
             {d.val}
@@ -40,7 +40,7 @@ function BarChart({ data, color = "#14b8a6", height = 140, isMobile = false }) {
           <div
             style={{
               width: "100%",
-              background: d.highlight ? "#16a34a" : color,
+              background: d.highlight ? "#1f9d6b" : color,
               borderRadius: "4px 4px 0 0",
               height: Math.max(
                 4,
@@ -53,7 +53,7 @@ function BarChart({ data, color = "#14b8a6", height = 140, isMobile = false }) {
           <div
             style={{
               fontSize: isMobile ? 9 : 10,
-              color: "#64748b",
+              color: "#6b7392",
             }}
           >
             {d.label}
@@ -162,7 +162,7 @@ export default function ReportGraphs() {
             value: `₹${(
               stats.stats?.monthlyRevenue || 0
             ).toLocaleString()}`,
-            color: "#14b8a6",
+            color: "#8b5cf6",
           },
           {
             label: "This Month Orders",
@@ -172,12 +172,12 @@ export default function ReportGraphs() {
           {
             label: "Total Products",
             value: stats.stats?.totalProducts || 0,
-            color: "#3b82f6",
+            color: "#5a8be8",
           },
           {
             label: "Active Vendors",
             value: stats.stats?.totalVendors || 0,
-            color: "#8b5cf6",
+            color: "#d946ef",
           },
         ]}
       />
@@ -197,7 +197,7 @@ export default function ReportGraphs() {
             background: "#fff",
             borderRadius: 10,
             padding: isMobile ? 12 : 20,
-            border: "1px solid #e2e8f0",
+            border: "1px solid #e6e9f2",
             overflowX: "auto",
           }}
         >
@@ -214,7 +214,7 @@ export default function ReportGraphs() {
           <div
             style={{
               fontSize: 11,
-              color: "#94a3b8",
+              color: "#9aa1b9",
               marginBottom: 8,
             }}
           >
@@ -224,7 +224,7 @@ export default function ReportGraphs() {
           {revenueData.length > 0 ? (
             <BarChart
               data={revenueData}
-              color="#14b8a6"
+              color="#8b5cf6"
               isMobile={isMobile}
             />
           ) : (
@@ -232,7 +232,7 @@ export default function ReportGraphs() {
               style={{
                 padding: 40,
                 textAlign: "center",
-                color: "#94a3b8",
+                color: "#9aa1b9",
               }}
             >
               No sales data yet
@@ -246,7 +246,7 @@ export default function ReportGraphs() {
             background: "#fff",
             borderRadius: 10,
             padding: isMobile ? 12 : 20,
-            border: "1px solid #e2e8f0",
+            border: "1px solid #e6e9f2",
             overflowX: "auto",
           }}
         >
@@ -263,7 +263,7 @@ export default function ReportGraphs() {
           <div
             style={{
               fontSize: 11,
-              color: "#94a3b8",
+              color: "#9aa1b9",
               marginBottom: 8,
             }}
           >
@@ -281,7 +281,7 @@ export default function ReportGraphs() {
               style={{
                 padding: 40,
                 textAlign: "center",
-                color: "#94a3b8",
+                color: "#9aa1b9",
               }}
             >
               No orders data yet
@@ -296,7 +296,7 @@ export default function ReportGraphs() {
           background: "#fff",
           borderRadius: 10,
           padding: isMobile ? 12 : 20,
-          border: "1px solid #e2e8f0",
+          border: "1px solid #e6e9f2",
           marginBottom: 20,
         }}
       >
@@ -315,7 +315,7 @@ export default function ReportGraphs() {
             style={{
               padding: 30,
               textAlign: "center",
-              color: "#94a3b8",
+              color: "#9aa1b9",
             }}
           >
             No product data yet
@@ -334,16 +334,16 @@ export default function ReportGraphs() {
               <div
                 key={i}
                 style={{
-                  background: "#f8fafc",
+                  background: "#f7f8fc",
                   borderRadius: 8,
                   padding: "14px 16px",
-                  border: "1px solid #e2e8f0",
+                  border: "1px solid #e6e9f2",
                 }}
               >
                 <div
                   style={{
                     fontSize: 10,
-                    color: "#94a3b8",
+                    color: "#9aa1b9",
                     fontWeight: 700,
                     marginBottom: 4,
                   }}
@@ -355,7 +355,7 @@ export default function ReportGraphs() {
                   style={{
                     fontWeight: 700,
                     fontSize: 13,
-                    color: "#1e293b",
+                    color: "#0f1535",
                     marginBottom: 6,
                     wordBreak: "break-word",
                   }}
@@ -366,7 +366,7 @@ export default function ReportGraphs() {
                 <div
                   style={{
                     fontSize: 11,
-                    color: "#64748b",
+                    color: "#6b7392",
                   }}
                 >
                   Qty sold: <strong>{p.totalQty}</strong>
@@ -376,7 +376,7 @@ export default function ReportGraphs() {
                   style={{
                     fontSize: 12,
                     fontWeight: 700,
-                    color: "#16a34a",
+                    color: "#1f9d6b",
                     marginTop: 4,
                   }}
                 >
@@ -395,7 +395,7 @@ export default function ReportGraphs() {
             background: "#fff",
             borderRadius: 10,
             padding: isMobile ? 12 : 20,
-            border: "1px solid #fca5a5",
+            border: "1px solid #f3b8b4",
           }}
         >
           <div
@@ -403,7 +403,7 @@ export default function ReportGraphs() {
               fontWeight: 700,
               fontSize: 13,
               marginBottom: 12,
-              color: "#ef4444",
+              color: "#e0524c",
             }}
           >
             ⚠️ Low / Out of Stock Products
@@ -422,7 +422,7 @@ export default function ReportGraphs() {
               <div
                 key={p._id}
                 style={{
-                  background: "#fee2e2",
+                  background: "#fdeceb",
                   borderRadius: 7,
                   padding: "10px 14px",
                   fontSize: 12,
@@ -439,7 +439,7 @@ export default function ReportGraphs() {
 
                 <div
                   style={{
-                    color: "#991b1b",
+                    color: "#a33a35",
                   }}
                 >
                   Stock: {p.stock} / Min: {p.minStockAlert}
