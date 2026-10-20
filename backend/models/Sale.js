@@ -24,6 +24,7 @@ const saleItemSchema = new mongoose.Schema({
 });
 
 const salePaymentSchema = new mongoose.Schema({
+  refundedAmount: { type: Number, min: 0, default: 0 },
   amount: { type: Number, required: true, min: 0 },
   appliedAmount: { type: Number, min: 0, default: 0 },
   advanceAmount: { type: Number, min: 0, default: 0 },
@@ -66,6 +67,7 @@ const saleSchema = new mongoose.Schema(
     grandTotal: { type: Number, default: 0 },
     amountPaid: { type: Number, default: 0 },
     payments: { type: [salePaymentSchema], default: [] },
+    refunds: { type: [require("./refundSchema")], default: [] },
     amountDue: { type: Number, default: 0 },
     cgst: { type: Number, default: 0 },
     sgst: { type: Number, default: 0 },
@@ -80,7 +82,7 @@ const saleSchema = new mongoose.Schema(
     },
     sourceOrder: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
   },
-  { timestamps: true }
+  { timestamps: true, optimisticConcurrency: true }
 );
 
 // Auto-generate invoice number
@@ -116,7 +118,7 @@ saleSchema.pre("save", async function (next) {
     this.sgst = this.totalGST / 2;
     this.igst = 0;
   }
-  this.amountDue = Math.max(0, this.grandTotal - this.amountPaid);
+  this.amountDue = this.status === "Cancelled" ? 0 : Math.max(0, this.grandTotal - this.amountPaid);
   if (this.status !== "Cancelled") {
     if (this.amountPaid >= this.grandTotal) this.status = "Paid";
     else if (this.amountPaid > 0) this.status = "Partial";

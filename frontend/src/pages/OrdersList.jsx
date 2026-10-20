@@ -3,16 +3,18 @@ import { PageTitle, Btn, Badge, TableWrap, Th, Td, LoadingSpinner, ErrorMsg, Emp
 import { salesAPI, customerAPI, productAPI, employeeAPI } from "../services/api";
 import InvoiceDetailsFields, { partyDetailsFromCustomer } from "../components/InvoiceDetailsFields";
 import TransactionDetailsModal from "../components/TransactionDetailsModal";
+import RefundModal, { RefundHistory } from "../components/RefundModal";
 
 const statusColor = { Open: "yellow", Converted: "green", Cancelled: "gray" };
 const today = () => new Date().toISOString().slice(0, 10);
 const currentUser = () => { try { return JSON.parse(localStorage.getItem("ht_user") || "null"); } catch { return null; } };
 
-function OrderAdvanceModal({ order, onClose, onDone, isAdmin, onEditPayment, onDeletePayment }) {
+function OrderAdvanceModal({ order, onClose, onDone, isAdmin: adminRole, onEditPayment, onDeletePayment }) {
+  const isAdmin = adminRole && !order.refunds?.length;
   const [form, setForm] = useState({ amount:"", method:"Cash", date:today(), notes:"" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const remaining = Math.max(0, (+order.grandTotal || 0) - (+order.amountPaid || 0));
+  const remaining = order.status === "Cancelled" ? 0 : Math.max(0, (+order.grandTotal || 0) - (+order.amountPaid || 0));
   const customerAdvance = (order.payments || []).reduce((sum,payment) => sum + (+payment.advanceAmount || 0), 0);
   const payments = [...(order.payments || [])].sort((a,b) => new Date(b.date) - new Date(a.date));
   const submit = async () => {
@@ -28,6 +30,7 @@ function OrderAdvanceModal({ order, onClose, onDone, isAdmin, onEditPayment, onD
       {[["Order Total",order.grandTotal,"#0f172a"],["Applied to Order",order.amountPaid,"#15803d"],["Remaining",remaining,"#dc2626"],["Extra Advance",customerAdvance,"#7c3aed"]].map(([label,value,color]) => <div key={label} style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8,padding:12}}><div style={{fontSize:10,fontWeight:800,color:"#64748b",textTransform:"uppercase"}}>{label}</div><div style={{fontSize:19,fontWeight:900,color,marginTop:4}}>₹{(+value||0).toLocaleString("en-IN")}</div></div>)}
     </div>
     <div style={{ fontWeight:800, marginBottom:8 }}>Advance Payment History</div>
+    <RefundHistory record={order} />
     <div style={{ maxHeight:220, overflowY:"auto", border:"1px solid #e2e8f0", borderRadius:8, marginBottom:16 }}>
       {payments.length ? payments.map((payment,index) => <div key={payment._id||index} style={{display:"grid",gridTemplateColumns:"115px 120px 1fr 120px",gap:8,padding:10,borderBottom:"1px solid #e2e8f0",alignItems:"center"}}><span>{new Date(payment.date).toLocaleDateString("en-IN")}</span><Badge color="green">{payment.paymentMode}</Badge><span style={{color:"#64748b"}}>{payment.notes||"-"}<small style={{display:"block"}}>Recorded by {payment.recordedByName||"Staff"}</small>{+payment.advanceAmount>0&&<small style={{display:"block",color:"#7c3aed",fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString("en-IN")} moved to advance</small>}{isAdmin&&payment._id&&<span style={{display:"flex",gap:6,marginTop:5}}><Btn sm color="blue" onClick={()=>onEditPayment(payment)}>Edit Payment</Btn><Btn sm color="red" onClick={()=>onDeletePayment(payment)}>Delete</Btn></span>}</span><strong style={{textAlign:"right",color:"#15803d"}}>₹{(+payment.amount||0).toLocaleString("en-IN")}</strong></div>) : <div style={{padding:24,textAlign:"center",color:"#94a3b8"}}>No advance payments recorded.</div>}
     </div>
@@ -160,6 +163,7 @@ export default function OrdersList({ navigate }) {
   const [viewing, setViewing] = useState(null);
   const [advanceOrder, setAdvanceOrder] = useState(null);
   const [editingPayment, setEditingPayment] = useState(null);
+  const [refundOrder, setRefundOrder] = useState(null);
   const isAdmin = currentUser()?.role === "admin";
   const [form, setForm] = useState({ date: today(), paymentMode: "Credit", amountPaid: "" });
   const [saving, setSaving] = useState(false);
@@ -222,9 +226,9 @@ export default function OrdersList({ navigate }) {
               <Td>{(order.items || []).map((item, index) => <div key={item._id || index} style={{ marginBottom:4 }}><strong>{item.productName || item.product?.name}</strong>{item.description && <div style={{ color:"#64748b", fontSize:10.5, whiteSpace:"pre-wrap" }}>{item.description}</div>}</div>)}</Td>
               <Td style={{ fontWeight: 800 }}>₹{(+order.grandTotal || 0).toLocaleString("en-IN")}</Td>
               <Td style={{ color:"#15803d", fontWeight:800 }}>₹{(+order.amountPaid || 0).toLocaleString("en-IN")}</Td>
-              <Td><Badge color={statusColor[order.status] || "gray"}>{order.status}</Badge></Td>
+              <Td><Badge color={statusColor[order.status] || "gray"}>{order.status}</Badge>{!!order.refunds?.length && <div style={{color:"#b45309",fontWeight:700,marginTop:5}}>Refunded ₹{order.refunds.reduce((sum,r)=>sum+r.amount,0).toLocaleString("en-IN")}</div>}</Td>
               <Td>{order.convertedSale ? <button type="button" onClick={() => openConvertedSale(order.convertedSale)} style={{background:"none",border:"none",padding:0,color:"#0284c7",fontWeight:800,cursor:"pointer",textAlign:"left",textDecoration:"underline",textUnderlineOffset:3}}>{order.convertedSale.invoiceNo}<span style={{display:"block",fontWeight:500,color:"#475569",textDecoration:"none",marginTop:3}}>({new Date(order.convertedSale.date).toLocaleDateString("en-IN")})</span></button> : "-"}</Td>
-              <Td><div style={{ display:"flex", gap:6, flexWrap:"wrap" }}><Btn sm color="purple" onClick={() => setAdvanceOrder(order)}>Advances ({order.payments?.length || 0})</Btn><Btn sm color="teal" onClick={() => setViewing(order)}>View Details</Btn><Btn sm color="blue" onClick={() => setEditing(order)}>Edit Details</Btn>{order.status === "Open" && <Btn sm color="green" onClick={() => openConvert(order)}>Convert to Sale</Btn>}</div></Td>
+              <Td><div style={{ display:"flex", gap:6, flexWrap:"wrap" }}><Btn sm color="purple" onClick={() => setAdvanceOrder(order)}>Advances ({order.payments?.length || 0})</Btn><Btn sm color="red" onClick={() => setRefundOrder(order)}>Refunds</Btn><Btn sm color="teal" onClick={() => setViewing(order)}>View Details</Btn><Btn sm color="blue" disabled={!!order.refunds?.length} onClick={() => setEditing(order)}>Edit Details</Btn>{order.status === "Open" && <Btn sm color="green" onClick={() => openConvert(order)}>Convert to Sale</Btn>}</div></Td>
             </tr>
           ))}</tbody>
         </table></TableWrap>
@@ -240,6 +244,7 @@ export default function OrdersList({ navigate }) {
       </Modal>
       {editing && <OrderEditModal order={editing} onClose={() => setEditing(null)} onDone={edited} />}
       {viewing && <TransactionDetailsModal record={viewing} type="order" onClose={() => setViewing(null)} />}
+      {refundOrder && <RefundModal kind="orders" record={refundOrder} isAdmin={isAdmin} onClose={()=>setRefundOrder(null)} onDone={message=>{setToast(message);setTimeout(()=>setToast(""),4000);load();}} />}
       {advanceOrder && <OrderAdvanceModal order={advanceOrder} isAdmin={isAdmin} onEditPayment={payment=>setEditingPayment({order:advanceOrder,payment})} onDeletePayment={async payment=>{if(!confirm(`Delete payment ₹${(+payment.amount||0).toLocaleString("en-IN")}? This will recalculate the order, linked sale and customer advance.`))return;try{const response=await salesAPI.deleteOrderPayment(advanceOrder._id,payment._id);setAdvanceOrder(response.data);setToast(response.message);setTimeout(()=>setToast(""),3000);load();}catch(err){alert(err.message);}}} onClose={() => setAdvanceOrder(null)} onDone={advanceAdded} />}
       {editingPayment && <OrderPaymentEditModal order={editingPayment.order} payment={editingPayment.payment} onClose={()=>setEditingPayment(null)} onDone={response=>{setEditingPayment(null);setAdvanceOrder(response.data);setToast(response.message);setTimeout(()=>setToast(""),3000);load();}} />}
     </div>

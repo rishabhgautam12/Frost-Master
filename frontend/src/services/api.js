@@ -75,6 +75,8 @@ export const customerAPI = {
 
 // Sales
 export const salesAPI = {
+  getRefunds: (kind, id) => request(`/sales/refunds/${kind}/${id}`),
+  refund: (kind, id, body) => request(`/sales/refunds/${kind}/${id}`, { method:"POST", body:JSON.stringify(body) }),
   getAll:                  (params = {}) => request(`/sales?${new URLSearchParams(params)}`),
   getById:                 (id)          => request(`/sales/${id}`),
   create:                  (body)        => request("/sales",            { method: "POST",   body: JSON.stringify(body) }),

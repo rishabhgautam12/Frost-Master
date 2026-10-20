@@ -227,7 +227,7 @@ function allocatePayments(payments, documentTotal) {
   let appliedTotal = 0;
   let advanceTotal = 0;
   payments.forEach(payment => {
-    const received = Math.max(0, +payment.amount || 0);
+    const received = Math.max(0, (+payment.amount || 0) - (+payment.refundedAmount || 0));
     const applied = Math.min(received, remaining);
     const advance = Math.max(0, received - applied);
     payment.appliedAmount = applied;
@@ -264,12 +264,13 @@ exports.getSales = async (req, res) => {
       .populate("items.product", "name modelNumber hsnCode")
       .sort({ date: -1 });
 
+    const activeSales = sales.filter(sale => sale.status !== "Cancelled");
     const summary = {
       totalSales:    sales.length,
-      totalRevenue:  sales.reduce((s,o) => s + o.grandTotal,  0),
-      totalReceived: sales.reduce((s,o) => s + o.amountPaid,  0),
-      totalDue:      sales.reduce((s,o) => s + o.amountDue,   0),
-      totalGST:      sales.reduce((s,o) => s + o.totalGST,    0),
+      totalRevenue:  activeSales.reduce((s,o) => s + o.grandTotal,  0),
+      totalReceived: activeSales.reduce((s,o) => s + o.amountPaid,  0),
+      totalDue:      activeSales.reduce((s,o) => s + o.amountDue,   0),
+      totalGST:      activeSales.reduce((s,o) => s + o.totalGST,    0),
     };
     res.json({ success:true, data:sales, summary });
   } catch (err) { res.status(500).json({ success:false, message:err.message }); }
@@ -350,6 +351,7 @@ exports.createSale = async (req, res) => {
     const initialPayments = Array.isArray(rest.payments)
       ? rest.payments.map(payment => ({
           ...payment,
+          refundedAmount: 0,
           recordedBy: req.user?._id,
           recordedByName,
         }))
@@ -363,6 +365,7 @@ exports.createSale = async (req, res) => {
       items:      enrichedItems,
       amountPaid: amountPaid || 0,
       payments:   initialPayments,
+      refunds: [],
       soldBy:     req.user?._id,
       soldByName: recordedByName,
     });
@@ -533,7 +536,7 @@ exports.createOrder = async (req, res) => {
     const { items, customer, amountPaid, payments, ...rest } = req.body;
     if (!customer) return res.status(400).json({ success:false, message:"A registered customer is required." });
     const cleanPayments = Array.isArray(payments) ? payments.filter(payment => +payment.amount > 0).map(payment => ({
-      ...payment, amount: +payment.amount, recordedBy: req.user?._id,
+      ...payment, refundedAmount: 0, amount: +payment.amount, recordedBy: req.user?._id,
       recordedByName: req.user?.name || req.user?.username || "Staff",
     })) : [];
     const order = await Order.create({
@@ -542,6 +545,7 @@ exports.createOrder = async (req, res) => {
       items: await buildSaleItems(items),
       amountPaid: cleanPayments.reduce((sum, payment) => sum + payment.amount, 0),
       payments: cleanPayments,
+      refunds: [],
       createdBy: req.user?._id,
       createdByName: req.user?.name || req.user?.username || "Staff",
     });
@@ -765,6 +769,7 @@ exports.convertOrderToSale = async (req, res) => {
       saleType: order.saleType, paymentMode: convertedPaymentMode,
       date: req.body.date || new Date(), items: order.items.map(item => item.toObject()),
       amountPaid: convertedAmountPaid,
+      refunds: (order.refunds || []).map(refund => refund.toObject ? refund.toObject() : refund),
       payments: [ ...(order.payments || []).map(payment => payment.toObject ? payment.toObject() : payment), ...(additionalAmountPaid > 0 ? [{
         amount: additionalAmountPaid,
         appliedAmount: conversionApplied,

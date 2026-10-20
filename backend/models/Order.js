@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 
 const orderPaymentSchema = new mongoose.Schema({
+  refundedAmount: { type: Number, min: 0, default: 0 },
   amount: { type: Number, required: true, min: 0 },
   appliedAmount: { type: Number, min: 0, default: 0 },
   advanceAmount: { type: Number, min: 0, default: 0 },
@@ -52,6 +53,7 @@ const orderSchema = new mongoose.Schema({
   grandTotal: { type: Number, default: 0 },
   amountPaid: { type: Number, default: 0 },
   payments: { type: [orderPaymentSchema], default: [] },
+  refunds: { type: [require("./refundSchema")], default: [] },
   isInterState: { type: Boolean, default: false },
   notes: String,
   invoiceDetails: { type: mongoose.Schema.Types.Mixed, default: {} },
@@ -59,7 +61,7 @@ const orderSchema = new mongoose.Schema({
   convertedSale: { type: mongoose.Schema.Types.ObjectId, ref: "Sale" },
   convertedAt: Date,
   sourceQuotation: { type: mongoose.Schema.Types.ObjectId, ref: "Quotation" },
-}, { timestamps: true });
+}, { timestamps: true, optimisticConcurrency: true });
 
 orderSchema.pre("save", async function (next) {
   if (!this.orderNo) {

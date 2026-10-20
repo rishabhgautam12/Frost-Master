@@ -1,5 +1,6 @@
 import { Badge, Btn, Modal } from "./Shared";
 import frostMasterLogo from "../assets/frost-master-logo.webp";
+import { RefundHistory } from "./RefundModal";
 
 const money = value => `₹${(+value || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 const date = value => value ? new Date(value).toLocaleDateString("en-IN") : "-";
@@ -33,7 +34,7 @@ export default function TransactionDetailsModal({ record, type, onClose }) {
     const companyHeaderHeight = showCompanyHeader ? 125 : 0;
     const itemRows = Math.max(1, (record.items || []).length);
     const paymentRows = Math.max(1, payments.length);
-    const height = 650 + companyHeaderHeight + itemRows * 48 + paymentRows * 38;
+    const height = 700 + companyHeaderHeight + itemRows * 48 + paymentRows * 38 + (record.refunds?.length || 0) * 145;
     const canvas = document.createElement("canvas");
     canvas.width = width * scale; canvas.height = height * scale;
     const ctx = canvas.getContext("2d"); ctx.scale(scale, scale);
@@ -73,6 +74,18 @@ export default function TransactionDetailsModal({ record, type, onClose }) {
     text("Notes",pad,y+22,10,800,"#64748b");wrapped(record.notes,pad,y+45,summaryX-pad-30,18,5);
     y+=168;
     text(isSale ? "PAYMENT HISTORY" : "ADVANCE PAYMENT HISTORY",pad,y,11,800,"#334155");y+=15;(payments.length?payments:[{amount:record.amountPaid,paymentMode:record.paymentMode,date:record.date,notes:isSale?"Previously paid":"Order advance"}]).filter(p => +p.amount > 0).forEach(p=>{rect(pad,y,width-pad*2,32,"#fff","#e2e8f0");text(date(p.date),pad+10,y+21,11);text(p.paymentMode || "Cash",pad+150,y+21,11);text(p.notes || "",pad+300,y+21,10,400,"#64748b");text(money(p.amount),width-pad-10,y+21,11,800,"#15803d","right");y+=32;});
+    if (record.refunds?.length) {
+      y+=24; text("REFUND HISTORY",pad,y,12,800,"#9a3412"); y+=16;
+      for (const refund of record.refunds) {
+        rect(pad,y,width-pad*2,135,"#fff7ed","#fed7aa");
+        text(`${date(refund.date)} · ${refund.type} · ${refund.method}`,pad+12,y+23,12,700);
+        text(`${money(refund.amount)} refunded`,width-pad-12,y+23,13,800,"#9a3412","right");
+        wrapped(refund.notes,pad+12,y+46,width-pad*2-24,17,3);
+        text(`Original payment: ${refund.paymentId || "No specific reference"}`,pad+12,y+108,11);
+        text(`Recorded by ${refund.recordedByName || "Admin"}`,pad+12,y+125,11);
+        y+=145;
+      }
+    }
     const link=document.createElement("a");link.download=`${safeName(number)}-${isSale?"sale":isQuotation?"quotation":"order"}.png`;link.href=canvas.toDataURL("image/png");link.click();
   };
 
@@ -89,5 +102,6 @@ export default function TransactionDetailsModal({ record, type, onClose }) {
     <div style={{ overflowX:"auto", marginBottom:14 }}><table style={{ width:"100%", minWidth:950, borderCollapse:"collapse", fontSize:11 }}><thead><tr>{["Product","HSN Code","Type","Description","Warehouse","Qty","Rate","Billing Rate","Discount","GST","Transport","Incentive","Total"].map(h=><th key={h} style={{padding:8,background:"#e2e8f0",textAlign:"left"}}>{h}</th>)}</tr></thead><tbody>{(record.items||[]).map((item,i)=>{const total=(+item.total||0)+(+item.gstAmount||0)+(+item.transportAmount||0)+(+item.transportGstAmount||0);return <tr key={item._id||i}>{[item.productName||item.product?.name||"Product",item.hsnCode||item.product?.hsnCode||"-",item.productType||"Manufacturing",item.description||"-",item.warehouse||"-",item.qty,money(item.rate),money(item.billingRate),`${item.discount||0}%`,`${item.gstRate||0}%`,money(item.transportAmount),isSale?`${item.incentivePercent||0}% (${money(item.incentiveAmount)})`:"-",money(total)].map((v,j)=><td key={j} style={{padding:8,borderBottom:"1px solid #e2e8f0"}}>{v}</td>)}</tr>})}</tbody></table></div>
     <div style={{ display:"grid", gridTemplateColumns:"1fr minmax(260px,360px)", gap:16 }}><div><strong>Notes</strong><div style={{whiteSpace:"pre-wrap",color:"#64748b",marginTop:5}}>{display(record.notes)}</div></div><div style={{background:"#f8fafc",padding:12,borderRadius:8}}>{summary.map(([label,value])=><div key={label} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",fontSize:label==="Grand Total"?15:12,borderTop:label==="Grand Total"?"1px solid #cbd5e1":"none"}}><span>{label}</span><strong>{money(value)}</strong></div>)}<div style={{display:"flex",justifyContent:"space-between",padding:"5px 0",color:"#15803d"}}><span>{isSale ? "Paid" : "Advance Paid"}</span><strong>{money(record.amountPaid)}</strong></div>{isSale&&<div style={{display:"flex",justifyContent:"space-between",padding:"5px 0",color:"#dc2626"}}><span>Due</span><strong>{money(record.amountDue)}</strong></div>}</div></div>
     <div style={{marginTop:16}}><strong>{isSale ? "Payment History" : "Advance Payment History"}</strong>{payments.length?payments.map((p,i)=><div key={p._id||i} style={{display:"grid",gridTemplateColumns:"120px 120px 1fr 110px",gap:8,padding:9,borderBottom:"1px solid #e2e8f0"}}><span>{date(p.date)}</span><span>{p.paymentMode}</span><span>{p.notes||"-"}</span><strong style={{color:"#15803d",textAlign:"right"}}>{money(p.amount)}</strong></div>):<div style={{color:"#94a3b8",padding:10}}>No itemized payment records.</div>}</div>
+    <RefundHistory record={record} />
   </Modal>;
 }

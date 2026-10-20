@@ -8,6 +8,7 @@ import { salesAPI, customerAPI, productAPI, employeeAPI } from "../services/api"
 import { downloadCSV } from "../services/csvExport";
 import InvoiceDetailsFields, { partyDetailsFromCustomer } from "../components/InvoiceDetailsFields";
 import TransactionDetailsModal from "../components/TransactionDetailsModal";
+import RefundModal, { RefundHistory } from "../components/RefundModal";
 
 const stColor = { Paid: "green", Partial: "yellow", Pending: "red", Cancelled: "gray" };
 function currentUser() {
@@ -150,6 +151,7 @@ function PaymentHistoryDrawer({ sale, onClose, onAddPayment, isAdmin, onEditPaym
             ))}
           </div>
           <div style={{ fontSize: 12, fontWeight: 800, color: "#334155", marginBottom: 10 }}>{payments.length} recorded payment{payments.length === 1 ? "" : "s"}</div>
+          <RefundHistory record={sale} />
           {legacyAmount > 0 && (
             <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 9, padding: 12, marginBottom: 10 }}>
               <div style={{ fontWeight: 800, color: "#92400e" }}>₹{legacyAmount.toLocaleString()} previously paid</div>
@@ -168,7 +170,8 @@ function PaymentHistoryDrawer({ sale, onClose, onAddPayment, isAdmin, onEditPaym
               <div style={{ marginTop: 3, color: "#64748b", fontSize: 11 }}>Recorded by {payment.recordedByName || "Staff"}</div>
               {+payment.advanceAmount > 0 && <div style={{marginTop:4,color:"#7c3aed",fontSize:11,fontWeight:800}}>₹{(+payment.advanceAmount).toLocaleString()} stored as customer advance</div>}
               {payment.notes && <div style={{ marginTop: 8, padding: "7px 9px", borderRadius: 6, background: "#f8fafc", color: "#475569", fontSize: 12 }}>{payment.notes}</div>}
-              {isAdmin && payment._id && <div style={{display:"flex",justifyContent:"flex-end",gap:6,marginTop:8}}><Btn sm color="blue" onClick={()=>onEditPayment(payment)}>Edit Payment</Btn><Btn sm color="red" onClick={()=>onDeletePayment(payment)}>Delete</Btn></div>}
+              {payment.refundedAmount > 0 && <div style={{color:"#b45309",marginTop:6}}>Refunded ₹{payment.refundedAmount.toLocaleString("en-IN")} · Net ₹{(payment.amount-payment.refundedAmount).toLocaleString("en-IN")}</div>}
+              {isAdmin && payment._id && !sale.refunds?.length && <div style={{display:"flex",justifyContent:"flex-end",gap:6,marginTop:8}}><Btn sm color="blue" onClick={()=>onEditPayment(payment)}>Edit Payment</Btn><Btn sm color="red" onClick={()=>onDeletePayment(payment)}>Delete</Btn></div>}
             </div>
           ))}
         </div>
@@ -611,6 +614,7 @@ export default function SalesList({ navigate }) {
   const [payModal, setPayModal] = useState(null);
   const [paymentDrawer, setPaymentDrawer] = useState(null);
   const [editingPayment, setEditingPayment] = useState(null);
+  const [refundSale, setRefundSale] = useState(null);
   const [detailModal, setDetailModal] = useState(null);
   const [editModal,setEditModal]= useState(null);
   const isAdmin = currentUser()?.role === "admin";
@@ -664,9 +668,10 @@ export default function SalesList({ navigate }) {
   const afterEdit = (msg) => { setEditModal(null); showToast(msg); load(); };
 
   // Totals from current list
-  const totalRevenue  = sales.reduce((s, o) => s + (o.grandTotal || 0), 0);
-  const totalReceived = sales.reduce((s, o) => s + (o.amountPaid || 0), 0);
-  const totalDue      = sales.reduce((s, o) => s + (o.amountDue  || 0), 0);
+  const activeSales = sales.filter(s => s.status !== "Cancelled");
+  const totalRevenue  = activeSales.reduce((s, o) => s + (o.grandTotal || 0), 0);
+  const totalReceived = activeSales.reduce((s, o) => s + (o.amountPaid || 0), 0);
+  const totalDue      = activeSales.reduce((s, o) => s + (o.amountDue  || 0), 0);
   const dueCount      = sales.filter(o => o.amountDue > 0 && o.status !== "Cancelled").length;
 
   const COLS = 10;
@@ -788,16 +793,17 @@ export default function SalesList({ navigate }) {
                         : <span style={{ color: "#94a3b8" }}>—</span>
                       }
                     </Td>
-                    <Td><Badge color={stColor[s.status] || "gray"}>{s.status}</Badge></Td>
+                    <Td><Badge color={stColor[s.status] || "gray"}>{s.status}</Badge>{!!s.refunds?.length && <div style={{color:"#b45309",fontWeight:700,marginTop:5}}>Refunded ₹{s.refunds.reduce((sum,r)=>sum+r.amount,0).toLocaleString("en-IN")}</div>}</Td>
                     <Td>
                       <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                         <Btn sm color="blue" onClick={() => setDetailModal(s)}>View Details</Btn>
                         {(isAdmin || currentUser()?.permissions?.complaints_view) && <Btn sm color="purple" onClick={() => { sessionStorage.setItem("complaintTarget", JSON.stringify({ referenceId:s._id, invoiceNo:s.invoiceNo })); navigate("complaints-active"); }}>Service / Complaints</Btn>}
                         <Btn sm color="teal" onClick={() => setPaymentDrawer(s)}>Payments ({s.payments?.length || 0})</Btn>
-                        <Btn sm color="blue" onClick={() => setEditModal(s)}>✏️ Edit</Btn>
-                        {isAdmin && <Btn sm color="red" onClick={() => handleDelete(s)}>Delete</Btn>}
+                        <Btn sm color="red" onClick={() => setRefundSale(s)}>Refunds</Btn>
+                        <Btn sm color="blue" disabled={!!s.refunds?.length} onClick={() => setEditModal(s)}>✏️ Edit</Btn>
+                        {isAdmin && <Btn sm color="red" disabled={!!s.refunds?.length} onClick={() => handleDelete(s)}>Delete</Btn>}
                         {s.status !== "Cancelled" && (
-                          <Btn sm color="red" onClick={() => handleCancel(s._id)}>✕</Btn>
+                          <Btn sm color="red" onClick={() => s.refunds?.length ? setRefundSale(s) : handleCancel(s._id)}>✕</Btn>
                         )}
                       </div>
                     </Td>
@@ -833,6 +839,7 @@ export default function SalesList({ navigate }) {
 
       {payModal  && <PaymentModal sale={payModal}  onClose={() => setPayModal(null)}  onDone={afterPay}  />}
       {detailModal && <TransactionDetailsModal record={detailModal} type="sale" onClose={() => setDetailModal(null)} />}
+      {refundSale && <RefundModal kind="sales" record={refundSale} isAdmin={isAdmin} onClose={()=>setRefundSale(null)} onDone={message=>{showToast(message);load();}} />}
       {paymentDrawer && <PaymentHistoryDrawer
         sale={paymentDrawer}
         onClose={() => setPaymentDrawer(null)}

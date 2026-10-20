@@ -143,8 +143,9 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
   if (sales.length === 0)
     return <EmptyState icon="🧾" text="No sales found for this customer." />;
 
-  const totalBilled   = sales.reduce((s,o)=>s+o.grandTotal,0);
-  const totalReceived = sales.reduce((s,o)=>s+o.amountPaid,0);
+  const activeSales = sales.filter(s => s.status !== "Cancelled");
+  const totalBilled   = activeSales.reduce((s,o)=>s+o.grandTotal,0);
+  const totalReceived = activeSales.reduce((s,o)=>s+o.amountPaid,0);
   const totalDue      = sales.reduce((s,o)=>s+o.amountDue,0);
 
   return (

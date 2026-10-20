@@ -35,7 +35,8 @@ exports.getCustomerById = async (req, res) => {
 
     // Build product summary for this customer
     const productMap = {};
-    sales.forEach((sale) => {
+    const activeSales = sales.filter(sale => sale.status !== "Cancelled");
+    activeSales.forEach((sale) => {
       sale.items.forEach((item) => {
         const pid = item.product?._id?.toString() || item.productName;
         if (!productMap[pid]) {
@@ -61,9 +62,9 @@ exports.getCustomerById = async (req, res) => {
         productSummary: Object.values(productMap),
         stats: {
           totalOrders: sales.length,
-          totalBilled: sales.reduce((s, o) => s + o.grandTotal, 0),
-          totalReceived: sales.reduce((s, o) => s + o.amountPaid, 0),
-          totalDue: sales.reduce((s, o) => s + o.amountDue, 0),
+          totalBilled: activeSales.reduce((s, o) => s + o.grandTotal, 0),
+          totalReceived: activeSales.reduce((s, o) => s + o.amountPaid, 0),
+          totalDue: activeSales.reduce((s, o) => s + o.amountDue, 0),
           advanceBalance: customer.advanceBalance || 0,
         },
       },
@@ -144,6 +145,7 @@ exports.recordPayment = async (req, res) => {
     const { saleId, amount } = req.body;
     const sale = await Sale.findById(saleId);
     if (!sale) return res.status(404).json({ success: false, message: "Sale not found" });
+      if (sale.status === "Cancelled" || sale.refunds?.length) return res.status(409).json({ success:false, message:"Use the sale payment timeline. This legacy payment action cannot modify cancelled or refunded sales." });
     const before = { amountPaid: sale.amountPaid, amountDue: sale.amountDue, status: sale.status };
     sale.amountPaid = Math.min(sale.grandTotal, sale.amountPaid + amount);
     sale.amountDue = Math.max(0, sale.grandTotal - sale.amountPaid);

@@ -1,5 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const { getRefunds, createRefund, protectRefundHistory } = require("../controllers/refundController");
+router.get("/refunds/:kind/:id", getRefunds);
+router.post("/refunds/:kind/:id", createRefund);
 const {
   getSales,
   getSaleById,
@@ -45,22 +48,22 @@ router.put("/quotations/:id", updateQuotation);
 router.post("/quotations/:id/convert", convertQuotationToOrder);
 router.get("/orders/all", getOrders);
 router.post("/orders", createOrder);
-router.put("/orders/:id", updateOrder);
+router.put("/orders/:id", protectRefundHistory("orders"), updateOrder);
 router.patch("/orders/:id/pay", payForOrder);
-router.put("/orders/:id/payments/:paymentId", updateOrderPaymentRecord);
-router.delete("/orders/:id/payments/:paymentId", deleteOrderPaymentRecord);
+router.put("/orders/:id/payments/:paymentId", protectRefundHistory("orders"), updateOrderPaymentRecord);
+router.delete("/orders/:id/payments/:paymentId", protectRefundHistory("orders"), deleteOrderPaymentRecord);
 router.post("/orders/:id/convert", convertOrderToSale);
 router.get("/", getSales);
 router.get("/gst-report", getGSTReport);
 router.get("/staff-report", getStaffSalesReport);
 router.post("/", createSale);
-router.patch("/:id/payment", updateSalePayment);
-router.patch("/:id/cancel", cancelSale);
+router.patch("/:id/payment", protectRefundHistory("sales"), updateSalePayment);
+router.patch("/:id/cancel", protectRefundHistory("sales"), cancelSale);
 router.patch("/:saleId/pay", payForSale);          // proper pay endpoint
-router.put("/:saleId/payments/:paymentId", updateSalePaymentRecord);
-router.delete("/:saleId/payments/:paymentId", deleteSalePaymentRecord);
-router.put("/:id/details", updateSaleDetails);      // edit notes / status
-router.delete("/:id", deleteSale);
+router.put("/:saleId/payments/:paymentId", protectRefundHistory("sales"), updateSalePaymentRecord);
+router.delete("/:saleId/payments/:paymentId", protectRefundHistory("sales"), deleteSalePaymentRecord);
+router.put("/:id/details", protectRefundHistory("sales"), updateSaleDetails);      // edit notes / status
+router.delete("/:id", protectRefundHistory("sales"), deleteSale);
 router.get("/:id", getSaleById);
 
 module.exports = router;
