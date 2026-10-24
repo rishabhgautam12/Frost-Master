@@ -239,7 +239,7 @@ export default function Navbar({ page, navigate, user, onLogout, label, children
             onClick={() => goTo("dashboard")}
           >
             <span className="fm-nav-icon"><Icon name="grid" /></span>
-            Dashboard
+            <span className="fm-grow">Dashboard</span>
           </button>
 
           <div className="fm-nav-caption">Workspace</div>
@@ -253,6 +253,7 @@ export default function Navbar({ page, navigate, user, onLogout, label, children
                   className={`fm-nav-link ${isActive ? "fm-parent-active" : ""}`}
                   onClick={() => toggle(nav.key)}
                   aria-expanded={isOpen}
+                  title={nav.label}
                 >
                   <span className="fm-nav-icon"><Icon name={nav.icon} /></span>
                   <span className="fm-grow">{nav.label}</span>
@@ -285,7 +286,7 @@ export default function Navbar({ page, navigate, user, onLogout, label, children
                 onClick={() => goTo("staff-management")}
               >
                 <span className="fm-nav-icon"><Icon name="shield" /></span>
-                Staff Management
+                <span className="fm-grow">Staff Management</span>
               </button>
             </>
           )}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Btn, Badge, LoadingSpinner, ErrorMsg, EmptyState, SuccessToast,
-  FormGroup, FormInput, FormSelect,
+  FormGroup, FormInput, FormSelect, roundTotal, formatRoundOff,
 } from "../components/Shared";
 import { customerAPI, salesAPI, productAPI } from "../services/api";
 import { downloadCSV } from "../services/csvExport";
@@ -411,7 +411,8 @@ function AddSaleTab({ customer, onDone }) {
   const cgst = form.isInterState ? 0 : totals.gst/2;
   const sgst = form.isInterState ? 0 : totals.gst/2;
   const igst = form.isInterState ? totals.gst : 0;
-  const due  = Math.max(0, totals.total - (+form.amountPaid||0));
+  const { total: grandTotal, roundOff } = roundTotal(totals.total);
+  const due  = Math.max(0, grandTotal - (+form.amountPaid||0));
 
   const handleSave = async () => {
     const valid = items.filter(it => it.product && +it.qty>0 && +it.rate>0);
@@ -581,9 +582,14 @@ function AddSaleTab({ customer, onDone }) {
                 </div>
               </>
           }
+          {roundOff !== 0 && (
+            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#6b7392" }}>
+              <span>Round Off</span><span>{formatRoundOff(roundOff)}</span>
+            </div>
+          )}
           <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0",
             borderTop:"2px solid #e6e9f2", fontWeight:800, fontSize:16 }}>
-            <span>Grand Total</span><span>₹{totals.total.toFixed(2)}</span>
+            <span>Grand Total</span><span>₹{grandTotal.toFixed(2)}</span>
           </div>
           <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#1f9d6b" }}>
             <span>Amount Paid</span><span>₹{(+form.amountPaid||0).toFixed(2)}</span>

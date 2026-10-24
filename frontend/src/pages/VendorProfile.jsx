@@ -14,7 +14,7 @@
 import { useState, useEffect } from "react";
 import {
   Btn, Badge, LoadingSpinner, ErrorMsg, EmptyState, SuccessToast,
-  FormGroup, FormInput, FormSelect, Modal,
+  FormGroup, FormInput, FormSelect, Modal, roundTotal, formatRoundOff,
 } from "../components/Shared";
 import { vendorAPI, productAPI, salesAPI, employeeAPI } from "../services/api";
 import QuickAddProduct from "../components/QuickAddProduct";
@@ -237,7 +237,7 @@ function PurchasesTab({ vendorId, onRefresh }) {
               gst: sum.gst + ((total * (+it.gstRate || 0)) / 100),
             };
           }, { subtotal: 0, gst: 0 });
-          const grandTotal  = itemTotals.subtotal + itemTotals.gst;
+          const grandTotal  = roundTotal(itemTotals.subtotal + itemTotals.gst).total;
           const newPaid     = Math.min(grandTotal, Math.max(0, +editForm.amountPaid || 0));
           const newDue      = grandTotal - newPaid;
           return (
@@ -928,7 +928,7 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
     const ci = calcItem(it);
     return { sub: s.sub + ci.sub, billing: s.billing + ci.billing, transport: s.transport + ci.transport, gst: s.gst + ci.gst };
   }, { sub:0, billing:0, transport:0, gst:0 });
-  const grand = totals.sub + totals.transport + totals.gst;
+  const { total: grand, roundOff } = roundTotal(totals.sub + totals.transport + totals.gst);
 
   const handleSave = async () => {
     const valid = items.filter(it => (+it.qty>0) && (+it.rate>0) && it.product);
@@ -1207,14 +1207,19 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
         <div style={{ background:"#f7f8fc", borderRadius:8, padding:"16px", fontSize:13 }}>
           <div style={{ fontWeight:700, marginBottom:10 }}>Purchase Summary</div>
           <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}>
-            <span>Subtotal</span><span>?{totals.sub.toFixed(2)}</span>
+            <span>Subtotal</span><span>₹{totals.sub.toFixed(2)}</span>
           </div>
           <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#6b7392" }}>
-            <span>Transport</span><span>?{totals.transport.toFixed(2)}</span>
+            <span>Transport</span><span>₹{totals.transport.toFixed(2)}</span>
           </div>
           <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#e5a03a" }}>
             <span>Total GST</span><span>₹{totals.gst.toFixed(2)}</span>
           </div>
+          {roundOff !== 0 && (
+            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#6b7392" }}>
+              <span>Round Off</span><span>{formatRoundOff(roundOff)}</span>
+            </div>
+          )}
           <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0",
             borderTop:"2px solid #e6e9f2", fontWeight:800, fontSize:16, color:"#0f1535" }}>
             <span>Grand Total</span><span>₹{grand.toFixed(2)}</span>

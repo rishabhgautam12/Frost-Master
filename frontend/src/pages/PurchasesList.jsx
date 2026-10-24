@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   PageTitle, Btn, TableWrap, Th, Td, Badge, LoadingSpinner, ErrorMsg,
-  EmptyState, Modal, FormGroup, FormInput, FormSelect, SuccessToast
+  EmptyState, Modal, FormGroup, FormInput, FormSelect, SuccessToast, roundTotal, formatRoundOff
 } from "../components/Shared";
 import { salesAPI, employeeAPI } from "../services/api";
 import { downloadCSV } from "../services/csvExport";
@@ -44,8 +44,12 @@ function PurchaseModal({
   if (!purchase) return null;
   const disabled = !editMode;
   const totals = summarize(items);
+  // Saved purchases show their stored total; edits preview the newly rounded total.
+  const rounded = roundTotal(totals.grand);
+  const grand = editMode ? rounded.total : (+purchase.grandTotal || 0);
+  const roundOff = editMode ? rounded.roundOff : (+purchase.roundOff || 0);
   const paid = payments.reduce((sum, p) => sum + (+p.amount || 0), 0);
-  const due = Math.max(0, totals.grand - paid);
+  const due = Math.max(0, grand - paid);
   const setF = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
   const setItem = (idx, key, value) => setItems((prev) => prev.map((it, i) => i === idx ? { ...it, [key]: value } : it));
   const setPayment = (idx, key, value) => setPayments((prev) => prev.map((p, i) => i === idx ? { ...p, [key]: value } : p));
@@ -71,12 +75,13 @@ function PurchaseModal({
           </div>
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:16 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:10, marginBottom:16 }}>
           {[
             ["Subtotal", money(totals.subtotal), "#0f1535"],
             ["Transport", money(totals.transport), "#6b7392"],
             ["Total GST", money(totals.gst), "#e5a03a"],
-            ["Grand Total", money(totals.grand), "#0f1535"],
+            ...(roundOff ? [["Round Off", formatRoundOff(roundOff), "#6b7392"]] : []),
+            ["Grand Total", money(grand), "#0f1535"],
           ].map(([label, value, color]) => (
             <div key={label} style={{ background:"#f7f8fc", border:"1px solid #e6e9f2", borderRadius:8, padding:"12px 14px" }}>
               <div style={{ fontSize:10, color:"#6b7392", textTransform:"uppercase", fontWeight:800 }}>{label}</div>

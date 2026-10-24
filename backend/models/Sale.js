@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { applyRoundOff } = require("../utils/roundOff");
 
 const saleItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
@@ -65,6 +66,7 @@ const saleSchema = new mongoose.Schema(
     transportTotal: { type: Number, default: 0 },
     totalGST: { type: Number, default: 0 },
     grandTotal: { type: Number, default: 0 },
+    roundOff: { type: Number },
     amountPaid: { type: Number, default: 0 },
     payments: { type: [salePaymentSchema], default: [] },
     refunds: { type: [require("./refundSchema")], default: [] },
@@ -108,7 +110,7 @@ saleSchema.pre("save", async function (next) {
   this.billingSubtotal = this.items.reduce((s, i) => s + (+i.billingTotal || 0), 0);
   this.transportTotal = this.items.reduce((s, i) => s + (+i.transportAmount || 0), 0);
   this.totalGST = this.items.reduce((s, i) => s + (+i.gstAmount || 0) + (+i.transportGstAmount || 0), 0);
-  this.grandTotal = this.subtotal - this.totalDiscount + this.transportTotal + this.totalGST;
+  applyRoundOff(this, this.subtotal - this.totalDiscount + this.transportTotal + this.totalGST);
   if (this.isInterState) {
     this.igst = this.totalGST;
     this.cgst = 0;

@@ -1,5 +1,36 @@
 // Shared UI components used across all pages
 
+// Round a bill to the nearest rupee; roundOff is the adjustment shown on the bill.
+export const roundTotal = (raw) => {
+  const exact = Math.round((+raw || 0) * 100) / 100;
+  const total = Math.round(exact);
+  return { total, roundOff: Math.round((total - exact) * 100) / 100 };
+};
+
+export const formatRoundOff = (value) => {
+  const n = +value || 0;
+  return `${n > 0 ? "+" : n < 0 ? "-" : ""}₹${Math.abs(n).toFixed(2)}`;
+};
+
+// Compact product cell for list tables: first product + "+N more", full list on hover.
+export const ItemsSummary = ({ items = [] }) => {
+  if (!items.length) return <span style={{ color: "#9aa1b9" }}>—</span>;
+  const nameOf = (item) => item.productName || item.product?.name || "Product";
+  const [first, ...rest] = items;
+  const tooltip = items.map((item) => `${nameOf(item)} × ${item.qty || 1}`).join("\n");
+  return (
+    <div title={tooltip} style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 240, minWidth: 0 }}>
+      <span style={{ fontWeight: 700, color: "#0f1535", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{nameOf(first)}</span>
+      {(+first.qty || 1) > 1 && <span style={{ color: "#6b7392", fontSize: 11, whiteSpace: "nowrap" }}>× {first.qty}</span>}
+      {rest.length > 0 && (
+        <span style={{ flexShrink: 0, padding: "2px 8px", borderRadius: 999, background: "#f1edff", color: "#6d28d9", fontSize: 10.5, fontWeight: 700, whiteSpace: "nowrap" }}>
+          +{rest.length} more
+        </span>
+      )}
+    </div>
+  );
+};
+
 export const PageTitle = ({ children }) => (
   <div style={{ width: "100%", maxWidth: "100%", display: "flex", alignItems: "center", gap: 12, marginBottom: 20, overflowWrap: "anywhere", animation: "fm-fade-up 0.35s ease both" }}>
     <span style={{ width: 6, alignSelf: "stretch", minHeight: 28, borderRadius: 999, background: "linear-gradient(180deg, #a78bfa, #7c3aed)", flexShrink: 0 }} />

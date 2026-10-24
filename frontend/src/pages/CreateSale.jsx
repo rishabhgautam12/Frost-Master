@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   PageTitle, Btn, FormGroup, FormInput, FormSelect,
-  SuccessToast, Modal,
+  SuccessToast, Modal, roundTotal, formatRoundOff,
 } from "../components/Shared";
 import { salesAPI, customerAPI, productAPI, employeeAPI } from "../services/api";
 import InvoiceDetailsFields, { partyDetailsFromCustomer } from "../components/InvoiceDetailsFields";
@@ -190,7 +190,8 @@ export default function CreateSale({ navigate, mode = "sale" }) {
   const igst = form.isInterState ? totals.gst : 0;
   const cleanPayments = payments.filter(p => p.paymentMode !== "Credit" && (+p.amount || 0) > 0).map(p => ({ ...p, amount:+p.amount }));
   const totalPaid = cleanPayments.reduce((sum, payment) => sum + payment.amount, 0);
-  const due  = Math.max(0, totals.total - totalPaid);
+  const { total: grandTotal, roundOff } = roundTotal(totals.total);
+  const due  = Math.max(0, grandTotal - totalPaid);
 
   const handleSave = async () => {
     const validItems = items.filter(it => it.product && +it.qty > 0 && +it.rate > 0);
@@ -541,9 +542,15 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                 </div>
               </>
             )}
+            {roundOff !== 0 && (
+              <div style={{ display:"flex", justifyContent:"space-between",
+                padding:"4px 0", color:"#6b7392" }}>
+                <span>Round Off</span><span>{formatRoundOff(roundOff)}</span>
+              </div>
+            )}
             <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0",
               borderTop:"2px solid #e6e9f2", fontWeight:800, fontSize:15, color:"#0f1535" }}>
-              <span>Grand Total</span><span>₹{totals.total.toFixed(2)}</span>
+              <span>Grand Total</span><span>₹{grandTotal.toFixed(2)}</span>
             </div>
             <div style={{ display:"flex", justifyContent:"space-between",
               padding:"4px 0", color:"#1f9d6b" }}>

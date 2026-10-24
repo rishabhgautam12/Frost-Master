@@ -383,6 +383,58 @@
 /* ── Mobile bottom tab bar ── */
 .fm-tabbar { display: none; }
 
+/* ── Desktop: icon rail that expands over the page on hover ── */
+@media (min-width: 1024px) {
+  .fm-shell { --sidebar-rail: 80px; }
+
+  .fm-sidebar {
+    width: var(--sidebar-rail);
+    transition: width 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease;
+  }
+
+  .fm-sidebar:hover,
+  .fm-sidebar:has(:focus-visible) {
+    width: var(--sidebar-w);
+    box-shadow: 24px 0 60px -18px rgba(15, 21, 53, 0.6);
+  }
+
+  /* Contents keep their full width and are clipped by the rail, so nothing reflows while it animates. */
+  .fm-brand, .fm-nav { width: var(--sidebar-w); box-sizing: border-box; flex-shrink: 0; }
+  .fm-user-card { width: calc(var(--sidebar-w) - 28px); box-sizing: border-box; flex-shrink: 0; }
+  .fm-nav-link { white-space: nowrap; }
+
+  /* The page slides along with the sidebar: narrower while it is open, full width when it closes. */
+  .fm-main {
+    margin-left: var(--sidebar-rail);
+    transition: margin-left 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .fm-shell:has(.fm-sidebar:hover) .fm-main,
+  .fm-shell:has(.fm-sidebar :focus-visible) .fm-main { margin-left: var(--sidebar-w); }
+
+  /* Labels fade in once the rail opens. */
+  .fm-brand > div, .fm-grow, .fm-chevron, .fm-nav-caption, .fm-user-meta, .fm-user-card .fm-icon-btn {
+    transition: opacity 0.18s ease 0.06s;
+  }
+
+  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-brand > div,
+  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-grow,
+  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-chevron,
+  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-nav-caption,
+  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-user-meta,
+  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-user-card .fm-icon-btn {
+    opacity: 0;
+    transition-delay: 0s;
+  }
+
+  /* Collapsed: icon-sized pills, sub-menus folded, plain avatar. */
+  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-nav-link { width: 52px; }
+  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-sub { grid-template-rows: 0fr; }
+  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-group-open .fm-sub-inner { padding-top: 0; padding-bottom: 0; }
+  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-nav { overflow-y: hidden; }
+  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-user-card { border-color: transparent; background: transparent; }
+}
+
 /* ── Tablet & mobile: off-canvas sidebar ── */
 @media (max-width: 1023px) {
   .fm-sidebar {

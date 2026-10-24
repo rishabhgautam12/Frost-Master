@@ -1,4 +1,4 @@
-import { Badge, Btn, Modal } from "./Shared";
+import { Badge, Btn, Modal, formatRoundOff } from "./Shared";
 import frostMasterLogo from "../assets/frost-master-logo.webp";
 import { RefundHistory } from "./RefundModal";
 
@@ -27,6 +27,11 @@ export default function TransactionDetailsModal({ record, type, onClose }) {
   const partyName = record.customer?.name || record.customerName || "Walk-in";
   const payments = record.payments || [];
   const showCompanyHeader = record.saleType === "GST Invoice";
+  const summary = [
+    ["Subtotal",record.subtotal],["Discount",record.totalDiscount],["Transport",record.transportTotal],["GST",record.totalGST],
+    ...(+record.roundOff ? [["Round Off",record.roundOff,formatRoundOff]] : []),
+    ["Grand Total",record.grandTotal],
+  ];
 
   const downloadImage = async () => {
     const width = 1100, scale = 2, pad = 36;
@@ -69,8 +74,9 @@ export default function TransactionDetailsModal({ record, type, onClose }) {
     let y=dispatchY+98; const cols=[pad,pad+330,pad+510,pad+600,pad+700,pad+810,width-pad];
     rect(pad,y,width-pad*2,34,"#e6e9f2"); ["Product / Description","Warehouse","Qty","Rate","GST","Transport","Total"].forEach((h,i)=>text(h,cols[i]+6,y+22,10,800,"#3a4260",i===6?"right":"left")); y+=34;
     (record.items || []).forEach(item=>{rect(pad,y,width-pad*2,48,"#fff","#e6e9f2");text(item.productName || item.product?.name || "Product",cols[0]+6,y+19,12,700);text(`HSN: ${item.hsnCode || item.product?.hsnCode || "-"}  ${String(item.description || "").slice(0,32)}`,cols[0]+6,y+37,10,400,"#6b7392");text(display(item.warehouse),cols[1]+6,y+27,11);text(item.qty,cols[2]+6,y+27,11);text(money(item.rate),cols[3]+6,y+27,11);text(`${item.gstRate || 0}%`,cols[4]+6,y+27,11);text(money(item.transportAmount),cols[5]+6,y+27,11);const total=(+item.total||0)+(+item.gstAmount||0)+(+item.transportAmount||0)+(+item.transportGstAmount||0);text(money(total),cols[6],y+27,11,800,"#0f1535","right");y+=48;});
-    y+=18; const summaryX=width-390-pad; rect(summaryX,y,390,142,"#fff","#d9deea");
-    [["Subtotal",record.subtotal],["Discount",record.totalDiscount],["Transport",record.transportTotal],["GST",record.totalGST],["Grand Total",record.grandTotal]].forEach(([label,value],i)=>{text(label,summaryX+18,y+24+i*24,12,i===4?800:500);text(money(value),summaryX+372,y+24+i*24,12,800,i===4?"#7c3aed":"#0f1535","right");});
+    y+=18; const summaryX=width-390-pad;
+    rect(summaryX,y,390,summary.length*24+22,"#fff","#d9deea");
+    summary.forEach(([label,value,format],i)=>{const isGrand=label==="Grand Total";text(label,summaryX+18,y+24+i*24,12,isGrand?800:500);text(format?format(value):money(value),summaryX+372,y+24+i*24,12,800,isGrand?"#7c3aed":"#0f1535","right");});
     text("Notes",pad,y+22,10,800,"#6b7392");wrapped(record.notes,pad,y+45,summaryX-pad-30,18,5);
     y+=168;
     text(isSale ? "PAYMENT HISTORY" : "ADVANCE PAYMENT HISTORY",pad,y,11,800,"#3a4260");y+=15;(payments.length?payments:[{amount:record.amountPaid,paymentMode:record.paymentMode,date:record.date,notes:isSale?"Previously paid":"Order advance"}]).filter(p => +p.amount > 0).forEach(p=>{rect(pad,y,width-pad*2,32,"#fff","#e6e9f2");text(date(p.date),pad+10,y+21,11);text(p.paymentMode || "Cash",pad+150,y+21,11);text(p.notes || "",pad+300,y+21,10,400,"#6b7392");text(money(p.amount),width-pad-10,y+21,11,800,"#17855a","right");y+=32;});
@@ -89,7 +95,6 @@ export default function TransactionDetailsModal({ record, type, onClose }) {
     const link=document.createElement("a");link.download=`${safeName(number)}-${isSale?"sale":isQuotation?"quotation":"order"}.png`;link.href=canvas.toDataURL("image/png");link.click();
   };
 
-  const summary = [["Subtotal",record.subtotal],["Discount",record.totalDiscount],["Transport",record.transportTotal],["GST",record.totalGST],["Grand Total",record.grandTotal]];
   return <Modal open wide title={`${documentTitle} Details - ${number}`} onClose={onClose}>
     <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:12 }}><Btn color="teal" onClick={downloadImage}>Download as Image</Btn></div>
     {showCompanyHeader && <div style={{background:"#fff",border:"1px solid #0f1535",padding:14,display:"flex",gap:28,alignItems:"center",marginBottom:0}}>
@@ -100,7 +105,7 @@ export default function TransactionDetailsModal({ record, type, onClose }) {
     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(270px,1fr))", gap:12, marginBottom:12 }}><PartyCard title="Buyer (Bill To)" party={{name:partyName,...details.billTo}} /><PartyCard title="Consignee (Ship To)" party={{name:partyName,...details.shipTo}} /></div>
     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:8, background:"#f5f3ff", border:"1px solid #a5f3fc", padding:12, borderRadius:8, marginBottom:12 }}>{[["E-Way Bill No.",details.eWayBillNo],["Sale Made By",record.salesEmployee?.name || record.salesEmployeeName],["Incentive",isSale ? `${record.incentivePercent || 0}% (${money(record.incentiveAmount)})` : "Calculated after conversion"],["Incentive Product Value",isSale ? money(record.incentiveBaseAmount ?? (record.items || []).reduce((sum,item) => sum + ((+item.rate || 0) * (+item.qty || 0)), 0)) : "-"],["Dispatched Through",details.dispatchedThrough],["Destination",details.destination],["Motor Vehicle No.",details.motorVehicleNo],["Payment Mode",record.paymentMode],["Sale Type",record.saleType]].map(([label,value])=><div key={label}><div style={{fontSize:9,fontWeight:800,color:"#6b7392",textTransform:"uppercase"}}>{label}</div><strong>{display(value)}</strong></div>)}</div>
     <div style={{ overflowX:"auto", marginBottom:14 }}><table style={{ width:"100%", minWidth:950, borderCollapse:"collapse", fontSize:11 }}><thead><tr>{["Product","HSN Code","Type","Description","Warehouse","Qty","Rate","Billing Rate","Discount","GST","Transport","Incentive","Total"].map(h=><th key={h} style={{padding:8,background:"#e6e9f2",textAlign:"left"}}>{h}</th>)}</tr></thead><tbody>{(record.items||[]).map((item,i)=>{const total=(+item.total||0)+(+item.gstAmount||0)+(+item.transportAmount||0)+(+item.transportGstAmount||0);return <tr key={item._id||i}>{[item.productName||item.product?.name||"Product",item.hsnCode||item.product?.hsnCode||"-",item.productType||"Manufacturing",item.description||"-",item.warehouse||"-",item.qty,money(item.rate),money(item.billingRate),`${item.discount||0}%`,`${item.gstRate||0}%`,money(item.transportAmount),isSale?`${item.incentivePercent||0}% (${money(item.incentiveAmount)})`:"-",money(total)].map((v,j)=><td key={j} style={{padding:8,borderBottom:"1px solid #e6e9f2"}}>{v}</td>)}</tr>})}</tbody></table></div>
-    <div style={{ display:"grid", gridTemplateColumns:"1fr minmax(260px,360px)", gap:16 }}><div><strong>Notes</strong><div style={{whiteSpace:"pre-wrap",color:"#6b7392",marginTop:5}}>{display(record.notes)}</div></div><div style={{background:"#f7f8fc",padding:12,borderRadius:8}}>{summary.map(([label,value])=><div key={label} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",fontSize:label==="Grand Total"?15:12,borderTop:label==="Grand Total"?"1px solid #d9deea":"none"}}><span>{label}</span><strong>{money(value)}</strong></div>)}<div style={{display:"flex",justifyContent:"space-between",padding:"5px 0",color:"#17855a"}}><span>{isSale ? "Paid" : "Advance Paid"}</span><strong>{money(record.amountPaid)}</strong></div>{isSale&&<div style={{display:"flex",justifyContent:"space-between",padding:"5px 0",color:"#d0433d"}}><span>Due</span><strong>{money(record.amountDue)}</strong></div>}</div></div>
+    <div style={{ display:"grid", gridTemplateColumns:"1fr minmax(260px,360px)", gap:16 }}><div><strong>Notes</strong><div style={{whiteSpace:"pre-wrap",color:"#6b7392",marginTop:5}}>{display(record.notes)}</div></div><div style={{background:"#f7f8fc",padding:12,borderRadius:8}}>{summary.map(([label,value,format])=><div key={label} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",fontSize:label==="Grand Total"?15:12,borderTop:label==="Grand Total"?"1px solid #d9deea":"none",color:label==="Round Off"?"#6b7392":undefined}}><span>{label}</span><strong>{format?format(value):money(value)}</strong></div>)}<div style={{display:"flex",justifyContent:"space-between",padding:"5px 0",color:"#17855a"}}><span>{isSale ? "Paid" : "Advance Paid"}</span><strong>{money(record.amountPaid)}</strong></div>{isSale&&<div style={{display:"flex",justifyContent:"space-between",padding:"5px 0",color:"#d0433d"}}><span>Due</span><strong>{money(record.amountDue)}</strong></div>}</div></div>
     <div style={{marginTop:16}}><strong>{isSale ? "Payment History" : "Advance Payment History"}</strong>{payments.length?payments.map((p,i)=><div key={p._id||i} style={{display:"grid",gridTemplateColumns:"120px 120px 1fr 110px",gap:8,padding:9,borderBottom:"1px solid #e6e9f2"}}><span>{date(p.date)}</span><span>{p.paymentMode}</span><span>{p.notes||"-"}</span><strong style={{color:"#17855a",textAlign:"right"}}>{money(p.amount)}</strong></div>):<div style={{color:"#9aa1b9",padding:10}}>No itemized payment records.</div>}</div>
     <RefundHistory record={record} />
   </Modal>;

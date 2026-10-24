@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PageTitle, Btn, TableWrap, Th, Td, LoadingSpinner, ErrorMsg, EmptyState, Modal, FormGroup, FormInput, SuccessToast } from "../components/Shared";
+import { PageTitle, Btn, TableWrap, Th, Td, LoadingSpinner, ErrorMsg, EmptyState, Modal, FormGroup, FormInput, SuccessToast, ItemsSummary } from "../components/Shared";
 import { salesAPI } from "../services/api";
 import { OrderEditModal } from "./OrdersList";
 import TransactionDetailsModal from "../components/TransactionDetailsModal";
@@ -56,7 +56,7 @@ export default function QuotationsList({ navigate }) {
       <tbody>{quotations.map(q => <tr key={q._id} style={{borderBottom:"1px solid #d9deea"}}>
         <Td style={{fontWeight:800}}>{q.quotationNo}</Td><Td>{new Date(q.date).toLocaleDateString("en-IN")}</Td>
         <Td>{q.customer?.name || q.customerName || "-"}</Td>
-        <Td>{(q.items || []).map((item,i) => <div key={item._id || i}><strong>{item.productName || item.product?.name}</strong>{item.description && <small style={{display:"block",color:"#6b7392"}}>{item.description}</small>}</div>)}</Td>
+        <Td><ItemsSummary items={q.items} /></Td>
         <Td style={{fontWeight:800}}>₹{(+q.grandTotal || 0).toLocaleString("en-IN")}</Td>
         <Td><div style={{display:"flex",gap:6,flexWrap:"wrap"}}><Btn sm color="teal" onClick={() => setViewing(q)}>View Details</Btn><Btn sm color="blue" onClick={() => setEditing(q)}>Edit</Btn><Btn sm color="green" onClick={() => {setConverting(q);setOrderDate(today());}}>Convert to Order</Btn></div></Td>
       </tr>)}</tbody>

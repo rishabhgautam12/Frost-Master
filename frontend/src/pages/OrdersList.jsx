@@ -1,11 +1,42 @@
 import { useEffect, useState } from "react";
-import { PageTitle, Btn, Badge, TableWrap, Th, Td, LoadingSpinner, ErrorMsg, EmptyState, Modal, FormGroup, FormInput, FormSelect, SuccessToast } from "../components/Shared";
+import { PageTitle, Btn, Badge, TableWrap, Th, Td, LoadingSpinner, ErrorMsg, EmptyState, Modal, FormGroup, FormInput, FormSelect, SuccessToast, ItemsSummary, roundTotal, formatRoundOff } from "../components/Shared";
 import { salesAPI, customerAPI, productAPI, employeeAPI } from "../services/api";
 import InvoiceDetailsFields, { partyDetailsFromCustomer } from "../components/InvoiceDetailsFields";
 import TransactionDetailsModal from "../components/TransactionDetailsModal";
 import RefundModal, { RefundHistory } from "../components/RefundModal";
+import { downloadCSV } from "../services/csvExport";
+import {
+  periodRange, inPeriod, matchesSearch, money, FilterSelect, SearchInput, PeriodFilter,
+  StatusTabs, ClearFiltersButton, SummaryCards, RowMenu, toolbarStyle,
+} from "../components/ListFilters";
 
-const statusColor = { Open: "yellow", Converted: "green", Cancelled: "gray" };
+// Order stage for the list tabs: cancelled, or open with no / part / full advance.
+const ORDER_STAGES = [
+  { value: "none", label: "No advance" },
+  { value: "part", label: "Part advance" },
+  { value: "paid", label: "Fully paid" },
+  { value: "cancelled", label: "Cancelled" },
+];
+const STAGE_COLOR = { none: "red", part: "yellow", paid: "green", cancelled: "gray" };
+const ORDER_SORTS = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "amountDesc", label: "Amount: high to low" },
+  { value: "amountAsc", label: "Amount: low to high" },
+  { value: "balanceDesc", label: "Balance: high to low" },
+];
+const orderBalance = o => o.status === "Cancelled" ? 0 : Math.max(0, (+o.grandTotal || 0) - (+o.amountPaid || 0));
+const orderStage = o => {
+  if (o.status === "Cancelled") return "cancelled";
+  if (!(+o.amountPaid > 0)) return "none";
+  return orderBalance(o) > 0 ? "part" : "paid";
+};
+const salespersonOf = o => o.salesEmployee?.name || o.salesEmployeeName || "";
+const orderSearchText = o => [
+  o.orderNo, o.customer?.name, o.customerName, o.customer?.phone, salespersonOf(o), o.createdByName, o.notes, o.saleType,
+  Math.round(o.grandTotal || 0),
+  ...(o.items || []).flatMap(i => [i.productName, i.product?.name, i.product?.modelNumber, i.description]),
+].filter(Boolean).join(" ").toLowerCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const currentUser = () => { try { return JSON.parse(localStorage.getItem("ht_user") || "null"); } catch { return null; } };
 
@@ -105,7 +136,7 @@ export function OrderEditModal({ order, onClose, onDone, documentName="Order", u
     const transport = +item.transportAmount || 0;
     return gross - discount + gst + transport + transport * (+item.transportGstRate || 0) / 100;
   };
-  const total = items.reduce((sum, item) => sum + itemTotal(item), 0);
+  const { total, roundOff } = roundTotal(items.reduce((sum, item) => sum + itemTotal(item), 0));
 
   const save = async () => {
     setSaving(true); setError("");
@@ -149,7 +180,7 @@ export function OrderEditModal({ order, onClose, onDone, documentName="Order", u
       </div>
     </div>
     <FormGroup label="Notes"><textarea rows="3" value={form.notes} onChange={changeForm("notes")} style={{ width:"100%", padding:9, border:"1px solid #dde1ec", borderRadius:7, boxSizing:"border-box" }} /></FormGroup>
-    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10 }}><strong>{documentName} Total: ₹{total.toLocaleString("en-IN", { maximumFractionDigits:2 })}</strong><div style={{ display:"flex", gap:8 }}><Btn color="cancel" onClick={onClose}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={save}>{saving ? "Saving..." : "Save Changes"}</Btn></div></div>
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10 }}><div><strong>{documentName} Total: ₹{total.toLocaleString("en-IN")}</strong>{roundOff !== 0 && <div style={{ fontSize:11, color:"#6b7392", marginTop:2 }}>Round off {formatRoundOff(roundOff)}</div>}</div><div style={{ display:"flex", gap:8 }}><Btn color="cancel" onClick={onClose}>Cancel</Btn><Btn color="teal" disabled={saving} onClick={save}>{saving ? "Saving..." : "Save Changes"}</Btn></div></div>
     {error && <div style={{ color:"#d0433d", marginTop:10 }}>{error}</div>}
   </Modal>;
 }
@@ -168,19 +199,50 @@ export default function OrdersList({ navigate }) {
   const [form, setForm] = useState({ date: today(), paymentMode: "Credit", amountPaid: "" });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
-  const [monthFilter, setMonthFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [stage, setStage] = useState("");
+  const [period, setPeriod] = useState("all");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [saleType, setSaleType] = useState("");
+  const [salesperson, setSalesperson] = useState("");
+  const [sort, setSort] = useState("newest");
 
-  const load = (filters = {}) => {
+  // All open orders are loaded once; every filter below runs instantly in the browser.
+  const load = () => {
     setLoading(true);
-    const selectedDate = filters.dateFilter ?? dateFilter;
-    const selectedMonth = filters.monthFilter ?? monthFilter;
-    const params = selectedDate
-      ? { from: selectedDate, to: selectedDate }
-      : selectedMonth ? { from: `${selectedMonth}-01`, to: `${selectedMonth}-${String(new Date(+selectedMonth.slice(0, 4), +selectedMonth.slice(5, 7), 0).getDate()).padStart(2, "0")}` } : {};
-    salesAPI.getOrders(params).then(res => { setOrders(res.data || []); setError(""); }).catch(err => setError(err.message)).finally(() => setLoading(false));
+    salesAPI.getOrders().then(res => { setOrders(res.data || []); setError(""); }).catch(err => setError(err.message)).finally(() => setLoading(false));
   };
   useEffect(load, []);
+
+  // ── Filtering ──
+  const range = periodRange(period, customFrom, customTo);
+  const salespeople = [...new Set(orders.map(salespersonOf).filter(Boolean))].sort();
+  const baseOrders = orders.filter(o =>
+    inPeriod(o.date, range)
+    && (!saleType || o.saleType === saleType)
+    && (!salesperson || salespersonOf(o) === salesperson)
+    && matchesSearch(orderSearchText(o), search)
+  );
+  const stageCounts = ORDER_STAGES.reduce((acc, st) => ({ ...acc, [st.value]: baseOrders.filter(o => orderStage(o) === st.value).length }), {});
+  const visibleOrders = baseOrders
+    .filter(o => !stage || orderStage(o) === stage)
+    .sort((a, b) => {
+      if (sort === "oldest") return new Date(a.date) - new Date(b.date);
+      if (sort === "amountDesc") return (b.grandTotal || 0) - (a.grandTotal || 0);
+      if (sort === "amountAsc") return (a.grandTotal || 0) - (b.grandTotal || 0);
+      if (sort === "balanceDesc") return orderBalance(b) - orderBalance(a);
+      return new Date(b.date) - new Date(a.date) || String(b.orderNo).localeCompare(String(a.orderNo));
+    });
+  const activeFilterCount = [search.trim(), stage, period !== "all", saleType, salesperson].filter(Boolean).length;
+  const clearFilters = () => {
+    setSearch(""); setStage(""); setPeriod("all"); setCustomFrom(""); setCustomTo(""); setSaleType(""); setSalesperson("");
+  };
+  const liveOrders = visibleOrders.filter(o => o.status !== "Cancelled");
+  const pipelineValue = liveOrders.reduce((sum, o) => sum + (+o.grandTotal || 0), 0);
+  const advanceTotal = liveOrders.reduce((sum, o) => sum + (+o.amountPaid || 0), 0);
+  const balanceTotal = liveOrders.reduce((sum, o) => sum + orderBalance(o), 0);
+  const readyCount = liveOrders.filter(o => orderStage(o) === "paid").length;
 
   const openConvert = order => {
     setConverting(order);
@@ -199,43 +261,135 @@ export default function OrdersList({ navigate }) {
   };
   const edited = message => { setEditing(null); setToast(message); setTimeout(() => setToast(""), 3000); load(); };
   const advanceAdded = message => { setAdvanceOrder(null); setToast(message); setTimeout(() => setToast(""), 3000); load(); };
-  const openConvertedSale = sale => {
-    sessionStorage.setItem("salesListTarget", JSON.stringify({ invoiceNo:sale.invoiceNo, date:sale.date }));
-    navigate("sales-list");
-  };
 
   return (
     <div>
-      <PageTitle>All Orders</PageTitle>
-      {toast && <SuccessToast msg={toast} />}
-      <div className="order-filter-bar" style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"flex-end", marginBottom:14 }}>
-        <div style={{ marginBottom:14 }}><Btn color="teal" onClick={() => navigate("order-create")}>+ Create Order</Btn></div>
-        <FormGroup label="Filter by month"><FormInput type="month" value={monthFilter} onChange={e => { setMonthFilter(e.target.value); if (e.target.value) setDateFilter(""); }} /></FormGroup>
-        <FormGroup label="Filter by date"><FormInput type="date" value={dateFilter} onChange={e => { setDateFilter(e.target.value); if (e.target.value) setMonthFilter(""); }} /></FormGroup>
-        <div style={{ marginBottom:14 }}><Btn color="blue" onClick={() => load()}>Filter</Btn></div>
-        <div style={{ marginBottom:14 }}><Btn color="cancel" onClick={() => { setMonthFilter(""); setDateFilter(""); load({ monthFilter:"", dateFilter:"" }); }}>Reset</Btn></div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+        <PageTitle>All Orders</PageTitle>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+          <Btn color="cancel" onClick={() => downloadCSV(visibleOrders, [
+            { label: "Order No.", key: "orderNo" },
+            { label: "Date", key: "date" },
+            { label: "Customer", key: "customer.name" },
+            { label: "Sale Type", key: "saleType" },
+            { label: "Salesperson", key: "salesEmployeeName" },
+            { label: "Total (₹)", key: "grandTotal" },
+            { label: "Advance (₹)", key: "amountPaid" },
+            { label: "Status", key: "status" },
+            { label: "Notes", key: "notes" },
+          ], "orders")}>Export CSV</Btn>
+          <Btn color="teal" onClick={() => navigate("order-create")}>+ Create Order</Btn>
+        </div>
       </div>
-      {loading ? <LoadingSpinner /> : error ? <ErrorMsg message={error} onRetry={load} /> : orders.length === 0 ? <EmptyState text="No orders found." /> : (
-        <TableWrap><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-          <thead><tr>{["Order No.", "Order Date", "Customer", "Items", "Total", "Advance Paid", "Status", "Converted Sale", "Actions"].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
-          <tbody>{orders.map(order => (
-            <tr key={order._id} style={{ borderBottom: "1px solid #f1f3f9" }}>
-              <Td style={{ fontWeight: 800 }}>{order.orderNo}</Td>
-              <Td>{new Date(order.date).toLocaleDateString("en-IN")}</Td>
-              <Td>{order.customer?.name || order.customerName || "Walk-in"}</Td>
-              <Td>{(order.items || []).map((item, index) => <div key={item._id || index} style={{ marginBottom:4 }}><strong>{item.productName || item.product?.name}</strong>{item.description && <div style={{ color:"#6b7392", fontSize:10.5, whiteSpace:"pre-wrap" }}>{item.description}</div>}</div>)}</Td>
-              <Td style={{ fontWeight: 800 }}>₹{(+order.grandTotal || 0).toLocaleString("en-IN")}</Td>
-              <Td style={{ color:"#17855a", fontWeight:800 }}>₹{(+order.amountPaid || 0).toLocaleString("en-IN")}</Td>
-              <Td><Badge color={statusColor[order.status] || "gray"}>{order.status}</Badge>{!!order.refunds?.length && <div style={{color:"#b45309",fontWeight:700,marginTop:5}}>Refunded ₹{order.refunds.reduce((sum,r)=>sum+r.amount,0).toLocaleString("en-IN")}</div>}</Td>
-              <Td>{order.convertedSale ? <button type="button" onClick={() => openConvertedSale(order.convertedSale)} style={{background:"none",border:"none",padding:0,color:"#0284c7",fontWeight:800,cursor:"pointer",textAlign:"left",textDecoration:"underline",textUnderlineOffset:3}}>{order.convertedSale.invoiceNo}<span style={{display:"block",fontWeight:500,color:"#4a5272",textDecoration:"none",marginTop:3}}>({new Date(order.convertedSale.date).toLocaleDateString("en-IN")})</span></button> : "-"}</Td>
-              <Td><div style={{ display:"flex", gap:6, flexWrap:"wrap" }}><Btn sm color="purple" onClick={() => setAdvanceOrder(order)}>Advances ({order.payments?.length || 0})</Btn><Btn sm color="red" onClick={() => setRefundOrder(order)}>Refunds</Btn><Btn sm color="teal" onClick={() => setViewing(order)}>View Details</Btn><Btn sm color="blue" disabled={!!order.refunds?.length} onClick={() => setEditing(order)}>Edit Details</Btn>{order.status === "Open" && <Btn sm color="green" onClick={() => openConvert(order)}>Convert to Sale</Btn>}</div></Td>
-            </tr>
-          ))}</tbody>
+      {toast && <SuccessToast msg={toast} />}
+
+      <SummaryCards cards={[
+        { label: "Open Orders", value: liveOrders.length, color: "#5a8be8", sub: activeFilterCount ? `of ${orders.length} total` : "awaiting conversion" },
+        { label: "Order Value", value: money(pipelineValue), color: "#7c3aed", sub: "excludes cancelled" },
+        { label: "Advance Received", value: money(advanceTotal), color: "#1f9d6b", sub: pipelineValue > 0 ? `${((advanceTotal / pipelineValue) * 100).toFixed(1)}% of value` : "—" },
+        { label: "Balance to Collect", value: money(balanceTotal), color: "#e0524c", sub: readyCount ? `${readyCount} fully paid, ready to convert` : "on conversion" },
+      ]} />
+
+      <div style={toolbarStyle}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <SearchInput value={search} onChange={setSearch} label="Search orders"
+            placeholder="Search order no., customer, phone, product, salesperson…" />
+          <PeriodFilter period={period} setPeriod={setPeriod} customFrom={customFrom} setCustomFrom={setCustomFrom} customTo={customTo} setCustomTo={setCustomTo} />
+          <FilterSelect label="Sort" value={sort} onChange={setSort}>
+            {ORDER_SORTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </FilterSelect>
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
+          <StatusTabs value={stage} onChange={setStage} tabs={[
+            { value: "", label: "All", count: baseOrders.length },
+            ...ORDER_STAGES.map(st => ({ value: st.value, label: st.label, count: stageCounts[st.value] })),
+          ]} />
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <FilterSelect label="Sale type" value={saleType} onChange={setSaleType}>
+              <option value="">All types</option>
+              {["GST Invoice", "Cash Sale"].map(t => <option key={t}>{t}</option>)}
+            </FilterSelect>
+            {salespeople.length > 0 && (
+              <FilterSelect label="Salesperson" value={salesperson} onChange={setSalesperson}>
+                <option value="">All salespeople</option>
+                {salespeople.map(p => <option key={p}>{p}</option>)}
+              </FilterSelect>
+            )}
+            <ClearFiltersButton count={activeFilterCount} onClick={clearFilters} />
+          </div>
+        </div>
+      </div>
+
+      {loading ? <LoadingSpinner /> : error ? <ErrorMsg message={error} onRetry={load} /> : (
+        <TableWrap><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+          <thead><tr>{["Order", "Customer", "Items", "Total", "Advance", "Balance", "Status", ""].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
+          <tbody>
+            {visibleOrders.length === 0 ? (
+              <tr><td colSpan={8}>
+                <EmptyState text={orders.length ? "No orders match these filters." : "No open orders."} />
+                {activeFilterCount > 0 && <div style={{ textAlign: "center", marginTop: -36, paddingBottom: 28 }}><Btn sm color="cancel" onClick={clearFilters}>Clear filters</Btn></div>}
+              </td></tr>
+            ) : visibleOrders.map(order => {
+              const balance = orderBalance(order);
+              const refunded = (order.refunds || []).reduce((sum, r) => sum + r.amount, 0);
+              const locked = !!order.refunds?.length;
+              return (
+                <tr key={order._id}
+                  style={{ borderBottom: "1px solid #f1f3f9", opacity: order.status === "Cancelled" ? 0.62 : 1 }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#faf8ff"}
+                  onMouseLeave={e => e.currentTarget.style.background = ""}>
+                  <Td style={{ whiteSpace: "nowrap" }}>
+                    <button type="button" onClick={() => setViewing(order)}
+                      style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "monospace", color: "#0284c7", fontWeight: 700, fontSize: 12, whiteSpace: "nowrap" }}>
+                      {order.orderNo}
+                    </button>
+                    <div style={{ fontSize: 11, color: "#6b7392", marginTop: 3 }}>{new Date(order.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
+                    <div style={{ fontSize: 10.5, color: "#9aa1b9", marginTop: 1 }}>{order.saleType}</div>
+                  </Td>
+                  <Td>
+                    <div style={{ fontWeight: 700, color: "#0f1535" }}>{order.customer?.name || order.customerName || "Walk-in"}</div>
+                    {order.customer?.phone && <div style={{ fontSize: 11, color: "#9aa1b9", marginTop: 2 }}>{order.customer.phone}</div>}
+                    {salespersonOf(order) && <div style={{ fontSize: 11, color: "#6b7392", marginTop: 2 }}>by {salespersonOf(order)}</div>}
+                  </Td>
+                  <Td><ItemsSummary items={order.items} /></Td>
+                  <Td style={{ fontWeight: 800, color: "#0f1535", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{money(order.grandTotal)}</Td>
+                  <Td style={{ color: "#1f9d6b", fontWeight: 700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{+order.amountPaid > 0 ? money(order.amountPaid) : <span style={{ color: "#b8bdd0" }}>—</span>}</Td>
+                  <Td style={{ whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{balance > 0 ? <span style={{ color: "#c0392b", fontWeight: 700 }}>{money(balance)}</span> : <span style={{ color: "#b8bdd0" }}>—</span>}</Td>
+                  <Td>
+                    <Badge color={STAGE_COLOR[orderStage(order)] || "gray"}>{ORDER_STAGES.find(st => st.value === orderStage(order))?.label}</Badge>
+                    {refunded > 0 && <div style={{ color: "#b45309", fontWeight: 700, fontSize: 11, marginTop: 4 }}>Refunded {money(refunded)}</div>}
+                  </Td>
+                  <Td>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", justifyContent: "flex-end" }}>
+                      {order.status === "Open" && <Btn sm color="green" onClick={() => openConvert(order)}>Convert</Btn>}
+                      <Btn sm color="cancel" onClick={() => setViewing(order)}>View</Btn>
+                      <RowMenu items={[
+                        { label: `Advance payments (${order.payments?.length || 0})`, onClick: () => setAdvanceOrder(order) },
+                        { label: "Edit order", onClick: () => setEditing(order), disabled: locked, disabledReason: "Orders with refunds cannot be edited" },
+                        { label: "Refunds", onClick: () => setRefundOrder(order) },
+                      ]} />
+                    </div>
+                  </Td>
+                </tr>
+              );
+            })}
+          </tbody>
+          {visibleOrders.length > 0 && (
+            <tfoot>
+              <tr style={{ background: "#f5f3ff", borderTop: "2px solid #ddd6fe" }}>
+                <td colSpan={3} style={{ padding: "11px 14px", fontWeight: 800, fontSize: 12, color: "#4c1d95" }}>Total · {liveOrders.length} order{liveOrders.length === 1 ? "" : "s"}</td>
+                <td style={{ padding: "11px 14px", fontWeight: 800, color: "#0f1535", whiteSpace: "nowrap" }}>{money(pipelineValue)}</td>
+                <td style={{ padding: "11px 14px", fontWeight: 800, color: "#1f9d6b", whiteSpace: "nowrap" }}>{money(advanceTotal)}</td>
+                <td style={{ padding: "11px 14px", fontWeight: 800, color: balanceTotal > 0 ? "#c0392b" : "#9aa1b9", whiteSpace: "nowrap" }}>{balanceTotal > 0 ? money(balanceTotal) : "—"}</td>
+                <td colSpan={2} />
+              </tr>
+            </tfoot>
+          )}
         </table></TableWrap>
       )}
 
       <Modal open={!!converting} onClose={() => !saving && setConverting(null)} title={`Convert ${converting?.orderNo || "Order"} to Sale`}>
-        <div style={{ color: "#6b7392", fontSize: 12, marginBottom: 14 }}>The order will remain in this list with its original date. The new sale will use the date below.</div>
+        <div style={{ color: "#6b7392", fontSize: 12, marginBottom: 14 }}>The order will move to All Sales as a new sale dated below, and will be removed from this list.</div>
         <FormGroup label="Sale Date"><FormInput type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} /></FormGroup>
         <FormGroup label="Payment Mode"><FormSelect value={form.paymentMode} onChange={e => setForm(p => ({ ...p, paymentMode: e.target.value }))}>{["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
         {converting?.amountPaid > 0 && <div style={{ background:"#f0faf5", border:"1px solid #a8e2c6", color:"#13734d", padding:10, borderRadius:7, marginBottom:10 }}>Order advance already received: <strong>₹{(+converting.amountPaid).toLocaleString("en-IN")}</strong></div>}

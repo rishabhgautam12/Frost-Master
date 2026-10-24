@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { PageTitle, Btn, FormGroup, FormInput, FormSelect, SuccessToast } from "../components/Shared";
+import { PageTitle, Btn, FormGroup, FormInput, FormSelect, SuccessToast, roundTotal, formatRoundOff } from "../components/Shared";
 import { salesAPI, vendorAPI, productAPI, employeeAPI } from "../services/api";
 import QuickAddProduct from "../components/QuickAddProduct";
 
@@ -96,7 +96,7 @@ export default function CreatePurchase({ navigate }) {
     const c = calcItem(it);
     return { sub: s.sub + c.actual, billing: s.billing + c.billing, transport: s.transport + c.transport, gst: s.gst + c.gst };
   }, { sub:0, billing:0, transport:0, gst:0 });
-  const grand = totals.sub + totals.transport + totals.gst;
+  const { total: grand, roundOff } = roundTotal(totals.sub + totals.transport + totals.gst);
   const totalPaid = payments.reduce((sum, payment) => (
     payment.paymentMode === "Credit" ? sum : sum + (+payment.amount || 0)
   ), 0);
@@ -388,6 +388,11 @@ export default function CreatePurchase({ navigate }) {
             <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#e5a03a" }}>
               <span>Total GST</span><span>₹{totals.gst.toFixed(2)}</span>
             </div>
+            {roundOff !== 0 && (
+              <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", color:"#6b7392" }}>
+                <span>Round Off</span><span>{formatRoundOff(roundOff)}</span>
+              </div>
+            )}
             <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0",
               borderTop:"2px solid #e6e9f2", fontWeight:800, fontSize:15 }}>
               <span>Grand Total</span><span>₹{grand.toFixed(2)}</span>

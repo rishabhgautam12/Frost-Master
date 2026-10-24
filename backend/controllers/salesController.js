@@ -252,10 +252,17 @@ exports.getSales = async (req, res) => {
       if (from) filter.date.$gte = new Date(from);
       if (to)   filter.date.$lte = new Date(to + "T23:59:59");
     }
-    if (search) filter.$or = [
-      { invoiceNo:    { $regex: search, $options: "i" } },
-      { customerName: { $regex: search, $options: "i" } },
-    ];
+    if (search) {
+      const pattern = { $regex: String(search).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
+      const customers = await Customer.find({ $or: [{ name: pattern }, { phone: pattern }] }).select("_id");
+      filter.$or = [
+        { invoiceNo: pattern },
+        { customerName: pattern },
+        { salesEmployeeName: pattern },
+        { "items.productName": pattern },
+        { customer: { $in: customers.map(c => c._id) } },
+      ];
+    }
 
     const sales = await Sale.find(filter)
       .populate("customer", "name phone")
@@ -515,7 +522,8 @@ exports.convertQuotationToOrder = async (req, res) => {
 exports.getOrders = async (req, res) => {
   try {
     const { from, to } = req.query;
-    const filter = {};
+    // Converted orders live on as sales, so they leave the orders list.
+    const filter = { status: { $ne: "Converted" } };
     if (from || to) {
       filter.date = {};
       if (from) filter.date.$gte = new Date(from);
@@ -915,9 +923,9 @@ exports.getGSTReport = async (req, res) => {
     }
     const sales = await Sale.find(filter)
       .populate("customer", "name gstin")
-      .select("invoiceNo date customer customerName grandTotal totalGST cgst sgst igst isInterState saleType");
+      .select("invoiceNo date customer customerName grandTotal roundOff totalGST cgst sgst igst isInterState saleType");
     const summary = {
-      totalTaxable: sales.reduce((s,o) => s + (o.grandTotal - o.totalGST), 0),
+      totalTaxable: sales.reduce((s,o) => s + (o.grandTotal - (o.roundOff || 0) - o.totalGST), 0),
       totalCGST:    sales.reduce((s,o) => s + o.cgst, 0),
       totalSGST:    sales.reduce((s,o) => s + o.sgst, 0),
       totalIGST:    sales.reduce((s,o) => s + o.igst, 0),

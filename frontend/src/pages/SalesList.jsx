@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import {
-  PageTitle, Btn, SearchBar, Input, TableWrap, Th, Td, Badge,
+  PageTitle, Btn, TableWrap, Th, Td, Badge,
   LoadingSpinner, ErrorMsg, EmptyState, SuccessToast,
-  Modal, FormGroup, FormInput, FormSelect,
+  Modal, FormGroup, FormInput, FormSelect, roundTotal, formatRoundOff,
 } from "../components/Shared";
 import { salesAPI, customerAPI, productAPI, employeeAPI } from "../services/api";
 import { downloadCSV } from "../services/csvExport";
 import InvoiceDetailsFields, { partyDetailsFromCustomer } from "../components/InvoiceDetailsFields";
 import TransactionDetailsModal from "../components/TransactionDetailsModal";
 import RefundModal, { RefundHistory } from "../components/RefundModal";
+import {
+  periodRange, inPeriod, matchesSearch, money, FilterSelect, SearchInput, PeriodFilter,
+  StatusTabs, ClearFiltersButton, SummaryCards, RowMenu, toolbarStyle,
+} from "../components/ListFilters";
 
 const stColor = { Paid: "green", Partial: "yellow", Pending: "red", Cancelled: "gray" };
 function currentUser() {
@@ -33,18 +37,6 @@ const saleDateValue = value => {
   return new Date(value).toISOString().slice(0, 10);
 };
 
-const MONTHS = [
-  { value: "", label: "All Months" },
-  { value: "01", label: "January" },  { value: "02", label: "February" },
-  { value: "03", label: "March" },    { value: "04", label: "April" },
-  { value: "05", label: "May" },      { value: "06", label: "June" },
-  { value: "07", label: "July" },     { value: "08", label: "August" },
-  { value: "09", label: "September" },{ value: "10", label: "October" },
-  { value: "11", label: "November" }, { value: "12", label: "December" },
-];
-
-const currentYear = new Date().getFullYear();
-const YEARS = Array.from({ length: 4 }, (_, i) => currentYear - i);
 
 // ── Payment Modal ──────────────────────────────────────────────────────────────
 function PaymentModal({ sale, onClose, onDone }) {
@@ -356,7 +348,8 @@ function FullEditModal({ sale, onClose, onDone }) {
       total: sum.total + c.total,
     };
   }, { subtotal: 0, discount: 0, transport: 0, gst: 0, total: 0 });
-  const due = Math.max(0, totals.total - (+form.amountPaid || 0));
+  const { total: grandTotal, roundOff } = roundTotal(totals.total);
+  const due = Math.max(0, grandTotal - (+form.amountPaid || 0));
 
   const handleSave = async () => {
     setSaving(true); setErr("");
@@ -512,7 +505,8 @@ function FullEditModal({ sale, onClose, onDone }) {
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}><span>GST</span><strong>Rs {totals.gst.toFixed(2)}</strong></div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}><span>Transport</span><strong>Rs {totals.transport.toFixed(2)}</strong></div>
-          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e6e9f2", paddingTop: 9, fontSize: 16 }}><span>Grand Total</span><strong>Rs {totals.total.toFixed(2)}</strong></div>
+          {roundOff !== 0 && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7, color: "#6b7392" }}><span>Round Off</span><strong>{formatRoundOff(roundOff)}</strong></div>}
+          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e6e9f2", paddingTop: 9, fontSize: 16 }}><span>Grand Total</span><strong>Rs {grandTotal.toFixed(2)}</strong></div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, color: due > 0 ? "#e0524c" : "#1f9d6b" }}><span>Due</span><strong>Rs {due.toFixed(2)}</strong></div>
         </div>
       </div>
@@ -535,6 +529,7 @@ function ExpandedRow({ sale, cols }) {
             { label: "Invoice No",   value: sale.invoiceNo },
             { label: "Sale Type",    value: sale.saleType },
             { label: "Payment Mode", value: sale.paymentMode },
+            ...(+sale.roundOff ? [{ label: "Round Off", value: formatRoundOff(sale.roundOff) }] : []),
             { label: "Grand Total",  value: `₹${sale.grandTotal.toLocaleString()}` },
             { label: "Amount Paid",  value: `₹${sale.amountPaid.toLocaleString()}` },
             { label: "Balance Due",  value: sale.amountDue > 0 ? `₹${sale.amountDue.toLocaleString()}` : "—" },
@@ -595,6 +590,25 @@ function ExpandedRow({ sale, cols }) {
   );
 }
 
+// ── List filters ───────────────────────────────────────────────────────────────
+const SORTS = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "amountDesc", label: "Amount: high to low" },
+  { value: "amountAsc",  label: "Amount: low to high" },
+  { value: "dueDesc",    label: "Due: high to low" },
+];
+const STATUSES = ["Paid", "Partial", "Pending", "Cancelled"];
+const PAYMENT_MODES = ["Cash", "UPI", "Card", "Bank Transfer", "Cheque", "Credit", "Multiple"];
+
+const searchableText = s => [
+  s.invoiceNo, s.customer?.name, s.customerName, s.customer?.phone,
+  s.salesEmployee?.name, s.salesEmployeeName, s.soldByName, s.notes, s.paymentMode, s.saleType,
+  Math.round(s.grandTotal || 0),
+  ...(s.items || []).flatMap(i => [i.productName, i.product?.name, i.product?.modelNumber, i.description]),
+].filter(Boolean).join(" ").toLowerCase();
+const salespersonOf = s => s.salesEmployee?.name || s.salesEmployeeName || "";
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function SalesList({ navigate }) {
   const [targetSale] = useState(() => {
@@ -602,14 +616,17 @@ export default function SalesList({ navigate }) {
     catch { return null; }
   });
   const [sales,    setSales]    = useState([]);
-  const [summary,  setSummary]  = useState({});
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
   const [search,   setSearch]   = useState(targetSale?.invoiceNo || "");
   const [status,   setStatus]   = useState("");
-  const [month,    setMonth]    = useState("");
-  const [year,     setYear]     = useState(targetSale?.date ? String(new Date(targetSale.date).getFullYear()) : String(currentYear));
-  const [dateFilter, setDateFilter] = useState("");
+  const [period,   setPeriod]   = useState("all");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo,   setCustomTo]   = useState("");
+  const [saleType, setSaleType] = useState("");
+  const [paymentMode, setPaymentMode] = useState("");
+  const [salesperson, setSalesperson] = useState("");
+  const [sort,     setSort]     = useState("newest");
   const [toast,    setToast]    = useState(null);
   const [payModal, setPayModal] = useState(null);
   const [paymentDrawer, setPaymentDrawer] = useState(null);
@@ -618,28 +635,15 @@ export default function SalesList({ navigate }) {
   const [detailModal, setDetailModal] = useState(null);
   const [editModal,setEditModal]= useState(null);
   const isAdmin = currentUser()?.role === "admin";
+  const canComplaints = isAdmin || currentUser()?.permissions?.complaints_view;
 
-  // Derive date range from month + year pickers
-  const getDateRange = (exactDate = dateFilter, selectedMonth = month, selectedYear = year) => {
-    if (exactDate) return { from: exactDate, to: exactDate };
-    if (!selectedMonth) {
-      return { from: `${selectedYear}-01-01`, to: `${selectedYear}-12-31` };
-    }
-    const lastDay = new Date(parseInt(selectedYear), parseInt(selectedMonth), 0).getDate();
-    return { from: `${selectedYear}-${selectedMonth}-01`, to: `${selectedYear}-${selectedMonth}-${lastDay}` };
-  };
-
-  const load = (filters = {}) => {
+  // All sales are loaded once; every filter below runs instantly in the browser.
+  const load = () => {
     setLoading(true);
-    const range  = getDateRange(filters.dateFilter, filters.month, filters.year);
-    const params = { from: range.from, to: range.to };
-    const selectedStatus = filters.status ?? status;
-    const selectedSearch = filters.search ?? search;
-    if (selectedStatus) params.status = selectedStatus;
-    if (selectedSearch) params.search = selectedSearch;
-    salesAPI.getAll(params)
-      .then((r) => { setSales(r.data); setSummary(r.summary || {}); setLoading(false); })
-      .catch((e) => { setError(e.message); setLoading(false); });
+    salesAPI.getAll()
+      .then((r) => { setSales(r.data || []); setError(null); })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -667,169 +671,189 @@ export default function SalesList({ navigate }) {
   const afterPay  = (msg) => { setPayModal(null);  showToast(msg); load(); };
   const afterEdit = (msg) => { setEditModal(null); showToast(msg); load(); };
 
-  // Totals from current list
-  const activeSales = sales.filter(s => s.status !== "Cancelled");
+  // ── Filtering ──
+  const range = periodRange(period, customFrom, customTo);
+  const salespeople = [...new Set(sales.map(salespersonOf).filter(Boolean))].sort();
+
+  // Everything except the status tab, so the tab counts reflect the other filters.
+  const baseSales = sales.filter(s =>
+    inPeriod(s.date, range)
+    && (!saleType || s.saleType === saleType)
+    && (!paymentMode || s.paymentMode === paymentMode)
+    && (!salesperson || salespersonOf(s) === salesperson)
+    && matchesSearch(searchableText(s), search)
+  );
+  const statusCounts = STATUSES.reduce((acc, st) => ({ ...acc, [st]: baseSales.filter(s => s.status === st).length }), {});
+  const visibleSales = baseSales
+    .filter(s => !status || s.status === status)
+    .sort((a, b) => {
+      if (sort === "oldest") return new Date(a.date) - new Date(b.date);
+      if (sort === "amountDesc") return (b.grandTotal || 0) - (a.grandTotal || 0);
+      if (sort === "amountAsc") return (a.grandTotal || 0) - (b.grandTotal || 0);
+      if (sort === "dueDesc") return (b.amountDue || 0) - (a.amountDue || 0);
+      return new Date(b.date) - new Date(a.date) || String(b.invoiceNo).localeCompare(String(a.invoiceNo));
+    });
+
+  const activeFilterCount = [search.trim(), status, period !== "all", saleType, paymentMode, salesperson].filter(Boolean).length;
+  const clearFilters = () => {
+    setSearch(""); setStatus(""); setPeriod("all"); setCustomFrom(""); setCustomTo("");
+    setSaleType(""); setPaymentMode(""); setSalesperson("");
+  };
+
+  // Totals from the filtered list
+  const activeSales = visibleSales.filter(s => s.status !== "Cancelled");
   const totalRevenue  = activeSales.reduce((s, o) => s + (o.grandTotal || 0), 0);
   const totalReceived = activeSales.reduce((s, o) => s + (o.amountPaid || 0), 0);
   const totalDue      = activeSales.reduce((s, o) => s + (o.amountDue  || 0), 0);
-  const dueCount      = sales.filter(o => o.amountDue > 0 && o.status !== "Cancelled").length;
+  const dueCount      = activeSales.filter(o => o.amountDue > 0).length;
 
-  const COLS = 10;
+  const COLS = 7;
 
   return (
     <div>
-      <PageTitle>All Sales</PageTitle>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+        <PageTitle>All Sales</PageTitle>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+          <Btn color="cancel" onClick={() => navigate("gst-report")}>GST Report</Btn>
+          <Btn color="cancel" onClick={() => downloadCSV(visibleSales, [
+            { label: "Invoice No.",  key: "invoiceNo"     },
+            { label: "Date",         key: "date"          },
+            { label: "Customer",     key: "customer.name" },
+            { label: "Sale Type",    key: "saleType"      },
+            { label: "Payment Mode", key: "paymentMode"   },
+            { label: "Total (₹)",    key: "grandTotal"    },
+            { label: "GST (₹)",      key: "totalGST"      },
+            { label: "Paid (₹)",     key: "amountPaid"    },
+            { label: "Due (₹)",      key: "amountDue"     },
+            { label: "Status",       key: "status"        },
+            { label: "Notes",        key: "notes"         },
+          ], "sales")}>Export CSV</Btn>
+          <Btn color="teal" onClick={() => navigate("sale-create")}>+ Create Sale</Btn>
+        </div>
+      </div>
       {toast && <SuccessToast msg={toast} />}
 
-      {/* ── Summary Cards ── */}
-      <div className="sales-summary-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 12, marginBottom: 16 }}>
-        {[
-          { label: "Total Sales",     value: sales.length,                          color: "#5a8be8", icon: "🧾" },
-          { label: "Total Revenue",   value: `₹${totalRevenue.toLocaleString()}`,   color: "#d946ef", icon: "💼" },
-          { label: "Amount Received", value: `₹${totalReceived.toLocaleString()}`,  color: "#1f9d6b", icon: "✅" },
-          { label: "Amount Due",      value: `₹${totalDue.toLocaleString()}`,       color: "#e0524c", icon: "🔴" },
-        ].map((c, i) => (
-          <div className="sales-summary-card" key={i} style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #e6e9f2", borderLeft: `4px solid ${c.color}` }}>
-            <div className="sales-summary-label" style={{ fontSize: 11, color: "#6b7392", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
-              {c.icon} {c.label}
-            </div>
-            <div className="sales-summary-value" style={{ fontSize: 22, fontWeight: 800, color: "#0f1535", marginTop: 4 }}>{c.value}</div>
-          </div>
-        ))}
-      </div>
+      {/* ── Summary Cards (follow the filters) ── */}
+      <SummaryCards cards={[
+        { label: "Invoices",    value: visibleSales.length,  color: "#5a8be8", sub: activeFilterCount ? `of ${sales.length} total` : "all time" },
+        { label: "Revenue",     value: money(totalRevenue),  color: "#7c3aed", sub: "excludes cancelled" },
+        { label: "Received",    value: money(totalReceived), color: "#1f9d6b", sub: totalRevenue > 0 ? `${((totalReceived / totalRevenue) * 100).toFixed(1)}% collected` : "—" },
+        { label: "Outstanding", value: money(totalDue),      color: "#e0524c", sub: dueCount ? `${dueCount} invoice${dueCount > 1 ? "s" : ""} pending` : "all cleared" },
+      ]} />
 
-      {/* ── Collection Progress Bar ── */}
-      {totalRevenue > 0 && (
-        <div style={{ background: "#fff", border: "1px solid #e6e9f2", borderRadius: 10, padding: "12px 18px", marginBottom: 16, display: "flex", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ fontSize: 12, color: "#6b7392", fontWeight: 700, whiteSpace: "nowrap" }}>💰 Collection Status</div>
-          <div style={{ flex: 1, minWidth: 180 }}>
-            <div style={{ height: 8, borderRadius: 20, background: "#fdeceb", overflow: "hidden" }}>
-              <div style={{ height: "100%", borderRadius: 20, background: "#1f9d6b", width: `${Math.min(100, (totalReceived / totalRevenue) * 100).toFixed(1)}%`, transition: "width 0.6s" }} />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 10.5 }}>
-              <span style={{ color: "#1f9d6b", fontWeight: 700 }}>Collected: {((totalReceived / totalRevenue) * 100).toFixed(1)}%</span>
-              <span style={{ color: "#e0524c", fontWeight: 700 }}>Pending: {((totalDue / totalRevenue) * 100).toFixed(1)}%</span>
-            </div>
-          </div>
-          <div style={{ fontSize: 12, color: "#e0524c", fontWeight: 800, whiteSpace: "nowrap" }}>
-            {dueCount > 0 ? `${dueCount} invoice${dueCount > 1 ? "s" : ""} pending` : "All cleared ✅"}
+      {/* ── Toolbar ── */}
+      <div style={toolbarStyle}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <SearchInput value={search} onChange={setSearch} label="Search sales"
+            placeholder="Search invoice, customer, phone, product, salesperson…" />
+          <PeriodFilter period={period} setPeriod={setPeriod} customFrom={customFrom} setCustomFrom={setCustomFrom} customTo={customTo} setCustomTo={setCustomTo} />
+          <FilterSelect label="Sort" value={sort} onChange={setSort}>
+            {SORTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </FilterSelect>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
+          <StatusTabs value={status} onChange={setStatus} tabs={[
+            { value: "", label: "All", count: baseSales.length },
+            ...STATUSES.map(st => ({ value: st, label: st, count: statusCounts[st] })),
+          ]} />
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <FilterSelect label="Sale type" value={saleType} onChange={setSaleType}>
+              <option value="">All types</option>
+              {["GST Invoice", "Cash Sale"].map(t => <option key={t}>{t}</option>)}
+            </FilterSelect>
+            <FilterSelect label="Payment mode" value={paymentMode} onChange={setPaymentMode}>
+              <option value="">All payment modes</option>
+              {PAYMENT_MODES.map(m => <option key={m}>{m}</option>)}
+            </FilterSelect>
+            {salespeople.length > 0 && (
+              <FilterSelect label="Salesperson" value={salesperson} onChange={setSalesperson}>
+                <option value="">All salespeople</option>
+                {salespeople.map(p => <option key={p}>{p}</option>)}
+              </FilterSelect>
+            )}
+            <ClearFiltersButton count={activeFilterCount} onClick={clearFilters} />
           </div>
         </div>
-      )}
-
-      {/* ── Action Buttons ── */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-        <Btn color="teal"  onClick={() => navigate("sale-create")}>+ Create Sale</Btn>
-        <Btn color="blue"  onClick={() => navigate("gst-report")}>📊 GST Report</Btn>
-        <Btn color="green" onClick={() => downloadCSV(sales, [
-          { label: "Invoice No.",  key: "invoiceNo"     },
-          { label: "Date",         key: "date"          },
-          { label: "Customer",     key: "customer.name" },
-          { label: "Sale Type",    key: "saleType"      },
-          { label: "Payment Mode", key: "paymentMode"   },
-          { label: "Total (₹)",    key: "grandTotal"    },
-          { label: "GST (₹)",      key: "totalGST"      },
-          { label: "Paid (₹)",     key: "amountPaid"    },
-          { label: "Due (₹)",      key: "amountDue"     },
-          { label: "Status",       key: "status"        },
-          { label: "Notes",        key: "notes"         },
-        ], "all_sales")}>⬇ Export CSV</Btn>
       </div>
-
-      {/* ── Filters ── */}
-      <SearchBar>
-        <Input placeholder="Search invoice / customer..." value={search}
-          onChange={(e) => setSearch(e.target.value)} style={{ minWidth: 200 }} />
-        <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} title="Filter by exact date" />
-        <select value={month} onChange={(e) => setMonth(e.target.value)}
-          style={{ padding: "7px 10px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, background: "#fafbfe" }}>
-          {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-        </select>
-        <select value={year} onChange={(e) => setYear(e.target.value)}
-          style={{ padding: "7px 10px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, background: "#fafbfe" }}>
-          {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)}
-          style={{ padding: "7px 10px", border: "1px solid #dde1ec", borderRadius: 6, fontSize: 12, background: "#fafbfe" }}>
-          <option value="">All Status</option>
-          {["Paid","Partial","Pending","Cancelled"].map(s => <option key={s}>{s}</option>)}
-        </select>
-        <Btn color="blue" onClick={load}>Filter</Btn>
-        <Btn color="cancel" onClick={() => {
-          setSearch(""); setMonth(""); setYear(String(currentYear)); setStatus(""); setDateFilter("");
-          load({ dateFilter:"", month:"", year:String(currentYear), status:"", search:"" });
-        }}>Reset</Btn>
-      </SearchBar>
 
       {loading ? <LoadingSpinner /> : error ? <ErrorMsg message={error} onRetry={load} /> : (
         <TableWrap>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr>
-                {["Invoice No.", "Date", "Customer", "Type", "Payment", "Total ₹", "Paid ₹", "Due ₹", "Status", "Actions"].map(h => <Th key={h}>{h}</Th>)}
+                {["Invoice", "Customer", "Total", "Paid", "Due", "Status", ""].map(h => <Th key={h}>{h}</Th>)}
               </tr>
             </thead>
             <tbody>
-              {sales.length === 0 ? (
-                <tr><td colSpan={COLS}><EmptyState text="No sales found for the selected period." /></td></tr>
-              ) : sales.map(s => (
+              {visibleSales.length === 0 ? (
+                <tr><td colSpan={COLS}>
+                  <EmptyState text={sales.length ? "No sales match these filters." : "No sales yet."} />
+                  {activeFilterCount > 0 && <div style={{ textAlign: "center", marginTop: -36, paddingBottom: 28 }}><Btn sm color="cancel" onClick={clearFilters}>Clear filters</Btn></div>}
+                </td></tr>
+              ) : visibleSales.map(s => {
+                const refunded = (s.refunds || []).reduce((sum, r) => sum + r.amount, 0);
+                const locked = !!s.refunds?.length;
+                return (
                   <tr key={s._id}
-                    style={{ borderBottom: "1px solid #f1f3f9", background: s.amountDue > 0 && s.status !== "Cancelled" ? "#fff9f9" : "" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#f5f3ff"}
-                    onMouseLeave={e => e.currentTarget.style.background = s.amountDue > 0 && s.status !== "Cancelled" ? "#fff9f9" : ""}
+                    style={{ borderBottom: "1px solid #f1f3f9", opacity: s.status === "Cancelled" ? 0.62 : 1 }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#faf8ff"}
+                    onMouseLeave={e => e.currentTarget.style.background = ""}
                   >
-                    <Td style={{ fontFamily: "monospace", color: "#0ea5e9", fontSize: 11 }}>{s.invoiceNo}</Td>
-                    <Td>{new Date(s.date).toLocaleDateString("en-IN")}</Td>
-                    <Td style={{ fontWeight: 700 }}>{s.customer?.name || s.customerName || "Walk-in"}</Td>
-                    <Td>{s.saleType}</Td>
-                    <Td>{s.paymentMode}</Td>
-                    <Td style={{ fontWeight: 700 }}>₹{s.grandTotal.toLocaleString()}</Td>
-                    <Td style={{ color: "#1f9d6b", fontWeight: 700 }}>₹{s.amountPaid.toLocaleString()}</Td>
-                    <Td>
-                      {s.amountDue > 0
-                        ? <span style={{ color: "#e0524c", fontWeight: 700, background: "#fdeceb", padding: "2px 7px", borderRadius: 20, fontSize: 11 }}>
-                            ₹{s.amountDue.toLocaleString()}
-                          </span>
-                        : <span style={{ color: "#9aa1b9" }}>—</span>
-                      }
+                    <Td style={{ whiteSpace: "nowrap" }}>
+                      <button type="button" onClick={() => setDetailModal(s)}
+                        style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "monospace", color: "#0284c7", fontWeight: 700, fontSize: 12, whiteSpace: "nowrap" }}>
+                        {s.invoiceNo}
+                      </button>
+                      <div style={{ fontSize: 11, color: "#6b7392", marginTop: 3 }}>{new Date(s.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
+                      <div style={{ fontSize: 10.5, color: "#9aa1b9", marginTop: 1 }}>{s.saleType} · {s.paymentMode}</div>
                     </Td>
-                    <Td><Badge color={stColor[s.status] || "gray"}>{s.status}</Badge>{!!s.refunds?.length && <div style={{color:"#b45309",fontWeight:700,marginTop:5}}>Refunded ₹{s.refunds.reduce((sum,r)=>sum+r.amount,0).toLocaleString("en-IN")}</div>}</Td>
                     <Td>
-                      <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                        <Btn sm color="blue" onClick={() => setDetailModal(s)}>View Details</Btn>
-                        {(isAdmin || currentUser()?.permissions?.complaints_view) && <Btn sm color="purple" onClick={() => { sessionStorage.setItem("complaintTarget", JSON.stringify({ referenceId:s._id, invoiceNo:s.invoiceNo })); navigate("complaints-active"); }}>Service / Complaints</Btn>}
-                        <Btn sm color="teal" onClick={() => setPaymentDrawer(s)}>Payments ({s.payments?.length || 0})</Btn>
-                        <Btn sm color="red" onClick={() => setRefundSale(s)}>Refunds</Btn>
-                        <Btn sm color="blue" disabled={!!s.refunds?.length} onClick={() => setEditModal(s)}>✏️ Edit</Btn>
-                        {isAdmin && <Btn sm color="red" disabled={!!s.refunds?.length} onClick={() => handleDelete(s)}>Delete</Btn>}
-                        {s.status !== "Cancelled" && (
-                          <Btn sm color="red" onClick={() => s.refunds?.length ? setRefundSale(s) : handleCancel(s._id)}>✕</Btn>
-                        )}
+                      <div style={{ fontWeight: 700, color: "#0f1535" }}>{s.customer?.name || s.customerName || "Walk-in"}</div>
+                      {s.customer?.phone && <div style={{ fontSize: 11, color: "#9aa1b9", marginTop: 2 }}>{s.customer.phone}</div>}
+                      {salespersonOf(s) && <div style={{ fontSize: 11, color: "#6b7392", marginTop: 2 }}>by {salespersonOf(s)}</div>}
+                    </Td>
+                    <Td style={{ fontWeight: 800, color: "#0f1535", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{money(s.grandTotal)}</Td>
+                    <Td style={{ color: "#1f9d6b", fontWeight: 700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{money(s.amountPaid)}</Td>
+                    <Td style={{ whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                      {s.amountDue > 0 && s.status !== "Cancelled"
+                        ? <span style={{ color: "#c0392b", fontWeight: 700 }}>{money(s.amountDue)}</span>
+                        : <span style={{ color: "#b8bdd0" }}>—</span>}
+                    </Td>
+                    <Td>
+                      <Badge color={stColor[s.status] || "gray"}>{s.status}</Badge>
+                      {refunded > 0 && <div style={{ color: "#b45309", fontWeight: 700, fontSize: 11, marginTop: 4 }}>Refunded {money(refunded)}</div>}
+                    </Td>
+                    <Td>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", justifyContent: "flex-end" }}>
+                        {s.status !== "Cancelled" && s.amountDue > 0 && <Btn sm color="green" onClick={() => setPayModal(s)}>Pay</Btn>}
+                        <Btn sm color="cancel" onClick={() => setDetailModal(s)}>View</Btn>
+                        <RowMenu items={[
+                          { label: `Payment history (${s.payments?.length || 0})`, onClick: () => setPaymentDrawer(s) },
+                          { label: "Edit sale", onClick: () => setEditModal(s), disabled: locked, disabledReason: "Sales with refunds cannot be edited" },
+                          { label: "Service / Complaints", hidden: !canComplaints, onClick: () => { sessionStorage.setItem("complaintTarget", JSON.stringify({ referenceId: s._id, invoiceNo: s.invoiceNo })); navigate("complaints-active"); } },
+                          { label: "Refunds", onClick: () => setRefundSale(s) },
+                          { label: "Cancel sale", danger: true, hidden: s.status === "Cancelled", onClick: () => locked ? setRefundSale(s) : handleCancel(s._id) },
+                          { label: "Delete sale", danger: true, hidden: !isAdmin, disabled: locked, disabledReason: "Sales with refunds cannot be deleted", onClick: () => handleDelete(s) },
+                        ]} />
                       </div>
                     </Td>
                   </tr>
-              ))}
+                );
+              })}
             </tbody>
 
             {/* ── Footer Totals Row ── */}
-            {sales.length > 0 && (
+            {visibleSales.length > 0 && (
               <tfoot>
-                <tr style={{ background: "#ede9fe", borderTop: "2px solid #8b5cf6" }}>
-                  <td colSpan={5} style={{ padding: "10px 12px", fontWeight: 800, fontSize: 12, color: "#8a5a12" }}>
-                    📊 TOTAL ({sales.length} invoice{sales.length > 1 ? "s" : ""})
+                <tr style={{ background: "#f5f3ff", borderTop: "2px solid #ddd6fe" }}>
+                  <td colSpan={2} style={{ padding: "11px 14px", fontWeight: 800, fontSize: 12, color: "#4c1d95" }}>
+                    Total · {visibleSales.length} invoice{visibleSales.length > 1 ? "s" : ""}
                   </td>
-                  <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 13, color: "#0f1535" }}>
-                    ₹{totalRevenue.toLocaleString()}
-                  </td>
-                  <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 13, color: "#1f9d6b" }}>
-                    ₹{totalReceived.toLocaleString()}
-                  </td>
-                  <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 13, color: totalDue > 0 ? "#e0524c" : "#9aa1b9" }}>
-                    {totalDue > 0 ? `₹${totalDue.toLocaleString()}` : "—"}
-                  </td>
-                  <td colSpan={2} style={{ padding: "10px 12px", fontSize: 11, color: "#8a5a12" }}>
-                    {dueCount > 0 ? `⚠️ ${dueCount} invoice${dueCount > 1 ? "s" : ""} have pending dues` : "✅ All invoices cleared"}
-                  </td>
+                  <td style={{ padding: "11px 14px", fontWeight: 800, color: "#0f1535", whiteSpace: "nowrap" }}>{money(totalRevenue)}</td>
+                  <td style={{ padding: "11px 14px", fontWeight: 800, color: "#1f9d6b", whiteSpace: "nowrap" }}>{money(totalReceived)}</td>
+                  <td style={{ padding: "11px 14px", fontWeight: 800, color: totalDue > 0 ? "#c0392b" : "#9aa1b9", whiteSpace: "nowrap" }}>{totalDue > 0 ? money(totalDue) : "—"}</td>
+                  <td colSpan={2} />
                 </tr>
               </tfoot>
             )}

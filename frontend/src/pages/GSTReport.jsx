@@ -67,7 +67,7 @@ export default function GSTReport() {
               {data.length === 0 ? (
                 <tr><td colSpan={9} style={{ padding: 40, textAlign: "center", color: "#9aa1b9" }}>No sales in this period</td></tr>
               ) : data.map((s) => {
-                const taxable = s.grandTotal - s.totalGST;
+                const taxable = s.grandTotal - (s.roundOff || 0) - s.totalGST;
                 return (
                   <tr key={s._id} style={{ borderBottom: "1px solid #f1f3f9" }}>
                     <Td style={{ fontFamily: "monospace", color: "#0ea5e9" }}>{s.invoiceNo}</Td>

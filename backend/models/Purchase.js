@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { applyRoundOff } = require("../utils/roundOff");
 
 const purchaseItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
@@ -42,6 +43,7 @@ const purchaseSchema = new mongoose.Schema(
     transportTotal: { type: Number, default: 0 },
     totalGST: { type: Number, default: 0 },
     grandTotal: { type: Number, default: 0 },
+    roundOff: { type: Number },
     amountPaid: { type: Number, default: 0 },
     payments: { type: [purchasePaymentSchema], default: [] },
     paymentMode: {
@@ -68,7 +70,7 @@ purchaseSchema.pre("save", async function (next) {
   this.billingSubtotal = this.items.reduce((s, i) => s + (+i.billingTotal || 0), 0);
   this.transportTotal = this.items.reduce((s, i) => s + (+i.transportAmount || 0), 0);
   this.totalGST = this.items.reduce((s, i) => s + (+i.gstAmount || 0) + (+i.transportGstAmount || 0), 0);
-  this.grandTotal = this.subtotal + this.transportTotal + this.totalGST;
+  applyRoundOff(this, this.subtotal + this.transportTotal + this.totalGST);
   if (Array.isArray(this.payments) && this.payments.length > 0) {
     this.amountPaid = Math.min(
       this.grandTotal,
