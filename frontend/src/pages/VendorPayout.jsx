@@ -89,7 +89,7 @@ export default function VendorPayout({ navigate }) {
       {loading ? <LoadingSpinner /> : error ? <ErrorMsg message={error} onRetry={load} /> : (
         <>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-            <div style={{ fontWeight:700, fontSize:14, color:"#0f1535" }}>⏳ Pending Payouts</div>
+            <div style={{ fontWeight:700, fontSize:14, color:"#0f1535" }}>Pending Payouts</div>
             <Btn color="green" onClick={() => downloadCSV(pending, [
               { label:"Vendor",        key:"vendor.name" },
               { label:"Invoice/Ref",   key:"invoiceNo"   },
@@ -97,7 +97,7 @@ export default function VendorPayout({ navigate }) {
               { label:"Amount (₹)",    key:"amount"      },
               { label:"Paid (₹)",      key:"paid"        },
               { label:"Status",        key:"status"      },
-            ], "vendor_pending_payouts")}>⬇ Export CSV</Btn>
+            ], "vendor_pending_payouts")}>Export CSV</Btn>
           </div>
           <TableWrap>
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
@@ -109,7 +109,7 @@ export default function VendorPayout({ navigate }) {
                 {pending.length === 0 ? (
                   <tr>
                     <td colSpan={8} style={{ padding:40, textAlign:"center", color:"#9aa1b9" }}>
-                      🎉 All vendor payments are settled!
+                      All vendor payments are settled!
                     </td>
                   </tr>
                 ) : pending.map(e => {
@@ -137,7 +137,7 @@ export default function VendorPayout({ navigate }) {
                       </Td>
                       <Td>
                         <Btn sm color="teal" onClick={() => openPayModal(e)}>
-                          💳 Pay Now
+                          Pay Now
                         </Btn>
                       </Td>
                     </tr>
@@ -220,7 +220,7 @@ export default function VendorPayout({ navigate }) {
                     textTransform:"uppercase", marginBottom:3 }}>After This Payment</div>
                   <Badge color={leftAfter === 0 ? "green" : paying > 0 ? "yellow" : "red"}>
                     {leftAfter === 0 && paying > 0
-                      ? "✅ Fully Settled"
+                      ? "Fully Settled"
                       : paying > 0
                       ? `₹${leftAfter.toLocaleString()} remaining`
                       : "—"}
@@ -236,7 +236,7 @@ export default function VendorPayout({ navigate }) {
                     placeholder={`Max ₹${bal.toLocaleString()}`} />
                   {paying > bal && (
                     <div style={{ color:"#e0524c", fontSize:10, marginTop:3 }}>
-                      ⚠️ Cannot exceed balance of ₹{bal.toLocaleString()}
+                      Cannot exceed balance of ₹{bal.toLocaleString()}
                     </div>
                   )}
                 </FormGroup>
@@ -262,7 +262,7 @@ export default function VendorPayout({ navigate }) {
                 <Btn color="cancel" onClick={() => setPayModal(null)}>Cancel</Btn>
                 <Btn color="teal" onClick={handlePay}
                   disabled={saving || !form.amount || +form.amount <= 0 || +form.amount > bal}>
-                  {saving ? "Processing..." : `💸 Pay ₹${(+form.amount||0).toLocaleString()}`}
+                  {saving ? "Processing..." : `Pay ₹${(+form.amount||0).toLocaleString()}`}
                 </Btn>
               </div>
             </div>

@@ -316,6 +316,30 @@
 
 .fm-crumb-home:hover { background: #fff; color: var(--primary); }
 
+.fm-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px 0 10px;
+  flex-shrink: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+}
+
+.fm-back-btn:hover { color: var(--primary); border-color: var(--primary-300); background: var(--primary-50); }
+
+@media (max-width: 767px) {
+  .fm-back-btn { width: 36px; padding: 0; justify-content: center; }
+  .fm-back-btn span { display: none; }
+}
+
 .fm-crumb-sep { color: #c5cbdd; }
 
 .fm-crumb-current {

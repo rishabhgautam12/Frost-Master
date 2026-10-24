@@ -88,11 +88,11 @@ export default function ProductStock({ navigate }) {
       {/* ── Summary Cards ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(145px,1fr))", gap: 12, marginBottom: 18 }}>
         {[
-          { label: "Total Stock Units",  value: totalUnits,                          color: "#5a8be8", icon: "📦" },
-          { label: "Stock Value", value: `₹${totalValue.toLocaleString()}`,   color: "#d946ef", icon: "💰" },
-          { label: "Low Stock Items",    value: lowStock,                             color: "#e5a03a", icon: "⚠️" },
-          { label: "Out of Stock",       value: outOfStock,                           color: "#e0524c", icon: "🚫" },
-          { label: "Negative Stock",     value: negativeStock,                        color: "#d0433d", icon: "📉" },
+          { label: "Total Stock Units",  value: totalUnits,                          color: "#5a8be8", icon: "" },
+          { label: "Stock Value", value: `₹${totalValue.toLocaleString()}`,   color: "#d946ef", icon: "" },
+          { label: "Low Stock Items",    value: lowStock,                             color: "#e5a03a", icon: "" },
+          { label: "Out of Stock",       value: outOfStock,                           color: "#e0524c", icon: "" },
+          { label: "Negative Stock",     value: negativeStock,                        color: "#d0433d", icon: "" },
         ].map((c, i) => {
           const key = ["all", "value", "low", "out", "negative"][i];
           const active = stockFilter === key;
@@ -118,7 +118,7 @@ export default function ProductStock({ navigate }) {
       {/* Negative stock warning banner */}
       {negativeStock > 0 && (
         <div style={{ background: "#fef2f2", border: "1px solid #f3b8b4", borderRadius: 8, padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "#b91c1c", display: "flex", alignItems: "center", gap: 8 }}>
-          📉 <strong>{negativeStock} product{negativeStock > 1 ? "s have" : " has"} negative stock</strong> — sales have been recorded beyond available stock. Please restock or verify.
+          <strong>{negativeStock} product{negativeStock > 1 ? "s have" : " has"} negative stock</strong> — sales have been recorded beyond available stock. Please restock or verify.
         </div>
       )}
 
@@ -141,7 +141,7 @@ export default function ProductStock({ navigate }) {
           { label: "Warehouse Stock", key: "warehouseText" },
           { label: "Min Alert",      key: "minStockAlert" },
           { label: "GST Rate",       key: "gstRate"       },
-        ], "product_stock")}>⬇ Export CSV</Btn>
+        ], "product_stock")}>Export CSV</Btn>
       </div>
 
       <SearchBar>
@@ -185,7 +185,7 @@ export default function ProductStock({ navigate }) {
                           color: isNeg ? "#d0433d" : p.stock === 0 ? "#e0524c" : p.stock <= p.minStockAlert ? "#e5a03a" : "#0f1535",
                         }}>
                           {p.stock}
-                          {isNeg && <span style={{ fontSize: 10, marginLeft: 3 }}>📉</span>}
+                          {isNeg && <span style={{ fontSize: 10, marginLeft: 3 }}></span>}
                         </span>
                       </Td>
                       <Td style={{ color: "#6b7392" }}>{p.minStockAlert}</Td>
@@ -209,7 +209,7 @@ export default function ProductStock({ navigate }) {
               <tfoot>
                 <tr style={{ background: "#ede9fe", borderTop: "2px solid #8b5cf6" }}>
                   <td colSpan={6} style={{ padding: "10px 12px", fontWeight: 800, fontSize: 12, color: "#8a5a12" }}>
-                    📊 TOTAL ({filteredProducts.length} products)
+                    TOTAL ({filteredProducts.length} products)
                   </td>
                   <td style={{ padding: "10px 12px", fontWeight: 800, fontSize: 14,
                     color: filteredUnits < 0 ? "#d0433d" : "#0f1535" }}>
@@ -221,10 +221,10 @@ export default function ProductStock({ navigate }) {
                   </td>
                   <td colSpan={2} style={{ padding: "10px 12px", fontSize: 11, color: "#8a5a12" }}>
                     {negativeStock > 0
-                      ? `⚠️ ${negativeStock} product${negativeStock > 1 ? "s" : ""} in negative`
+                      ? `${negativeStock} product${negativeStock > 1 ? "s" : ""} in negative`
                       : outOfStock > 0
-                        ? `🚫 ${outOfStock} out of stock`
-                        : "✅ All stocked"
+                        ? `${outOfStock} out of stock`
+                        : "All stocked"
                     }
                   </td>
                 </tr>
@@ -296,14 +296,14 @@ export default function ProductStock({ navigate }) {
 
             {previewStock < 0 && (
               <div style={{ background: "#fef2f2", border: "1px solid #f3b8b4", borderRadius: 7, padding: "8px 12px", marginBottom: 12, fontSize: 11.5, color: "#b91c1c" }}>
-                ⚠️ This will result in negative stock ({previewStock} units). Proceed only if intentional.
+                This will result in negative stock ({previewStock} units). Proceed only if intentional.
               </div>
             )}
 
             <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
               <Btn color="cancel" onClick={() => setAdjModal(null)}>Cancel</Btn>
               <Btn color="teal" onClick={handleAdj} disabled={saving}>
-                {saving ? "Saving..." : "💾 Update Stock"}
+                {saving ? "Saving..." : "Update Stock"}
               </Btn>
             </div>
           </div>

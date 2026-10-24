@@ -156,7 +156,7 @@ export default function VendorLedger({ navigate }) {
           { label:"Amount (₹)",  key:"amount"      },
           { label:"Paid (₹)",    key:"paid"        },
           { label:"Status",      key:"status"      },
-        ], "vendor_ledger")}>⬇ Download CSV</Btn>
+        ], "vendor_ledger")}>Download CSV</Btn>
       </div>
 
       <SearchBar>
@@ -288,7 +288,7 @@ export default function VendorLedger({ navigate }) {
                     <Td>
                       {isPurchase && bal > 0 && (
                         <Btn sm color="teal" onClick={() => navigate("vendor-payout")}>
-                          💳 Pay
+                          Pay
                         </Btn>
                       )}
                       {isPayment && isAdmin && <span style={{display:"flex",gap:6,flexWrap:"wrap"}}><Btn sm color="blue" onClick={()=>openPaymentEdit(r)}>Edit Payment</Btn><Btn sm color="red" onClick={()=>deletePayment(r)}>Delete</Btn></span>}
@@ -366,14 +366,14 @@ export default function VendorLedger({ navigate }) {
         {/* Helper text */}
         <div style={{ marginTop:10, fontSize:11, color:"#6b7392", background:"#f7f8fc",
           borderRadius:6, padding:"8px 12px" }}>
-          💡 <strong>Purchase</strong> — vendor supplied goods (we owe them) &nbsp;|&nbsp;
+          <strong>Purchase</strong> — vendor supplied goods (we owe them) &nbsp;|&nbsp;
           <strong>Payment</strong> — we paid them (reduces what we owe) &nbsp;|&nbsp;
           <strong>Debit/Credit Note / Return</strong> — goods returned / adjustment (they owe us)
         </div>
         <div style={{ display:"flex", gap:10, marginTop:14 }}>
           <Btn color="cancel" onClick={() => setAddModal(false)}>Cancel</Btn>
           <Btn color="teal" onClick={handleAdd} disabled={saving}>
-            {saving ? "Saving..." : "💾 Save Entry"}
+            {saving ? "Saving..." : "Save Entry"}
           </Btn>
         </div>
       </Modal>

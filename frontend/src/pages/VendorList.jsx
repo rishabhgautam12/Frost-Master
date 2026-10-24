@@ -120,7 +120,7 @@ export default function VendorList({ navigate }) {
                       <span onClick={() => navigate(`vendor-profile:${v._id}`)}
                         style={{ color:"#0ea5e9", cursor:"pointer",
                           display:"flex", alignItems:"center", gap:4 }}>
-                        🔗 {v.name}
+                        {v.name}
                       </span>
                     </Td>
                     <Td>{v.company}</Td>
@@ -140,9 +140,9 @@ export default function VendorList({ navigate }) {
                       <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
                         <Btn sm color="blue"
                           onClick={() => navigate(`vendor-profile:${v._id}`)}>
-                          👁 Profile
+                          Profile
                         </Btn>
-                        <Btn sm color="teal" onClick={() => openEdit(v)}>✏️ Edit</Btn>
+                        <Btn sm color="teal" onClick={() => openEdit(v)}>Edit</Btn>
                         <Btn sm color="red"
                           onClick={() => handleToggle(v._id)}>
                           {v.status==="Active" ? "Deactivate" : "Activate"}
@@ -195,7 +195,7 @@ export default function VendorList({ navigate }) {
         <div style={{ display:"flex", gap:10, marginTop:16 }}>
           <Btn color="cancel" onClick={() => setEditV(null)}>Cancel</Btn>
           <Btn color="teal" onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "💾 Save Changes"}
+            {saving ? "Saving..." : "Save Changes"}
           </Btn>
         </div>
       </Modal>

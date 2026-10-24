@@ -31,48 +31,46 @@ export const ItemsSummary = ({ items = [] }) => {
   );
 };
 
-export const PageTitle = ({ children }) => (
-  <div style={{ width: "100%", maxWidth: "100%", display: "flex", alignItems: "center", gap: 12, marginBottom: 20, overflowWrap: "anywhere", animation: "fm-fade-up 0.35s ease both" }}>
-    <span style={{ width: 6, alignSelf: "stretch", minHeight: 28, borderRadius: 999, background: "linear-gradient(180deg, #a78bfa, #7c3aed)", flexShrink: 0 }} />
-    <span style={{ fontSize: 22, fontWeight: 800, color: "#0f1535", letterSpacing: "-0.02em", lineHeight: 1.25, fontFamily: "var(--font-display)" }}>
-      {children}
-    </span>
+// Small line icons (no emoji) for status UI.
+const ICON_PATHS = {
+  check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+  alert: <><path d="M12 3 2 20h20L12 3z" /><path d="M12 10v4.5M12 17.5v.01" /></>,
+  inbox: <><path d="M3 13h5l1.5 3h5L16 13h5" /><path d="M5.5 5h13L21 13v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6l2.5-8z" /></>,
+  close: <path d="M18 6 6 18M6 6l12 12" />,
+};
+export const UiIcon = ({ name, size = 16, stroke = 2 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {ICON_PATHS[name]}
+  </svg>
+);
+
+export const PageTitle = ({ children, subtitle }) => (
+  <div className="fm-page-head">
+    <h1 className="fm-page-title">{children}</h1>
+    {subtitle && <div className="fm-page-subtitle">{subtitle}</div>}
   </div>
 );
 
-export const Btn = ({ children, onClick, color = "teal", sm, disabled }) => {
-  const colors = {
-    green:  { background: "#1f9d6b", color: "#fff", boxShadow: "0 4px 12px -4px rgba(31,157,107,0.45)" },
-    blue:   { background: "#0ea5e9", color: "#fff", boxShadow: "0 4px 12px -4px rgba(59,143,217,0.45)" },
-    teal:   { background: "linear-gradient(135deg, #8b5cf6, #7c3aed 55%, #9333ea)", color: "#fff", boxShadow: "0 4px 12px -4px rgba(124,58,237,0.5)" },
-    gold:   { background: "linear-gradient(135deg, #7c3aed, #db2777)", color: "#fff", boxShadow: "0 4px 12px -4px rgba(60,76,184,0.5)" },
-    red:    { background: "#e0524c", color: "#fff", boxShadow: "0 4px 12px -4px rgba(224,82,76,0.45)" },
-    cancel: { background: "#fff", color: "#4a5272", border: "1px solid #dde1ec" },
-    purple: { background: "#c026d3", color: "#fff", boxShadow: "0 4px 12px -4px rgba(122,92,224,0.45)" },
-  };
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      onMouseEnter={e => { if (!disabled) e.currentTarget.style.filter = "brightness(1.06)"; }}
-      onMouseLeave={e => { e.currentTarget.style.filter = "none"; }}
-      style={{
-        padding: sm ? "5px 12px" : "9px 18px",
-        borderRadius: sm ? 8 : 10, fontWeight: 700,
-        fontSize: sm ? 11.5 : 12.5,
-        cursor: disabled ? "not-allowed" : "pointer",
-        border: "none",
-        display: "inline-flex", alignItems: "center", gap: 6,
-        justifyContent: "center", whiteSpace: "nowrap", minHeight: sm ? 30 : 38,
-        letterSpacing: "0.01em",
-        opacity: disabled ? 0.55 : 1,
-        ...colors[color],
-      }}
-    >
-      {children}
-    </button>
-  );
+// Existing colour names map onto a calmer hierarchy (see .fm-btn-* in index.css).
+const BTN_VARIANT = {
+  teal: "primary", gold: "primary",
+  green: "success",
+  blue: "soft", purple: "soft",
+  red: "danger",
+  cancel: "outline", slate: "outline",
 };
+
+export const Btn = ({ children, onClick, color = "teal", sm, disabled, type = "button", title }) => (
+  <button
+    type={type}
+    title={title}
+    onClick={onClick}
+    disabled={disabled}
+    className={`fm-btn fm-btn-${BTN_VARIANT[color] || "primary"}${sm ? " fm-btn-sm" : ""}`}
+  >
+    {children}
+  </button>
+);
 
 export const SearchBar = ({ children }) => (
   <div className="fm-searchbar" style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", background: "#fff", padding: "14px 16px", borderRadius: 14, border: "1px solid #e6e9f2", boxShadow: "var(--shadow-xs)", marginBottom: 18 }}>
@@ -86,7 +84,7 @@ export const Input = ({ placeholder, type = "text", style = {}, value, onChange 
     placeholder={placeholder}
     value={value}
     onChange={onChange}
-    style={{ maxWidth: "100%", padding: "9px 13px", border: "1px solid #dde1ec", borderRadius: 10, fontSize: 12.5, background: "#fafbfe", outline: "none", boxSizing: "border-box", minHeight: 38, ...style }}
+    style={{ maxWidth: "100%", padding: "9px 13px", border: "1px solid #dde1ec", borderRadius: 10, fontSize: 13, background: "#fff", outline: "none", boxSizing: "border-box", minHeight: 38, ...style }}
   />
 );
 
@@ -97,29 +95,29 @@ export const TableWrap = ({ children }) => (
 );
 
 export const Th = ({ children }) => (
-  <th style={{ padding: "12px 14px", textAlign: "left", fontWeight: 700, color: "#6b7392", fontSize: 11, whiteSpace: "nowrap", background: "#f8f9fd" }}>
+  <th style={{ padding: "11px 16px", textAlign: "left", fontWeight: 700, color: "#6b7392", fontSize: 11, whiteSpace: "nowrap", background: "#fafbfd" }}>
     {children}
   </th>
 );
 
 export const Td = ({ children, style = {}, onClick }) => (
-  <td onClick={onClick} style={{ padding: "12px 14px", color: "#3a4260", verticalAlign: "middle", ...style }}>
+  <td onClick={onClick} style={{ padding: "12px 16px", color: "#3a4260", verticalAlign: "middle", ...style }}>
     {children}
   </td>
 );
 
 export const Badge = ({ children, color = "green" }) => {
   const colors = {
-    green:  { background: "#e3f5ec", color: "#13734d", dot: "#1f9d6b" },
-    red:    { background: "#fdeceb", color: "#a33a35", dot: "#e0524c" },
-    yellow: { background: "#fdf1dc", color: "#8a5a12", dot: "#e5a03a" },
-    blue:   { background: "#e5edfc", color: "#34509f", dot: "#5a8be8" },
-    gray:   { background: "#f1f3f9", color: "#4a5272", dot: "#9aa1b9" },
-    purple: { background: "#fae8ff", color: "#86198f", dot: "#d946ef" },
+    green:  { background: "#e7f6ee", color: "#12704a", dot: "#1f9d6b" },
+    red:    { background: "#fdeeed", color: "#a3302b", dot: "#e0524c" },
+    yellow: { background: "#fdf3e1", color: "#8a5a12", dot: "#e5a03a" },
+    blue:   { background: "#e9f0fd", color: "#2f4b9a", dot: "#5a8be8" },
+    gray:   { background: "#f1f3f8", color: "#4a5272", dot: "#9aa1b9" },
+    purple: { background: "#f3ecff", color: "#6d28d9", dot: "#8b5cf6" },
   };
   const { dot, ...c } = colors[color] || colors.gray;
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 999, fontSize: 10.5, fontWeight: 700, lineHeight: 1.5, whiteSpace: "nowrap", ...c }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600, lineHeight: 1.5, whiteSpace: "nowrap", ...c }}>
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: dot, flexShrink: 0 }} />
       {children}
     </span>
@@ -127,13 +125,14 @@ export const Badge = ({ children, color = "green" }) => {
 };
 
 export const StatsGrid = ({ cards }) => (
-  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 14, marginBottom: 20 }}>
+  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: 12, marginBottom: 20 }}>
     {cards.map((c, i) => (
-      <div key={i} style={{ position: "relative", overflow: "hidden", background: "#fff", borderRadius: 14, padding: "16px 18px", border: "1px solid #e6e9f2", boxShadow: "var(--shadow-sm)" }}>
-        <span style={{ position: "absolute", top: -26, right: -26, width: 78, height: 78, borderRadius: "50%", background: c.color, opacity: 0.1 }} />
-        <span style={{ display: "block", width: 28, height: 5, borderRadius: 999, background: c.color, marginBottom: 12 }} />
-        <div style={{ position: "relative", fontSize: "clamp(17px, 4.4vw, 24px)", fontWeight: 800, color: "#0f1535", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere", lineHeight: 1.2 }}>{c.value}</div>
-        <div style={{ fontSize: 11.5, color: "#6b7392", marginTop: 3, fontWeight: 600 }}>{c.label}</div>
+      <div key={i} style={{ background: "#fff", borderRadius: 14, padding: "15px 18px", border: "1px solid #e6e9f2", boxShadow: "var(--shadow-xs)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11.5, color: "#6b7392", fontWeight: 600 }}>
+          <span style={{ width: 8, height: 8, borderRadius: 3, background: c.color, flexShrink: 0 }} />
+          {c.label}
+        </div>
+        <div style={{ fontSize: "clamp(18px, 4.4vw, 24px)", fontWeight: 800, color: "#0f1535", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere", lineHeight: 1.2, marginTop: 8 }}>{c.value}</div>
       </div>
     ))}
   </div>
@@ -141,17 +140,17 @@ export const StatsGrid = ({ cards }) => (
 
 export const FormGroup = ({ label, children }) => (
   <div style={{ marginBottom: 16, minWidth: 0 }}>
-    <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#4a5272", marginBottom: 6 }}>{label}</label>
+    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3a4260", marginBottom: 6 }}>{label}</label>
     {children}
   </div>
 );
 
 export const FormInput = (props) => (
-  <input {...props} style={{ width: "100%", padding: "10px 13px", border: "1px solid #dde1ec", borderRadius: 10, fontSize: 13, outline: "none", background: "#fafbfe", boxSizing: "border-box", minHeight: 40, ...props.style }} />
+  <input {...props} style={{ width: "100%", padding: "10px 13px", border: "1px solid #dde1ec", borderRadius: 10, fontSize: 13, outline: "none", background: "#fff", boxSizing: "border-box", minHeight: 40, ...props.style }} />
 );
 
 export const FormSelect = ({ children, ...props }) => (
-  <select {...props} style={{ width: "100%", padding: "10px 13px", border: "1px solid #dde1ec", borderRadius: 10, fontSize: 13, outline: "none", background: "#fafbfe", boxSizing: "border-box", minHeight: 40 }}>
+  <select {...props} style={{ width: "100%", padding: "10px 13px", border: "1px solid #dde1ec", borderRadius: 10, fontSize: 13, outline: "none", background: "#fff", boxSizing: "border-box", minHeight: 40 }}>
     {children}
   </select>
 );
@@ -159,11 +158,13 @@ export const FormSelect = ({ children, ...props }) => (
 export const Modal = ({ open, onClose, title, children, wide, className }) => {
   if (!open) return null;
   return (
-    <div className={className} onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(15,21,53,0.38)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div className="fm-modal-panel" onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 18, padding: 28, width: wide ? 1120 : 520, maxWidth: "95vw", maxHeight: "90vh", overflowY: "auto", boxShadow: "var(--shadow-lg)", border: "1px solid #e6e9f2", animation: "fm-fade-up 0.22s ease both" }}>
+    <div className={className} onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(15,21,53,0.42)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div className="fm-modal-panel" role="dialog" aria-modal="true" aria-label={typeof title === "string" ? title : undefined} onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 18, padding: 26, width: wide ? 1120 : 520, maxWidth: "95vw", maxHeight: "90vh", overflowY: "auto", boxShadow: "var(--shadow-lg)", border: "1px solid #e6e9f2", animation: "fm-fade-up 0.2s ease both" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid #eef0f6" }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: "#0f1535", letterSpacing: "-0.01em", fontFamily: "var(--font-display)" }}>{title}</div>
-          <button onClick={onClose} aria-label="Close" style={{ background: "#f1f3f9", border: "none", width: 32, height: 32, borderRadius: 10, fontSize: 14, cursor: "pointer", color: "#6b7392", flexShrink: 0, display: "grid", placeItems: "center" }}>✕</button>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#0f1535", letterSpacing: "-0.01em" }}>{title}</div>
+          <button onClick={onClose} aria-label="Close" style={{ background: "#fff", border: "1px solid #e6e9f2", width: 32, height: 32, borderRadius: 9, cursor: "pointer", color: "#6b7392", flexShrink: 0, display: "grid", placeItems: "center" }}>
+            <UiIcon name="close" size={15} />
+          </button>
         </div>
         {children}
       </div>
@@ -190,28 +191,31 @@ export const DetailRow = ({ open, cols, data }) => {
 };
 
 export const LoadingSpinner = () => (
-  <div style={{ display: "flex", justifyContent: "center", padding: 44 }}>
-    <div style={{ width: 34, height: 34, borderRadius: "50%", border: "3.5px solid #ede9fe", borderTopColor: "#7c3aed", animation: "spin 0.8s linear infinite" }} />
+  <div role="status" aria-label="Loading" style={{ display: "flex", justifyContent: "center", padding: 44 }}>
+    <div style={{ width: 30, height: 30, borderRadius: "50%", border: "3px solid #ede9fe", borderTopColor: "#7c3aed", animation: "spin 0.8s linear infinite" }} />
   </div>
 );
 
 export const ErrorMsg = ({ message, onRetry }) => (
-  <div style={{ background: "#fdeceb", border: "1px solid #f6cfcc", borderRadius: 12, padding: "14px 18px", color: "#a33a35", fontSize: 13, fontWeight: 600, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-    <span>⚠️ {message}</span>
+  <div role="alert" style={{ background: "#fff", border: "1px solid #f3cdc9", borderLeft: "4px solid #e0524c", borderRadius: 12, padding: "12px 16px", color: "#a3302b", fontSize: 13, fontWeight: 600, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+    <span style={{ display: "flex", alignItems: "center", gap: 9 }}><UiIcon name="alert" size={17} />{message}</span>
     {onRetry && <Btn sm color="red" onClick={onRetry}>Retry</Btn>}
   </div>
 );
 
-export const EmptyState = ({ icon = "📭", text }) => (
-  <div style={{ textAlign: "center", padding: "56px 20px", color: "#9aa1b9" }}>
-    <div style={{ width: 72, height: 72, margin: "0 auto", borderRadius: 22, background: "linear-gradient(135deg, #f5f3ff, #ede9fe)", display: "grid", placeItems: "center", fontSize: 32 }}>{icon}</div>
-    <div style={{ marginTop: 14, fontSize: 14, fontWeight: 600, color: "#6b7392" }}>{text || "No data found"}</div>
+// `icon` is accepted for backwards compatibility but a consistent line icon is always shown.
+export const EmptyState = ({ text }) => (
+  <div style={{ textAlign: "center", padding: "52px 20px", color: "#9aa1b9" }}>
+    <div style={{ width: 56, height: 56, margin: "0 auto", borderRadius: 16, background: "#f5f3ff", color: "#8b5cf6", display: "grid", placeItems: "center" }}>
+      <UiIcon name="inbox" size={26} stroke={1.7} />
+    </div>
+    <div style={{ marginTop: 14, fontSize: 13.5, fontWeight: 600, color: "#6b7392" }}>{text || "No data found"}</div>
   </div>
 );
 
 export const SuccessToast = ({ msg }) => (
-  <div style={{ position: "fixed", bottom: 24, right: 24, background: "#fff", color: "#13734d", padding: "12px 18px 12px 14px", borderRadius: 14, fontWeight: 700, fontSize: 13, zIndex: 99999, boxShadow: "var(--shadow-lg)", border: "1px solid #c6ecd9", display: "flex", alignItems: "center", gap: 10, animation: "fm-fade-up 0.25s ease both" }}>
-    <span style={{ width: 26, height: 26, borderRadius: 8, background: "#e3f5ec", display: "grid", placeItems: "center", fontSize: 13 }}>✅</span>
+  <div role="status" style={{ position: "fixed", bottom: 24, right: 24, background: "#0f1535", color: "#fff", padding: "12px 18px 12px 12px", borderRadius: 12, fontWeight: 600, fontSize: 13, zIndex: 99999, boxShadow: "var(--shadow-lg)", display: "flex", alignItems: "center", gap: 10, animation: "fm-fade-up 0.25s ease both", maxWidth: "calc(100vw - 48px)" }}>
+    <span style={{ width: 24, height: 24, borderRadius: 7, background: "#1f9d6b", display: "grid", placeItems: "center", flexShrink: 0 }}><UiIcon name="check" size={14} stroke={2.6} /></span>
     {msg}
   </div>
 );

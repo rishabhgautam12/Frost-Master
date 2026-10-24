@@ -208,7 +208,7 @@ export default function ReportGraphs() {
               marginBottom: 4,
             }}
           >
-            📈 Monthly Revenue (Last 6 months)
+            Monthly Revenue (Last 6 months)
           </div>
 
           <div
@@ -257,7 +257,7 @@ export default function ReportGraphs() {
               marginBottom: 4,
             }}
           >
-            🛒 Monthly Orders
+            Monthly Orders
           </div>
 
           <div
@@ -307,7 +307,7 @@ export default function ReportGraphs() {
             marginBottom: 14,
           }}
         >
-          🏆 Top Products by Revenue
+          Top Products by Revenue
         </div>
 
         {topProducts.length === 0 ? (
@@ -406,7 +406,7 @@ export default function ReportGraphs() {
               color: "#e0524c",
             }}
           >
-            ⚠️ Low / Out of Stock Products
+            Low / Out of Stock Products
           </div>
 
           <div

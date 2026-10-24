@@ -145,11 +145,11 @@ function PermissionGrid({ perms, onChange }) {
         <span style={{ fontSize: 11, color: "#6b7392", fontWeight: 700 }}>Quick Select:</span>
         <button onClick={() => toggleAll(true)}
           style={{ fontSize: 11, padding: "3px 10px", border: "1px solid #1f9d6b", background: allOn ? "#1f9d6b" : "#f0faf5", color: allOn ? "#fff" : "#1f9d6b", borderRadius: 20, cursor: "pointer", fontWeight: 700 }}>
-          ✅ All Access
+          All Access
         </button>
         <button onClick={() => toggleAll(false)}
           style={{ fontSize: 11, padding: "3px 10px", border: "1px solid #e0524c", background: allOff ? "#e0524c" : "#fef2f2", color: allOff ? "#fff" : "#e0524c", borderRadius: 20, cursor: "pointer", fontWeight: 700 }}>
-          🚫 No Access
+          No Access
         </button>
       </div>
 
@@ -173,7 +173,7 @@ function PermissionGrid({ perms, onChange }) {
               {groupPerms.map(({ key, label }) => (
                 <label key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", borderBottom: "1px solid #f1f3f9", background: perms[key] ? "#f0faf5" : "#fff", transition: "background 0.1s" }}>
                   <span style={{ fontSize: 12, color: perms[key] ? "#17855a" : "#6b7392", fontWeight: perms[key] ? 600 : 400 }}>
-                    {perms[key] ? "✅" : "⬜"} {label}
+                    {label}
                   </span>
                   <div onClick={() => toggle(key)}
                     style={{ width: 38, height: 20, borderRadius: 20, background: perms[key] ? "#1f9d6b" : "#dde1ec", position: "relative", cursor: "pointer", transition: "background 0.2s", flexShrink: 0 }}>
@@ -326,10 +326,10 @@ export default function StaffManagement() {
       {/* Summary */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12, marginBottom: 18 }}>
         {[
-          { label: "Total Staff",   value: staff.length,                                color: "#5a8be8", icon: "👥" },
-          { label: "Active",        value: staff.filter(s => s.isActive).length,        color: "#1f9d6b", icon: "✅" },
-          { label: "Inactive",      value: staff.filter(s => !s.isActive).length,       color: "#e0524c", icon: "🚫" },
-          { label: "Full Access",   value: staff.filter(s => permCount(s) === ALL_PERM_KEYS.length).length, color: "#d946ef", icon: "🔓" },
+          { label: "Total Staff",   value: staff.length,                                color: "#5a8be8", icon: "" },
+          { label: "Active",        value: staff.filter(s => s.isActive).length,        color: "#1f9d6b", icon: "" },
+          { label: "Inactive",      value: staff.filter(s => !s.isActive).length,       color: "#e0524c", icon: "" },
+          { label: "Full Access",   value: staff.filter(s => permCount(s) === ALL_PERM_KEYS.length).length, color: "#d946ef", icon: "" },
         ].map((c, i) => (
           <div key={i} style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #e6e9f2", borderLeft: `4px solid ${c.color}` }}>
             <div style={{ fontSize: 11, color: "#6b7392", fontWeight: 700 }}>{c.icon} {c.label}</div>
@@ -384,8 +384,8 @@ export default function StaffManagement() {
                   </Td>
                   <Td>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <Btn sm color="blue" onClick={() => openEdit(u)}>✏️ Edit</Btn>
-                      <Btn sm color="red"  onClick={() => handleDelete(u)}>🗑 Delete</Btn>
+                      <Btn sm color="blue" onClick={() => openEdit(u)}>Edit</Btn>
+                      <Btn sm color="red"  onClick={() => handleDelete(u)}>Delete</Btn>
                     </div>
                   </Td>
                 </tr>
@@ -465,14 +465,14 @@ export default function StaffManagement() {
         </div>
 
         <div style={{ marginBottom: 8, fontWeight: 700, fontSize: 12, color: "#0f1535" }}>
-          🔐 Set Permissions
+          Set Permissions
         </div>
         <PermissionGrid perms={addPerms} onChange={setAddPerms} />
 
         <div style={{ display: "flex", gap: 10, marginTop: 18, justifyContent: "flex-end" }}>
           <Btn color="cancel" onClick={() => setAddOpen(false)}>Cancel</Btn>
           <Btn color="teal" onClick={handleAdd} disabled={addSaving}>
-            {addSaving ? "Creating..." : "✅ Create Staff Member"}
+            {addSaving ? "Creating..." : "Create Staff Member"}
           </Btn>
         </div>
       </Modal>
@@ -508,14 +508,14 @@ export default function StaffManagement() {
         </div>
 
         <div style={{ marginBottom: 8, fontWeight: 700, fontSize: 12, color: "#0f1535" }}>
-          🔐 Manage Permissions
+          Manage Permissions
         </div>
         <PermissionGrid perms={editPerms} onChange={setEditPerms} />
 
         <div style={{ display: "flex", gap: 10, marginTop: 18, justifyContent: "flex-end" }}>
           <Btn color="cancel" onClick={() => setEditUser(null)}>Cancel</Btn>
           <Btn color="teal" onClick={handleEdit} disabled={editSaving}>
-            {editSaving ? "Saving..." : "💾 Save Changes"}
+            {editSaving ? "Saving..." : "Save Changes"}
           </Btn>
         </div>
       </Modal>

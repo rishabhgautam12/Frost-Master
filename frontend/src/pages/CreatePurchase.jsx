@@ -194,7 +194,7 @@ export default function CreatePurchase({ navigate }) {
         </div>
         {/* Items table */}
         <div style={{ marginBottom:20 }}>
-          <div style={{ fontWeight:700, fontSize:13, marginBottom:10 }}>📦 Purchased Items</div>
+          <div style={{ fontWeight:700, fontSize:13, marginBottom:10 }}>Purchased Items</div>
           <div style={{ background:"#fff", border:"1px solid #e6e9f2", borderRadius:8, overflowX:"auto", overflowY:"hidden" }}>
             {/* Table header */}
             <div style={{ display:"grid",
@@ -411,7 +411,7 @@ export default function CreatePurchase({ navigate }) {
         <div style={{ display:"flex", gap:10, marginTop:20 }}>
           <Btn color="cancel" onClick={() => navigate("purchases-list")}>Cancel</Btn>
           <Btn color="teal" onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "🛒 Record Purchase"}
+            {saving ? "Saving..." : "Record Purchase"}
           </Btn>
         </div>
       </div>

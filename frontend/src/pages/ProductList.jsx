@@ -105,7 +105,7 @@ export default function ProductList({ navigate }) {
 
       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:14 }}>
         <Btn color="teal" onClick={() => navigate("product-add")}>+ Add Product</Btn>
-        <Btn color="blue" onClick={() => navigate("product-stock")}>📊 Manage Stock</Btn>
+        <Btn color="blue" onClick={() => navigate("product-stock")}>Manage Stock</Btn>
       </div>
 
       <SearchBar>
@@ -152,14 +152,14 @@ export default function ProductList({ navigate }) {
                     </Td>
                     <Td>
                       <Badge color={p.stock===0?"red":p.stock<=p.minStockAlert?"yellow":"green"}>
-                        {p.stock}{p.stock===0?" ⚠️":""}
+                        {p.stock}{p.stock===0?" ":""}
                       </Badge>
                     </Td>
                     <Td style={{ color:"#6b7392" }}>{p.gstRate||18}%</Td>
                     <Td>
                       <div style={{ display:"flex", gap:5 }}>
-                        <Btn sm color="blue" onClick={() => openEdit(p)}>✏️ Edit</Btn>
-                        <Btn sm color="red"  onClick={() => handleDelete(p._id, p.name)}>🗑</Btn>
+                        <Btn sm color="blue" onClick={() => openEdit(p)}>Edit</Btn>
+                        <Btn sm color="red"  onClick={() => handleDelete(p._id, p.name)}></Btn>
                       </div>
                     </Td>
                   </tr>
@@ -179,7 +179,7 @@ export default function ProductList({ navigate }) {
               <div style={{ background:+margin>=0?"#e3f5ec":"#fdeceb",
                 border:`1px solid ${+margin>=0?"#a8e2c6":"#f3b8b4"}`,
                 borderRadius:8, padding:"9px 14px", marginBottom:14, fontSize:12 }}>
-                💡 Margin: <strong>{margin}%</strong> &nbsp;|&nbsp;
+                Margin: <strong>{margin}%</strong> &nbsp;|&nbsp;
                 Buy ₹{editProd.purchasePrice} → Sell ₹{editProd.sellingPrice} →
                 Profit <strong>₹{(+editProd.sellingPrice-+editProd.purchasePrice).toFixed(0)}</strong>/unit
               </div>
@@ -241,7 +241,7 @@ export default function ProductList({ navigate }) {
             <div style={{ display:"flex", gap:10, marginTop:16 }}>
               <Btn color="cancel" onClick={() => setEditProd(null)}>Cancel</Btn>
               <Btn color="teal" onClick={handleSave} disabled={saving}>
-                {saving ? "Saving..." : "💾 Save Changes"}
+                {saving ? "Saving..." : "Save Changes"}
               </Btn>
             </div>
           </div>

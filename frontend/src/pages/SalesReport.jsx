@@ -53,7 +53,7 @@ export default function SalesReport({ navigate }) {
           { label:"Paid (₹)",      key:"amountPaid"        },
           { label:"Due (₹)",       key:"amountDue"         },
           { label:"Status",        key:"status"            },
-        ], "sales_report")}>⬇ Export CSV</Btn>
+        ], "sales_report")}>Export CSV</Btn>
       </SearchBar>
 
       {loading ? <LoadingSpinner /> : error ? <ErrorMsg message={error} onRetry={load} /> : (

@@ -36,7 +36,7 @@ function QuickAddCustomer({ onSaved, onCancel }) {
     <div style={{ background:"#f0faf5", border:"1px solid #a8e2c6", borderRadius:10,
       padding:18, marginBottom:16 }}>
       <div style={{ fontWeight:700, fontSize:13, color:"#13734d", marginBottom:14 }}>
-        ➕ Add New Customer
+        Add New Customer
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
         <FormGroup label="Full Name *">
@@ -73,7 +73,7 @@ function QuickAddCustomer({ onSaved, onCancel }) {
       <div style={{ display:"flex", gap:10, marginTop:14 }}>
         <Btn color="cancel" onClick={onCancel}>Cancel</Btn>
         <Btn color="green" onClick={handleSave} disabled={saving}>
-          {saving ? "Saving..." : "💾 Save & Select Customer"}
+          {saving ? "Saving..." : "Save & Select Customer"}
         </Btn>
       </div>
     </div>
@@ -284,7 +284,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                   <div style={{ marginTop:6, fontSize:11, color:"#6b7392",
                     background:"#f0faf5", padding:"6px 10px", borderRadius:6,
                     border:"1px solid #a8e2c6" }}>
-                    ✅ {selectedCustomer.name} · {selectedCustomer.phone}
+                    {selectedCustomer.name} · {selectedCustomer.phone}
                     {selectedCustomer.email && ` · ${selectedCustomer.email}`}
                     {selectedCustomer.city  && ` · ${selectedCustomer.city}`}
                     &nbsp;·&nbsp;<strong>{selectedCustomer.customerType}</strong>
@@ -334,7 +334,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
         {/* Items */}
         <div style={{ marginBottom:20 }}>
           <div style={{ fontWeight:700, fontSize:13, marginBottom:10, color:"#0f1535" }}>
-            📦 {documentName} Items
+            {documentName} Items
           </div>
 
           <div style={{ background:"#fff", border:"1px solid #e6e9f2", borderRadius:8, overflowX:"auto" }}>
@@ -566,7 +566,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
         <div style={{ display:"flex", gap:10, marginTop:20 }}>
           <Btn color="cancel" onClick={() => navigate(listPage)}>Cancel</Btn>
           <Btn color="teal" onClick={handleSave} disabled={saving}>
-            {saving ? "Creating..." : isQuotation ? "Create Quotation" : isOrder ? "Create Order" : "🧾 Create Sale"}
+            {saving ? "Creating..." : isQuotation ? "Create Quotation" : isOrder ? "Create Order" : "Create Sale"}
           </Btn>
         </div>
       </div>

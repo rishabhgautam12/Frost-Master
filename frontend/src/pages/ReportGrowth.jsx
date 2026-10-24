@@ -25,7 +25,7 @@ export default function ReportGrowth() {
       orders:  t.orders,
       change,
       pct,
-      trend:   change === null ? "—" : change >= 0 ? "📈" : "📉",
+      trend:   change === null ? "—" : change >= 0 ? "▲ Up" : "▼ Down",
     };
   });
 
@@ -37,13 +37,12 @@ export default function ReportGrowth() {
 
       {rows.length === 0 ? (
         <div style={{ background:"#fff", borderRadius:10, padding:60, textAlign:"center", color:"#9aa1b9", border:"1px solid #e6e9f2" }}>
-          <div style={{ fontSize:40 }}>📊</div>
-          <div style={{ marginTop:10 }}>No sales data yet. Start creating sales to see growth trends.</div>
+          <div>No sales data yet. Start creating sales to see growth trends.</div>
         </div>
       ) : (
         <>
           <div style={{ background:"#f5f3ff", border:"1px solid #ede9fe", borderRadius:8, padding:"10px 16px", marginBottom:14, fontSize:12, color:"#8a5a12" }}>
-            ℹ️ Month-over-month comparison based on actual sales in MongoDB.
+            Month-over-month comparison based on actual sales in MongoDB.
           </div>
           <TableWrap>
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
@@ -65,7 +64,7 @@ export default function ReportGrowth() {
                       {r.pct === null ? "—" : `${+r.pct >= 0 ? "+" : ""}${r.pct}%`}
                     </Td>
                     <Td>₹{r.orders > 0 ? Math.round(r.revenue / r.orders).toLocaleString() : "—"}</Td>
-                    <Td style={{ fontSize:18 }}>{r.trend}</Td>
+                    <Td style={{ fontWeight:800, color: r.change === null ? "#9aa1b9" : r.change >= 0 ? "#1f9d6b" : "#e0524c" }}>{r.trend}</Td>
                   </tr>
                 ))}
               </tbody>

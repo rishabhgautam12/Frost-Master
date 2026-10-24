@@ -346,7 +346,7 @@ export default function OrdersList({ navigate }) {
                     <div style={{ fontSize: 11, color: "#6b7392", marginTop: 3 }}>{new Date(order.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
                     <div style={{ fontSize: 10.5, color: "#9aa1b9", marginTop: 1 }}>{order.saleType}</div>
                   </Td>
-                  <Td>
+                  <Td style={{ minWidth: 190 }}>
                     <div style={{ fontWeight: 700, color: "#0f1535" }}>{order.customer?.name || order.customerName || "Walk-in"}</div>
                     {order.customer?.phone && <div style={{ fontSize: 11, color: "#9aa1b9", marginTop: 2 }}>{order.customer.phone}</div>}
                     {salespersonOf(order) && <div style={{ fontSize: 11, color: "#6b7392", marginTop: 2 }}>by {salespersonOf(order)}</div>}

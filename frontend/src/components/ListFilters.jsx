@@ -166,10 +166,12 @@ export function RowMenu({ items }) {
   const toggle = e => {
     e.stopPropagation();
     if (pos) return setPos(null);
+    // The app is CSS-zoomed on desktop: measured rects are on-screen pixels, fixed offsets are pre-zoom pixels.
+    const zoom = e.currentTarget.currentCSSZoom || 1;
     const r = e.currentTarget.getBoundingClientRect();
-    const menuHeight = visible.length * 36 + 12;
+    const menuHeight = (visible.length * 36 + 12) * zoom;
     const top = r.bottom + menuHeight > window.innerHeight ? Math.max(8, r.top - menuHeight - 4) : r.bottom + 4;
-    setPos({ top, left: Math.max(8, r.right - 210) });
+    setPos({ top: top / zoom, left: Math.max(8, r.right - 210 * zoom) / zoom });
   };
   return (
     <>

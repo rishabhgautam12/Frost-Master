@@ -81,6 +81,7 @@ const ICONS = {
   menu: <><path d="M4 7h16M4 12h16M4 17h10" /></>,
   close: <><path d="M18 6 6 18M6 6l12 12" /></>,
   chevron: <><path d="m6 9 6 6 6-6" /></>,
+  back: <><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></>,
   home: <><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z" /></>,
   more: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
 };
@@ -149,7 +150,7 @@ function labelTables(root) {
 const initials = (name = "") =>
   name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || "").join("") || "U";
 
-export default function Navbar({ page, navigate, user, onLogout, label, children }) {
+export default function Navbar({ page, navigate, onBack, user, onLogout, label, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expanded,   setExpanded]   = useState(() => new Set());
   const contentRef = useRef(null);
@@ -312,6 +313,13 @@ export default function Navbar({ page, navigate, user, onLogout, label, children
           <button className="fm-icon-btn fm-menu-btn" onClick={() => setMobileOpen(true)} aria-label="Open menu">
             <Icon name="menu" />
           </button>
+
+          {page !== "dashboard" && onBack && (
+            <button className="fm-back-btn" onClick={onBack} aria-label="Go back" title="Go back">
+              <Icon name="back" size={16} />
+              <span>Back</span>
+            </button>
+          )}
 
           <div className="fm-crumbs">
             <button onClick={() => goTo("dashboard")} className="fm-crumb-home">

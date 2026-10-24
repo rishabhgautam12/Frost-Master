@@ -66,7 +66,7 @@ export default function ProductAdd({ navigate }) {
         {/* Live margin preview */}
         {margin !== null && (
           <div style={{ background: +margin >= 0 ? "#e3f5ec":"#fdeceb", border:`1px solid ${+margin>=0?"#a8e2c6":"#f3b8b4"}`, borderRadius:8, padding:"10px 16px", marginBottom:16, fontSize:12 }}>
-            💡 Profit Margin: <strong>{margin}%</strong> &nbsp;|&nbsp;
+            Profit Margin: <strong>{margin}%</strong> &nbsp;|&nbsp;
             Buy ₹{form.purchasePrice} → Sell ₹{form.sellingPrice} → Profit <strong>₹{(+form.sellingPrice - +form.purchasePrice).toFixed(0)}</strong>/unit
           </div>
         )}
@@ -123,7 +123,7 @@ export default function ProductAdd({ navigate }) {
 
         <div style={{ display:"flex", gap:10, marginTop:20 }}>
           <Btn color="cancel" onClick={() => navigate("product-list")}>Cancel</Btn>
-          <Btn color="teal" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "💾 Save Product"}</Btn>
+          <Btn color="teal" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Product"}</Btn>
         </div>
       </div>
     </div>

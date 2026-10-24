@@ -115,7 +115,7 @@ function PurchasesTab({ vendorId, onRefresh }) {
 
   if (loading) return <LoadingSpinner />;
   if (purchases.length === 0) return (
-    <EmptyState icon="🛒" text="No purchases yet. Use the 'Add Purchase' tab to record one." />
+    <EmptyState icon="" text="No purchases yet. Use the 'Add Purchase' tab to record one." />
   );
 
   const totalAmt  = purchases.reduce((s,p) => s + p.grandTotal, 0);
@@ -167,7 +167,7 @@ function PurchasesTab({ vendorId, onRefresh }) {
                       {due===0?"Paid":due<p.grandTotal?"Partial":"Pending"}
                     </Badge></TD>
                     <TD>
-                      <Btn sm color="blue" onClick={() => openEdit(p)}>✏️ Edit</Btn>
+                      <Btn sm color="blue" onClick={() => openEdit(p)}>Edit</Btn>
                     </TD>
                   </tr>
 
@@ -176,7 +176,7 @@ function PurchasesTab({ vendorId, onRefresh }) {
                     <tr style={{ background:"#f7f8fc" }}>
                       <td colSpan={11} style={{ padding:"12px 20px" }}>
                         <div style={{ fontSize:11, fontWeight:700, color:"#6b7392", marginBottom:8 }}>
-                          📦 PURCHASE ITEMS
+                          PURCHASE ITEMS
                         </div>
                         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11 }}>
                           <thead><tr>
@@ -200,7 +200,7 @@ function PurchasesTab({ vendorId, onRefresh }) {
                         </table>
                         {p.notes && (
                           <div style={{ marginTop:8, fontSize:11, color:"#6b7392" }}>
-                            📝 Notes: {p.notes}
+                            Notes: {p.notes}
                           </div>
                         )}
                       </td>
@@ -257,7 +257,7 @@ function PurchasesTab({ vendorId, onRefresh }) {
                 <div>
                   <div style={{ color:"#6b7392", fontSize:10, fontWeight:700, textTransform:"uppercase", marginBottom:3 }}>New Balance</div>
                   <div style={{ fontWeight:800, color: newDue>0?"#e0524c":"#1f9d6b", fontSize:15 }}>
-                    {newDue>0 ? `₹${newDue.toLocaleString()}` : "✅ Fully Paid"}
+                    {newDue>0 ? `₹${newDue.toLocaleString()}` : "Fully Paid"}
                   </div>
                 </div>
               </div>
@@ -279,7 +279,7 @@ function PurchasesTab({ vendorId, onRefresh }) {
                     value={editForm.amountPaid} onChange={setF("amountPaid")} />
                   {+editForm.amountPaid > grandTotal && (
                     <div style={{ color:"#e0524c", fontSize:10, marginTop:3 }}>
-                      ⚠️ Cannot exceed grand total ₹{grandTotal.toLocaleString()}
+                      Cannot exceed grand total ₹{grandTotal.toLocaleString()}
                     </div>
                   )}
                 </FormGroup>
@@ -339,7 +339,7 @@ function PurchasesTab({ vendorId, onRefresh }) {
               <div style={{ display:"flex", gap:10, marginTop:16 }}>
                 <Btn color="cancel" onClick={() => setEditModal(null)}>Cancel</Btn>
                 <Btn color="teal" onClick={handleSaveEdit} disabled={saving}>
-                  {saving ? "Saving..." : "💾 Save Changes"}
+                  {saving ? "Saving..." : "Save Changes"}
                 </Btn>
               </div>
             </div>
@@ -463,7 +463,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
         <div style={{ background:+(isEdit?editMargin:addMargin)>=0?"#e3f5ec":"#fdeceb",
           border:`1px solid ${+(isEdit?editMargin:addMargin)>=0?"#a8e2c6":"#f3b8b4"}`,
           borderRadius:8, padding:"10px 14px", marginBottom:14, fontSize:12 }}>
-          💡 Margin: <strong>{isEdit?editMargin:addMargin}%</strong> &nbsp;|&nbsp;
+          Margin: <strong>{isEdit?editMargin:addMargin}%</strong> &nbsp;|&nbsp;
           Buy ₹{f.purchasePrice} → Sell ₹{f.sellingPrice} →
           Profit <strong>₹{(+f.sellingPrice-+f.purchasePrice).toFixed(0)}</strong>/unit
         </div>
@@ -514,7 +514,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
       </div>
 
       {products.length === 0
-        ? <EmptyState icon="📦" text="No products from this vendor yet. Click 'Add New Product' to add one." />
+        ? <EmptyState icon="" text="No products from this vendor yet. Click 'Add New Product' to add one." />
         : (
           <div style={{ overflowX:"auto" }}>
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
@@ -550,7 +550,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
                       <TD style={{ color:"#6b7392" }}>{p.gstRate}%</TD>
                       <TD><Badge color={{ Out:"red", Low:"yellow", OK:"green" }[stockStatus]}>{stockStatus}</Badge></TD>
                       <TD>
-                        <Btn sm color="blue" onClick={() => openEdit(p)}>✏️ Edit</Btn>
+                        <Btn sm color="blue" onClick={() => openEdit(p)}>Edit</Btn>
                       </TD>
                     </tr>
                   );
@@ -567,7 +567,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
         <div style={{ display:"flex", gap:10, marginTop:16 }}>
           <Btn color="cancel" onClick={() => setAddModal(false)}>Cancel</Btn>
           <Btn color="teal" onClick={handleAdd} disabled={saving}>
-            {saving ? "Saving..." : "💾 Save Product"}
+            {saving ? "Saving..." : "Save Product"}
           </Btn>
         </div>
       </Modal>
@@ -581,7 +581,7 @@ function ProductsTab({ vendorId, vendorName, onRefresh }) {
             <div style={{ display:"flex", gap:10, marginTop:16 }}>
               <Btn color="cancel" onClick={() => setEditModal(null)}>Cancel</Btn>
               <Btn color="teal" onClick={handleEditSave} disabled={saving}>
-                {saving ? "Saving..." : "💾 Update Product"}
+                {saving ? "Saving..." : "Update Product"}
               </Btn>
             </div>
           </>
@@ -670,7 +670,7 @@ function LedgerTab({ vendorId, onRefresh }) {
       </div>
 
       {entries.length === 0
-        ? <EmptyState icon="📒" text="No ledger entries found." />
+        ? <EmptyState icon="" text="No ledger entries found." />
         : (
           <div style={{ overflowX:"auto" }}>
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
@@ -737,7 +737,7 @@ function LedgerTab({ vendorId, onRefresh }) {
                       </TD>
                       <TD>
                         {isPurchaseWithDue && (
-                          <Btn sm color="teal" onClick={() => openPay(e)}>💳 Pay</Btn>
+                          <Btn sm color="teal" onClick={() => openPay(e)}>Pay</Btn>
                         )}
                       </TD>
                     </tr>
@@ -789,7 +789,7 @@ function LedgerTab({ vendorId, onRefresh }) {
                     textTransform:"uppercase", marginBottom:3 }}>After This Payment</div>
                   <Badge color={leftAfter===0 && paying>0 ? "green" : paying>0 ? "yellow" : "red"}>
                     {leftAfter===0 && paying>0
-                      ? "✅ Invoice Fully Settled"
+                      ? "Invoice Fully Settled"
                       : paying>0
                       ? `₹${leftAfter.toLocaleString()} will remain`
                       : "Enter an amount above"}
@@ -805,7 +805,7 @@ function LedgerTab({ vendorId, onRefresh }) {
                     placeholder={`Max ₹${bal.toLocaleString()}`} />
                   {paying > bal && (
                     <div style={{ color:"#e0524c", fontSize:10, marginTop:3 }}>
-                      ⚠️ Cannot exceed balance of ₹{bal.toLocaleString()}
+                      Cannot exceed balance of ₹{bal.toLocaleString()}
                     </div>
                   )}
                 </FormGroup>
@@ -829,7 +829,7 @@ function LedgerTab({ vendorId, onRefresh }) {
                 <Btn color="cancel" onClick={() => setPayModal(null)}>Cancel</Btn>
                 <Btn color="teal" onClick={handlePay}
                   disabled={saving || !payForm.amount || +payForm.amount<=0 || +payForm.amount>bal}>
-                  {saving ? "Processing..." : `💸 Pay ₹${paying.toLocaleString()}`}
+                  {saving ? "Processing..." : `Pay ₹${paying.toLocaleString()}`}
                 </Btn>
               </div>
             </div>
@@ -979,7 +979,7 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
 
       <div style={{ background:"#f5f3ff", border:"1px solid #ede9fe", borderRadius:8,
         padding:"10px 16px", marginBottom:16, fontSize:12, color:"#8a5a12" }}>
-        ℹ️ Record a purchase from <strong>{vendorName}</strong>.
+        Record a purchase from <strong>{vendorName}</strong>.
         Select an existing product or click <strong>"+ New Product"</strong> to add one on the spot —
         it will be saved to your product list automatically.
       </div>
@@ -1004,7 +1004,7 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
         marginBottom:16, overflow:"hidden" }}>
         <div style={{ padding:"12px 14px", borderBottom:"1px solid #f1f3f9",
           fontWeight:700, fontSize:13 }}>
-          📦 Purchase Items
+          Purchase Items
         </div>
 
         {items.map((it, i) => {
@@ -1243,7 +1243,7 @@ function AddPurchaseTab({ vendorId, vendorName, onDone }) {
           setNewProductRow(null);
         }}>Reset</Btn>
         <Btn color="teal" onClick={handleSave} disabled={saving}>
-          {saving ? "Saving..." : "🛒 Record Purchase"}
+          {saving ? "Saving..." : "Record Purchase"}
         </Btn>
       </div>
     </div>
@@ -1272,10 +1272,10 @@ export default function VendorProfile({ vendorId, navigate }) {
 
   const { vendor, summary } = data;
   const TABS = [
-    { key:"purchases",   label:"🛒 Purchases"    },
-    { key:"products",    label:"📦 Products"     },
-    { key:"ledger",      label:"📒 Ledger"       },
-    { key:"add-purchase",label:"➕ Add Purchase" },
+    { key:"purchases",   label:"Purchases"    },
+    { key:"products",    label:"Products"     },
+    { key:"ledger",      label:"Ledger"       },
+    { key:"add-purchase",label:"Add Purchase" },
   ];
 
   return (
@@ -1293,10 +1293,10 @@ export default function VendorProfile({ vendorId, navigate }) {
             <div style={{ fontSize:24, fontWeight:900, letterSpacing:"-0.5px" }}>{vendor.name}</div>
             <div style={{ fontSize:15, color:"#9aa1b9", marginTop:3 }}>{vendor.company}</div>
             <div style={{ display:"flex", gap:20, marginTop:10, flexWrap:"wrap", fontSize:13, color:"#dde1ec" }}>
-              <span>📞 {vendor.phone}</span>
-              {vendor.email && <span>📧 {vendor.email}</span>}
-              {vendor.city  && <span>📍 {vendor.city}</span>}
-              {vendor.gstin && <span>🏷️ {vendor.gstin}</span>}
+              <span>{vendor.phone}</span>
+              {vendor.email && <span>{vendor.email}</span>}
+              {vendor.city  && <span>{vendor.city}</span>}
+              {vendor.gstin && <span>{vendor.gstin}</span>}
             </div>
           </div>
           <Badge color={{ Active:"green", Inactive:"red", Pending:"yellow" }[vendor.status]}>

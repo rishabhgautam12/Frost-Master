@@ -186,7 +186,7 @@ export default function CustomerList({ navigate }) {
                         <span onClick={() => navigate(`customer-profile:${c._id}`)}
                           style={{ color:"#0ea5e9", cursor:"pointer",
                             display:"flex", alignItems:"center", gap:4 }}>
-                          🔗 {c.name}
+                          {c.name}
                         </span>
                       </Td>
                       <Td>{c.phone}</Td>
@@ -210,13 +210,13 @@ export default function CustomerList({ navigate }) {
                         <div style={{ display:"flex", gap:5 }}>
                           <Btn sm color="blue"
                             onClick={() => navigate(`customer-profile:${c._id}`)}>
-                            👁 Profile
+                            Profile
                           </Btn>
                           <Btn sm color="teal" onClick={() => openEdit(c)}>
-                            ✏️ Edit
+                            Edit
                           </Btn>
                           <Btn sm color="red" onClick={() => handleDelete(c._id, c.name)}>
-                            🗑
+                            
                           </Btn>
                         </div>
                       </Td>
@@ -235,7 +235,7 @@ export default function CustomerList({ navigate }) {
         <div style={{ display:"flex", gap:10, marginTop:16 }}>
           <Btn color="cancel" onClick={() => setAddModal(false)}>Cancel</Btn>
           <Btn color="teal" onClick={handleAdd} disabled={saving}>
-            {saving ? "Saving..." : "💾 Save Customer"}
+            {saving ? "Saving..." : "Save Customer"}
           </Btn>
         </div>
       </Modal>
@@ -247,7 +247,7 @@ export default function CustomerList({ navigate }) {
         <div style={{ display:"flex", gap:10, marginTop:16 }}>
           <Btn color="cancel" onClick={() => setEditCust(null)}>Cancel</Btn>
           <Btn color="teal" onClick={handleEdit} disabled={saving}>
-            {saving ? "Saving..." : "💾 Save Changes"}
+            {saving ? "Saving..." : "Save Changes"}
           </Btn>
         </div>
       </Modal>

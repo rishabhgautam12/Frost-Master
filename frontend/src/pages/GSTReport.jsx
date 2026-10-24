@@ -50,11 +50,11 @@ export default function GSTReport() {
           { label:"SGST (₹)",      key:"sgst"              },
           { label:"IGST (₹)",      key:"igst"              },
           { label:"Total GST (₹)", key:"totalGST"          },
-        ], "gst_report")}>⬇ Export CSV</Btn>
+        ], "gst_report")}>Export CSV</Btn>
       </SearchBar>
 
       <div style={{ background: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: 8, padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "#8a5a12" }}>
-        ℹ️ This report shows output GST (tax collected from customers). For GSTR-1 filing, consult your CA.
+        This report shows output GST (tax collected from customers). For GSTR-1 filing, consult your CA.
       </div>
 
       {loading ? <LoadingSpinner /> : error ? <ErrorMsg message={error} onRetry={load} /> : (

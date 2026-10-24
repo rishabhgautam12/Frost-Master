@@ -77,7 +77,7 @@ export default function QuickAddProduct({ mode="purchase", vendorId, defaultRate
       <div style={{ fontWeight:700, fontSize:13,
         color: mode === "purchase" ? "#34509f" : "#13734d",
         marginBottom:12 }}>
-        {mode === "purchase" ? "📦 Add New Product to Purchase" : "📦 Add New Product to Sell"}
+        {mode === "purchase" ? "Add New Product to Purchase" : "Add New Product to Sell"}
       </div>
 
       {/* Margin preview */}
@@ -87,7 +87,7 @@ export default function QuickAddProduct({ mode="purchase", vendorId, defaultRate
           border: `1px solid ${+margin >= 0 ? "#a8e2c6" : "#f3b8b4"}`,
           borderRadius:7, padding:"8px 12px", marginBottom:12, fontSize:11,
         }}>
-          💡 Margin: <strong>{margin}%</strong> &nbsp;|&nbsp;
+          Margin: <strong>{margin}%</strong> &nbsp;|&nbsp;
           Buy ₹{form.purchasePrice} → Sell ₹{form.sellingPrice} →
           Profit <strong>₹{(+form.sellingPrice - +form.purchasePrice).toFixed(0)}</strong>/unit
         </div>
@@ -135,7 +135,7 @@ export default function QuickAddProduct({ mode="purchase", vendorId, defaultRate
       <div style={{ display:"flex", gap:10, marginTop:12 }}>
         <Btn color="cancel" onClick={onCancel}>Cancel</Btn>
         <Btn color={mode === "purchase" ? "blue" : "teal"} onClick={handleSave} disabled={saving}>
-          {saving ? "Saving..." : "💾 Save Product & Continue"}
+          {saving ? "Saving..." : "Save Product & Continue"}
         </Btn>
       </div>
     </div>

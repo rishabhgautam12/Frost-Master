@@ -60,7 +60,9 @@ function getLabel(page) {
 function AccessDenied() {
   return (
     <div style={{ maxWidth: 440, margin: "48px auto", textAlign: "center", padding: "44px 32px", background: "#fff", border: "1px solid #e6e9f2", borderRadius: 20, boxShadow: "var(--shadow-sm)" }}>
-      <div style={{ width: 72, height: 72, margin: "0 auto", borderRadius: 22, background: "linear-gradient(135deg, #f5f3ff, #ede9fe)", display: "grid", placeItems: "center", fontSize: 32 }}>🔒</div>
+      <div style={{ width: 72, height: 72, margin: "0 auto", borderRadius: 22, background: "linear-gradient(135deg, #f5f3ff, #ede9fe)", display: "grid", placeItems: "center", color: "#7c3aed" }}>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.5" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+      </div>
       <div style={{ fontSize: 19, fontWeight: 800, color: "#0f1535", marginTop: 18, letterSpacing: "-0.01em" }}>Access Denied</div>
       <div style={{ fontSize: 13.5, marginTop: 8, color: "#6b7392" }}>You don't have permission to view this page.</div>
       <div style={{ fontSize: 12.5, marginTop: 4, color: "#9aa1b9" }}>Contact your administrator for access.</div>
@@ -71,7 +73,32 @@ function AccessDenied() {
 export default function App() {
   const { user, logout, loading, justLoggedIn, clearJustLoggedIn } = useAuth();
   const [page, setPage] = useState("dashboard");
+  const [historyIndex, setHistoryIndex] = useState(0);
   const [welcoming, setWelcoming] = useState(false);
+
+  // Page changes go into browser history, so the Back button (ours, the browser's, or the mouse) returns to the previous page.
+  useEffect(() => {
+    window.history.replaceState({ page: "dashboard", index: 0 }, "");
+    const onPop = e => {
+      setPage(e.state?.page || "dashboard");
+      setHistoryIndex(e.state?.index || 0);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const navigate = next => {
+    if (next === page) return;
+    const index = historyIndex + 1;
+    window.history.pushState({ page: next, index }, "");
+    setHistoryIndex(index);
+    setPage(next);
+  };
+
+  const goBack = () => {
+    if (historyIndex > 0) window.history.back();
+    else navigate("dashboard");
+  };
 
   useEffect(() => {
     if (!justLoggedIn) return;
@@ -108,45 +135,45 @@ export default function App() {
   const customerProfileId = page.startsWith("customer-profile:") ? page.split(":")[1] : null;
 
   return (
-    <Navbar page={page} navigate={setPage} user={user} onLogout={logout} label={getLabel(page)}>
+    <Navbar page={page} navigate={navigate} onBack={goBack} user={user} onLogout={logout} label={getLabel(page)}>
       <div style={{ minWidth: 0, maxWidth: "100%" }}>
         {/* Dashboard — always visible to any logged-in user */}
-        {page === "dashboard"        && <Dashboard navigate={setPage} />}
+        {page === "dashboard"        && <Dashboard navigate={navigate} />}
 
         {/* Staff Management — admin only */}
         {page === "staff-management" && (isAdmin ? <StaffManagement /> : <AccessDenied />)}
         {page === "employee-management" && <Guard perm="employees_view"><EmployeeManagement user={user} /></Guard>}
 
         {/* Vendors */}
-        {page === "vendor-list"      && <Guard perm="vendors_view">    <VendorList     navigate={setPage} /></Guard>}
-        {page === "vendor-add"       && <Guard perm="vendors_create">  <VendorAdd      navigate={setPage} /></Guard>}
-        {page === "vendor-ledger"    && <Guard perm="vendors_view">    <VendorLedger   navigate={setPage} /></Guard>}
-        {page === "vendor-payout"    && <Guard perm="vendors_edit">    <VendorPayout   navigate={setPage} /></Guard>}
-        {vendorProfileId             && <Guard perm="vendors_view">    <VendorProfile  vendorId={vendorProfileId} navigate={setPage} /></Guard>}
+        {page === "vendor-list"      && <Guard perm="vendors_view">    <VendorList     navigate={navigate} /></Guard>}
+        {page === "vendor-add"       && <Guard perm="vendors_create">  <VendorAdd      navigate={navigate} /></Guard>}
+        {page === "vendor-ledger"    && <Guard perm="vendors_view">    <VendorLedger   navigate={navigate} /></Guard>}
+        {page === "vendor-payout"    && <Guard perm="vendors_edit">    <VendorPayout   navigate={navigate} /></Guard>}
+        {vendorProfileId             && <Guard perm="vendors_view">    <VendorProfile  vendorId={vendorProfileId} navigate={navigate} /></Guard>}
 
         {/* Products */}
-        {page === "product-list"     && <Guard perm="products_view">   <ProductList    navigate={setPage} /></Guard>}
-        {page === "product-add"      && <Guard perm="products_create"> <ProductAdd     navigate={setPage} /></Guard>}
-        {page === "product-stock"    && <Guard perm="products_stock">  <ProductStock   navigate={setPage} /></Guard>}
+        {page === "product-list"     && <Guard perm="products_view">   <ProductList    navigate={navigate} /></Guard>}
+        {page === "product-add"      && <Guard perm="products_create"> <ProductAdd     navigate={navigate} /></Guard>}
+        {page === "product-stock"    && <Guard perm="products_stock">  <ProductStock   navigate={navigate} /></Guard>}
 
         {/* Customers */}
-        {page === "customer-list"    && <Guard perm="customers_view">  <CustomerList   navigate={setPage} /></Guard>}
-        {page === "customer-add"     && <Guard perm="customers_create"><CustomerList   navigate={setPage} /></Guard>}
-        {customerProfileId           && <Guard perm="customers_view">  <CustomerProfile customerId={customerProfileId} navigate={setPage} /></Guard>}
+        {page === "customer-list"    && <Guard perm="customers_view">  <CustomerList   navigate={navigate} /></Guard>}
+        {page === "customer-add"     && <Guard perm="customers_create"><CustomerList   navigate={navigate} /></Guard>}
+        {customerProfileId           && <Guard perm="customers_view">  <CustomerProfile customerId={customerProfileId} navigate={navigate} /></Guard>}
 
         {/* Sales */}
-        {page === "quotation-create" && <Guard perm="sales_create">  <CreateQuotation navigate={setPage} /></Guard>}
-        {page === "quotations-list"  && <Guard perm="sales_view">    <QuotationsList  navigate={setPage} /></Guard>}
-        {page === "sale-create"      && <Guard perm="sales_create">    <CreateSale     navigate={setPage} /></Guard>}
-        {page === "sales-list"       && <Guard perm="sales_view">      <SalesList      navigate={setPage} /></Guard>}
-        {page === "order-create"     && <Guard perm="sales_create">    <CreateOrder    navigate={setPage} /></Guard>}
-        {page === "orders-list"      && <Guard perm="sales_view">      <OrdersList     navigate={setPage} /></Guard>}
-        {page === "complaints-active" && <Guard perm="complaints_view"><Complaints status="Active" user={user} navigate={setPage} /></Guard>}
-        {page === "complaints-solved" && <Guard perm="complaints_view"><Complaints status="Solved" user={user} navigate={setPage} /></Guard>}
-        {page === "purchase-create"  && <Guard perm="purchases_create"><CreatePurchase navigate={setPage} /></Guard>}
-        {page === "purchases-list"   && <Guard perm="purchases_view">  <PurchasesList  navigate={setPage} /></Guard>}
+        {page === "quotation-create" && <Guard perm="sales_create">  <CreateQuotation navigate={navigate} /></Guard>}
+        {page === "quotations-list"  && <Guard perm="sales_view">    <QuotationsList  navigate={navigate} /></Guard>}
+        {page === "sale-create"      && <Guard perm="sales_create">    <CreateSale     navigate={navigate} /></Guard>}
+        {page === "sales-list"       && <Guard perm="sales_view">      <SalesList      navigate={navigate} /></Guard>}
+        {page === "order-create"     && <Guard perm="sales_create">    <CreateOrder    navigate={navigate} /></Guard>}
+        {page === "orders-list"      && <Guard perm="sales_view">      <OrdersList     navigate={navigate} /></Guard>}
+        {page === "complaints-active" && <Guard perm="complaints_view"><Complaints status="Active" user={user} navigate={navigate} /></Guard>}
+        {page === "complaints-solved" && <Guard perm="complaints_view"><Complaints status="Solved" user={user} navigate={navigate} /></Guard>}
+        {page === "purchase-create"  && <Guard perm="purchases_create"><CreatePurchase navigate={navigate} /></Guard>}
+        {page === "purchases-list"   && <Guard perm="purchases_view">  <PurchasesList  navigate={navigate} /></Guard>}
         {page === "gst-report"       && <Guard perm="reports_gst">     <GSTReport      /></Guard>}
-        {page === "sales-report"     && <Guard perm="reports_sales">   <SalesReport    navigate={setPage} /></Guard>}
+        {page === "sales-report"     && <Guard perm="reports_sales">   <SalesReport    navigate={navigate} /></Guard>}
         {page === "staff-sales-report" && <Guard perm="reports_sales"> <StaffSalesReport /></Guard>}
 
         {/* Reports */}

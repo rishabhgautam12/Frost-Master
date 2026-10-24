@@ -105,10 +105,10 @@ function PaymentModal({ sale, onClose, onDone }) {
           style={{ width: "100%", padding: "9px 12px", border: "1px solid #dde1ec", borderRadius: 7, fontSize: 13, resize: "vertical", boxSizing: "border-box", background: "#fafbfe" }} />
       </FormGroup>
 
-      {err && <div style={{ color: "#e0524c", fontSize: 12, marginBottom: 10 }}>⚠️ {err}</div>}
+      {err && <div style={{ color: "#e0524c", fontSize: 12, marginBottom: 10 }}>{err}</div>}
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
         <Btn color="cancel" onClick={onClose}>Cancel</Btn>
-        <Btn color="green" onClick={handlePay} disabled={saving}>{saving ? "Saving..." : "✅ Record Payment"}</Btn>
+        <Btn color="green" onClick={handlePay} disabled={saving}>{saving ? "Saving..." : "Record Payment"}</Btn>
       </div>
     </Modal>
   );
@@ -227,7 +227,7 @@ function EditModal({ sale, onClose, onDone }) {
             <option value="Pending">Pending</option>
           </FormSelect>
           <div style={{ fontSize: 10.5, color: "#9aa1b9", marginTop: 4 }}>
-            ⚠️ Manually override the status if needed. If set to Paid, amount paid will sync automatically.
+            Manually override the status if needed. If set to Paid, amount paid will sync automatically.
           </div>
         </FormGroup>
       )}
@@ -239,10 +239,10 @@ function EditModal({ sale, onClose, onDone }) {
           style={{ width: "100%", padding: "9px 12px", border: "1px solid #dde1ec", borderRadius: 7, fontSize: 13, resize: "vertical", boxSizing: "border-box", background: "#fafbfe" }} />
       </FormGroup>
 
-      {err && <div style={{ color: "#e0524c", fontSize: 12, marginBottom: 10 }}>⚠️ {err}</div>}
+      {err && <div style={{ color: "#e0524c", fontSize: 12, marginBottom: 10 }}>{err}</div>}
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
         <Btn color="cancel" onClick={onClose}>Cancel</Btn>
-        <Btn color="teal" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "💾 Save Changes"}</Btn>
+        <Btn color="teal" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Btn>
       </div>
     </Modal>
   );
@@ -546,7 +546,7 @@ function ExpandedRow({ sale, cols }) {
             <div style={{ gridColumn: "1/-1" }}>
               <div style={{ fontSize: 10, color: "#9aa1b9", fontWeight: 700, textTransform: "uppercase" }}>Notes</div>
               <div style={{ fontSize: 12.5, color: "#4a5272", marginTop: 2, background: "#fff", padding: "6px 10px", borderRadius: 6, border: "1px solid #e6e9f2" }}>
-                📝 {sale.notes}
+                {sale.notes}
               </div>
             </div>
           )}
@@ -808,7 +808,7 @@ export default function SalesList({ navigate }) {
                       <div style={{ fontSize: 11, color: "#6b7392", marginTop: 3 }}>{new Date(s.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
                       <div style={{ fontSize: 10.5, color: "#9aa1b9", marginTop: 1 }}>{s.saleType} · {s.paymentMode}</div>
                     </Td>
-                    <Td>
+                    <Td style={{ minWidth: 190 }}>
                       <div style={{ fontWeight: 700, color: "#0f1535" }}>{s.customer?.name || s.customerName || "Walk-in"}</div>
                       {s.customer?.phone && <div style={{ fontSize: 11, color: "#9aa1b9", marginTop: 2 }}>{s.customer.phone}</div>}
                       {salespersonOf(s) && <div style={{ fontSize: 11, color: "#6b7392", marginTop: 2 }}>by {salespersonOf(s)}</div>}

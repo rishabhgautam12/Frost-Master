@@ -68,7 +68,7 @@ export default function VendorAdd({ navigate }) {
         </FormGroup>
         <div style={{ display:"flex", gap:10, marginTop:20 }}>
           <Btn color="cancel" onClick={() => navigate("vendor-list")}>Cancel</Btn>
-          <Btn color="teal" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "💾 Save Vendor"}</Btn>
+          <Btn color="teal" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Vendor"}</Btn>
         </div>
       </div>
     </div>

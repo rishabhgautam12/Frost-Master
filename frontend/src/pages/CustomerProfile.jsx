@@ -37,7 +37,7 @@ const Stat = ({ label, value, color }) => (
 ──────────────────────────────────────────────── */
 function ProductsBoughtTab({ productSummary, stats }) {
   if (productSummary.length === 0)
-    return <EmptyState icon="🛍️" text="No products purchased yet. Use the 'Add Sale' tab to create a sale." />;
+    return <EmptyState icon="" text="No products purchased yet. Use the 'Add Sale' tab to create a sale." />;
 
   return (
     <div>
@@ -141,7 +141,7 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
   };
 
   if (sales.length === 0)
-    return <EmptyState icon="🧾" text="No sales found for this customer." />;
+    return <EmptyState icon="" text="No sales found for this customer." />;
 
   const activeSales = sales.filter(s => s.status !== "Cancelled");
   const totalBilled   = activeSales.reduce((s,o)=>s+o.grandTotal,0);
@@ -158,7 +158,7 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
           <Stat label="Amount Received" value={`₹${totalReceived.toLocaleString()}`} color="#1f9d6b" />
           <Stat label="Amount Due"      value={`₹${totalDue.toLocaleString()}`}      color="#e0524c" />
         </div>
-        <Btn color="green" onClick={handleCSV}>⬇ Export CSV</Btn>
+        <Btn color="green" onClick={handleCSV}>Export CSV</Btn>
       </div>
 
       <div style={{ overflowX:"auto" }}>
@@ -196,7 +196,7 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
                   <TD>
                     {s.status !== "Cancelled" && (
                       <Btn sm color="teal" onClick={() => openPay(s)}>
-                        💳 Receive
+                        Receive
                       </Btn>
                     )}
                   </TD>
@@ -206,7 +206,7 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
                   <tr style={{ background:"#f7f8fc" }}>
                     <td colSpan={10} style={{ padding:"12px 20px" }}>
                       <div style={{ fontSize:11, fontWeight:700, color:"#6b7392", marginBottom:8 }}>
-                        🛍️ SALE ITEMS
+                        SALE ITEMS
                       </div>
                       <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11 }}>
                         <thead><tr>
@@ -269,7 +269,7 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
               style={{ background:"#fff", borderRadius:12, padding:28, width:480,
                 maxWidth:"95vw", boxShadow:"0 20px 60px rgba(0,0,0,0.25)" }}>
               <div style={{ fontSize:16, fontWeight:800, marginBottom:16 }}>
-                💳 Receive Payment — {payModal.invoiceNo}
+                Receive Payment — {payModal.invoiceNo}
               </div>
 
               {/* Invoice summary strip */}
@@ -308,7 +308,7 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
                     color: leftAfter===0 && paying>0 ? "#13734d" : paying>0 ? "#8a5a12" : "#6b7392",
                     padding:"2px 8px", borderRadius:20, fontSize:10, fontWeight:700 }}>
                     {leftAfter===0 && paying>0
-                      ? "✅ Fully Settled"
+                      ? "Fully Settled"
                       : paying>0
                       ? `₹${leftAfter.toLocaleString()} will remain`
                       : "Enter amount below"}
@@ -342,7 +342,7 @@ function SaleHistoryTab({ sales, onRefresh, customerName }) {
                 <Btn color="cancel" onClick={() => setPayModal(null)}>Cancel</Btn>
                 <Btn color="teal" onClick={handlePay}
                   disabled={saving || !payForm.amount || +payForm.amount<=0}>
-                  {saving ? "Processing..." : `✅ Receive ₹${paying.toLocaleString()}`}
+                  {saving ? "Processing..." : `Receive ₹${paying.toLocaleString()}`}
                 </Btn>
               </div>
             </div>
@@ -482,7 +482,7 @@ function AddSaleTab({ customer, onDone }) {
       <div style={{ background:"#fff", borderRadius:8, border:"1px solid #e6e9f2",
         marginBottom:16, overflowX:"auto" }}>
         <div style={{ padding:"12px 14px", borderBottom:"1px solid #f1f3f9",
-          fontWeight:700, fontSize:13 }}>🛍️ Sale Items</div>
+          fontWeight:700, fontSize:13 }}>Sale Items</div>
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
           <thead><tr style={{ background:"#f7f8fc" }}>
             {["Product","Qty","Rate (₹)","Discount (%)","GST %","Total (₹)",""]
@@ -609,7 +609,7 @@ function AddSaleTab({ customer, onDone }) {
                     isInterState:false, amountPaid:"", notes:"" });
         }}>Reset</Btn>
         <Btn color="teal" onClick={handleSave} disabled={saving}>
-          {saving ? "Creating..." : "🧾 Create Sale"}
+          {saving ? "Creating..." : "Create Sale"}
         </Btn>
       </div>
     </div>
@@ -638,9 +638,9 @@ export default function CustomerProfile({ customerId, navigate }) {
 
   const { customer, sales, productSummary, stats } = data;
   const TABS = [
-    { key:"products", label:"📦 Products Bought" },
-    { key:"history",  label:"🧾 Sale History"    },
-    { key:"add-sale", label:"➕ Add Sale"         },
+    { key:"products", label:"Products Bought" },
+    { key:"history",  label:"Sale History"    },
+    { key:"add-sale", label:"Add Sale"         },
   ];
   const typeColor = { Retail:"green", Wholesale:"blue", VIP:"purple", Dealer:"yellow", Online:"gray" };
 
@@ -661,10 +661,10 @@ export default function CustomerProfile({ customerId, navigate }) {
             </div>
             <div style={{ display:"flex", gap:16, marginTop:8, flexWrap:"wrap",
               fontSize:13, color:"#9aa1b9" }}>
-              <span>📞 {customer.phone}</span>
-              {customer.email && <span>📧 {customer.email}</span>}
-              {customer.city  && <span>📍 {customer.city}</span>}
-              {customer.gstin && <span>🏷️ {customer.gstin}</span>}
+              <span>{customer.phone}</span>
+              {customer.email && <span>{customer.email}</span>}
+              {customer.city  && <span>{customer.city}</span>}
+              {customer.gstin && <span>{customer.gstin}</span>}
             </div>
           </div>
           <div style={{ display:"flex", gap:8, alignItems:"center" }}>
