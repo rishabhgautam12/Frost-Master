@@ -1,4 +1,4 @@
-import { useState, useEffect, useId, useRef } from "react";
+import { useState, useEffect, useId, useLayoutEffect, useRef } from "react";
 import "./Navbar.css";
 
 const navConfig = [
@@ -154,7 +154,45 @@ const initials = (name = "") =>
 export default function Navbar({ page, navigate, onBack, user, onLogout, label, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expanded,   setExpanded]   = useState(() => new Set());
+  const [railOpen,   setRailOpen]   = useState(false);
+  const railTimer = useRef(0);
   const contentRef = useRef(null);
+
+  // Hover intent for the desktop rail: open after a short pause, close a beat after leaving,
+  // so sweeping the cursor past the edge never makes it flicker.
+  const scheduleRail = (open, delay) => {
+    clearTimeout(railTimer.current);
+    railTimer.current = setTimeout(() => setRailOpen(open), delay);
+  };
+  useEffect(() => () => clearTimeout(railTimer.current), []);
+
+  // When the rail opens/closes the page's margin changes in one step (a single layout). Before that frame is
+  // painted, offset the page back to where it was and animate the offset away — a GPU-only slide.
+  const mainRef = useRef(null);
+  const railMounted = useRef(false);
+  useLayoutEffect(() => {
+    if (!railMounted.current) { railMounted.current = true; return; }
+    const main = mainRef.current;
+    if (!main || !window.matchMedia("(min-width: 1024px)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const styles = getComputedStyle(main.parentElement);
+    const shift = parseFloat(styles.getPropertyValue("--sidebar-w")) - parseFloat(styles.getPropertyValue("--sidebar-rail"));
+    if (!shift) return;
+    // If a previous slide is still running, continue from where the page currently is.
+    const inFlight = getComputedStyle(main).transform;
+    const current = inFlight && inFlight !== "none" ? new DOMMatrix(inFlight).m41 : 0;
+    main.style.transition = "none";
+    main.style.transform = `translateX(${current + (railOpen ? -shift : shift)}px)`;
+    main.getBoundingClientRect(); // commit the start position
+    main.style.transition = `transform ${styles.getPropertyValue("--rail-speed").trim() || "0.32s"} ${styles.getPropertyValue("--rail-ease").trim()}`;
+    main.style.transform = "translateX(0)";
+    // Clear the transform afterwards: a transformed ancestor would trap fixed pop-ups and menus inside it.
+    const done = () => { main.style.transition = ""; main.style.transform = ""; };
+    const onEnd = e => { if (e.target === main && e.propertyName === "transform") done(); };
+    const timer = setTimeout(done, 450);
+    main.addEventListener("transitionend", onEnd);
+    return () => { clearTimeout(timer); main.removeEventListener("transitionend", onEnd); };
+  }, [railOpen]);
 
   // ── Permission check — computed directly from user prop (no context needed) ──
   const isAdmin = user?.role === "admin";
@@ -221,9 +259,14 @@ export default function Navbar({ page, navigate, onBack, user, onLogout, label, 
   const today = new Date().toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
 
   return (
-    <div className="fm-shell">
+    <div className={`fm-shell ${railOpen ? "fm-rail-open" : ""}`}>
       {/* ── Sidebar ── */}
-      <aside className={`fm-sidebar ${mobileOpen ? "fm-sidebar-open" : ""}`} aria-label="Main navigation">
+      <aside
+        className={`fm-sidebar ${mobileOpen ? "fm-sidebar-open" : ""}`}
+        aria-label="Main navigation"
+        onMouseEnter={() => scheduleRail(true, 120)}
+        onMouseLeave={() => scheduleRail(false, 220)}
+      >
         <div className="fm-brand">
           <LogoMark size={38} />
           <div>
@@ -309,7 +352,7 @@ export default function Navbar({ page, navigate, onBack, user, onLogout, label, 
       {mobileOpen && <div className="fm-scrim" onClick={() => setMobileOpen(false)} />}
 
       {/* ── Main column ── */}
-      <div className="fm-main">
+      <div className="fm-main" ref={mainRef}>
         <header className="fm-topbar">
           <button className="fm-icon-btn fm-menu-btn" onClick={() => setMobileOpen(true)} aria-label="Open menu">
             <Icon name="menu" />

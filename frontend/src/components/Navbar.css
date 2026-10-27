@@ -107,13 +107,13 @@
 
 .fm-nav-link:hover .fm-nav-icon { color: #fff; background: rgba(167, 139, 250, 0.22); }
 
+/* Selected top-level item (Dashboard, Staff Management) matches the selected sub-item look. */
 .fm-nav-link.fm-active {
-  background: linear-gradient(135deg, #7c3aed 0%, #a21caf 70%, #db2777 120%);
+  background: rgba(124, 58, 237, 0.26);
   color: #fff;
-  box-shadow: 0 12px 26px -12px rgba(219, 39, 119, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
-.fm-nav-link.fm-active .fm-nav-icon { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.fm-nav-link.fm-active .fm-nav-icon { background: rgba(124, 58, 237, 0.45); color: #ede9fe; }
 
 .fm-nav-link.fm-parent-active { color: #fff; }
 .fm-nav-link.fm-parent-active .fm-nav-icon { background: rgba(124, 58, 237, 0.38); color: #ede9fe; }
@@ -408,55 +408,65 @@
 .fm-tabbar { display: none; }
 
 /* ── Desktop: icon rail that expands over the page on hover ── */
+/* Open state is driven by `.fm-rail-open` on the shell (set by Navbar with a short hover delay) or keyboard focus.
+   One duration + easing for every moving part so the rail, labels and page move as one. */
 @media (min-width: 1024px) {
-  .fm-shell { --sidebar-rail: 80px; }
+  .fm-shell {
+    --sidebar-rail: 80px;
+    --rail-ease: cubic-bezier(0.32, 0.72, 0, 1);
+    --rail-speed: 0.32s;
+  }
 
   .fm-sidebar {
     width: var(--sidebar-rail);
-    transition: width 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease;
+    will-change: width;
+    transition: width var(--rail-speed) var(--rail-ease), box-shadow var(--rail-speed) ease;
   }
 
-  .fm-sidebar:hover,
+  .fm-rail-open .fm-sidebar,
   .fm-sidebar:has(:focus-visible) {
     width: var(--sidebar-w);
-    box-shadow: 24px 0 60px -18px rgba(15, 21, 53, 0.6);
+    box-shadow: 18px 0 50px -24px rgba(15, 21, 53, 0.55);
   }
 
-  /* Contents keep their full width and are clipped by the rail, so nothing reflows while it animates. */
+  /* Contents keep their full width and are clipped by the rail, so the sidebar itself never reflows. */
   .fm-brand, .fm-nav { width: var(--sidebar-w); box-sizing: border-box; flex-shrink: 0; }
-  .fm-user-card { width: calc(var(--sidebar-w) - 28px); box-sizing: border-box; flex-shrink: 0; }
-  .fm-nav-link { white-space: nowrap; }
+  .fm-user-card { width: calc(var(--sidebar-w) - 28px); box-sizing: border-box; flex-shrink: 0; transition: background-color var(--rail-speed) ease, border-color var(--rail-speed) ease; }
 
-  /* The page slides along with the sidebar: narrower while it is open, full width when it closes. */
-  .fm-main {
-    margin-left: var(--sidebar-rail);
-    transition: margin-left 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Pills grow between two fixed widths (a % width cannot animate and would snap). */
+  .fm-nav-link {
+    width: calc(var(--sidebar-w) - 28px);
+    white-space: nowrap;
+    transition: width var(--rail-speed) var(--rail-ease), background-color 0.15s ease, color 0.15s ease;
   }
 
-  .fm-shell:has(.fm-sidebar:hover) .fm-main,
+  /* The page takes its new width in one step and Navbar slides it into place with a transform,
+     so heavy pages (dashboard charts, long tables) never re-layout on every animation frame. */
+  .fm-shell { overflow-x: clip; }
+  .fm-main { margin-left: var(--sidebar-rail); }
+
+  .fm-rail-open .fm-main,
   .fm-shell:has(.fm-sidebar :focus-visible) .fm-main { margin-left: var(--sidebar-w); }
 
-  /* Labels fade in once the rail opens. */
+  /* Labels fade and drift in slightly after the rail starts opening; they leave immediately on close. */
   .fm-brand > div, .fm-grow, .fm-chevron, .fm-nav-caption, .fm-user-meta, .fm-user-card .fm-icon-btn {
-    transition: opacity 0.18s ease 0.06s;
+    transition: opacity 0.22s ease 0.08s, transform var(--rail-speed) var(--rail-ease);
   }
 
-  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-brand > div,
-  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-grow,
-  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-chevron,
-  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-nav-caption,
-  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-user-meta,
-  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-user-card .fm-icon-btn {
+  .fm-shell:not(.fm-rail-open) .fm-sidebar:not(:has(:focus-visible)) :is(.fm-brand > div, .fm-grow, .fm-chevron, .fm-nav-caption, .fm-user-meta, .fm-user-card .fm-icon-btn) {
     opacity: 0;
-    transition-delay: 0s;
+    transform: translateX(-6px);
+    transition: opacity 0.12s ease, transform var(--rail-speed) var(--rail-ease);
   }
 
   /* Collapsed: icon-sized pills, sub-menus folded, plain avatar. */
-  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-nav-link { width: 52px; }
-  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-sub { grid-template-rows: 0fr; }
-  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-group-open .fm-sub-inner { padding-top: 0; padding-bottom: 0; }
-  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-nav { overflow-y: hidden; }
-  .fm-sidebar:not(:hover):not(:has(:focus-visible)) .fm-user-card { border-color: transparent; background: transparent; }
+  .fm-shell:not(.fm-rail-open) .fm-sidebar:not(:has(:focus-visible)) .fm-nav-link { width: 52px; }
+  .fm-shell:not(.fm-rail-open) .fm-sidebar:not(:has(:focus-visible)) .fm-sub { grid-template-rows: 0fr; }
+  .fm-shell:not(.fm-rail-open) .fm-sidebar:not(:has(:focus-visible)) .fm-group-open .fm-sub-inner { padding-top: 0; padding-bottom: 0; }
+  .fm-shell:not(.fm-rail-open) .fm-sidebar:not(:has(:focus-visible)) .fm-nav { overflow-y: hidden; }
+  .fm-shell:not(.fm-rail-open) .fm-sidebar:not(:has(:focus-visible)) .fm-user-card { border-color: transparent; background: transparent; }
+
+  .fm-sub { transition: grid-template-rows var(--rail-speed) var(--rail-ease); }
 }
 
 /* ── Tablet & mobile: off-canvas sidebar ── */
