@@ -40,7 +40,7 @@ const bcNames = {
   "product-stock":   "Product Stocks",
   "customer-list":   "Customers",
   "sale-create":     "Create Sale",   "sales-list":       "All Sales",
-  "order-create":    "Create Order",  "orders-list":      "All Orders",
+  "order-create":    "Create Order",  "orders-list":      "All Orders",  "dispatch-ready": "Ready to Dispatch",
   "quotation-create":"Create Quotation", "quotations-list":"Quotations",
   "complaints-active":"Active Complaints", "complaints-solved":"Solved Complaints",
   "purchase-create": "Create Purchase","purchases-list":  "All Purchases",
@@ -168,6 +168,7 @@ export default function App() {
         {page === "sales-list"       && <Guard perm="sales_view">      <SalesList      navigate={navigate} /></Guard>}
         {page === "order-create"     && <Guard perm="sales_create">    <CreateOrder    navigate={navigate} /></Guard>}
         {page === "orders-list"      && <Guard perm="sales_view">      <OrdersList     navigate={navigate} /></Guard>}
+        {page === "dispatch-ready"   && <Guard perm="sales_view">      <OrdersList     navigate={navigate} view="ready" /></Guard>}
         {page === "complaints-active" && <Guard perm="complaints_view"><Complaints status="Active" user={user} navigate={navigate} /></Guard>}
         {page === "complaints-solved" && <Guard perm="complaints_view"><Complaints status="Solved" user={user} navigate={navigate} /></Guard>}
         {page === "purchase-create"  && <Guard perm="purchases_create"><CreatePurchase navigate={navigate} /></Guard>}

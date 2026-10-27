@@ -159,7 +159,7 @@ export default function ProductList({ navigate }) {
                     <Td>
                       <div style={{ display:"flex", gap:5 }}>
                         <Btn sm color="blue" onClick={() => openEdit(p)}>Edit</Btn>
-                        <Btn sm color="red"  onClick={() => handleDelete(p._id, p.name)}></Btn>
+                        <Btn sm color="red"  onClick={() => handleDelete(p._id, p.name)}>Delete</Btn>
                       </div>
                     </Td>
                   </tr>

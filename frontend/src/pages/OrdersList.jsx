@@ -6,7 +6,7 @@ import TransactionDetailsModal from "../components/TransactionDetailsModal";
 import RefundModal, { RefundHistory } from "../components/RefundModal";
 import { downloadCSV } from "../services/csvExport";
 import {
-  periodRange, inPeriod, matchesSearch, money, FilterSelect, SearchInput, PeriodFilter,
+  periodRange, inPeriod, matchesSearch, money, isoDay, FilterSelect, SearchInput, PeriodFilter,
   StatusTabs, ClearFiltersButton, SummaryCards, RowMenu, toolbarStyle,
 } from "../components/ListFilters";
 
@@ -24,6 +24,7 @@ const ORDER_SORTS = [
   { value: "amountDesc", label: "Amount: high to low" },
   { value: "amountAsc", label: "Amount: low to high" },
   { value: "balanceDesc", label: "Balance: high to low" },
+  { value: "expectedAsc", label: "Expected date: soonest" },
 ];
 const orderBalance = o => o.status === "Cancelled" ? 0 : Math.max(0, (+o.grandTotal || 0) - (+o.amountPaid || 0));
 const orderStage = o => {
@@ -37,7 +38,49 @@ const orderSearchText = o => [
   Math.round(o.grandTotal || 0),
   ...(o.items || []).flatMap(i => [i.productName, i.product?.name, i.product?.modelNumber, i.description]),
 ].filter(Boolean).join(" ").toLowerCase();
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => isoDay(new Date());
+const dateInput = value => value ? isoDay(new Date(value)) : "";
+const shortDate = value => new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+
+// Delivery status of an open order against its expected date.
+const daysBetween = (fromIso, toIso) => Math.round((new Date(toIso) - new Date(fromIso)) / 86400000);
+const deliveryInfo = o => {
+  if (o.status !== "Open" || !o.expectedDate) return { state: o.status === "Open" ? "nodate" : "closed" };
+  const diff = daysBetween(today(), dateInput(o.expectedDate)); // >0 days left, <0 days late
+  if (diff < 0) return { state: "overdue", days: -diff };
+  if (diff === 0) return { state: "today", days: 0 };
+  return { state: diff <= 3 ? "soon" : "ontrack", days: diff };
+};
+const DELIVERY_FILTERS = [
+  { value: "", label: "All delivery dates" },
+  { value: "overdue", label: "Overdue" },
+  { value: "today", label: "Due today" },
+  { value: "soon", label: "Due in 3 days" },
+  { value: "ready", label: "Ready to dispatch" },
+  { value: "nodate", label: "No expected date" },
+];
+const matchesDelivery = (o, filter) => {
+  if (!filter) return true;
+  if (filter === "ready") return !!o.readyToDispatch;
+  return deliveryInfo(o).state === filter;
+};
+
+const emptyCell = <span style={{ color: "#b8bdd0" }}>—</span>;
+
+// Expected-date cell: the date, plus how late / how soon for open orders.
+function ExpectedCell({ order }) {
+  if (!order.expectedDate) return emptyCell;
+  const info = deliveryInfo(order);
+  const color = info.state === "overdue" ? "#c0392b" : info.state === "today" || info.state === "soon" ? "#b45309" : "#3a4260";
+  const note = info.state === "overdue" ? `${info.days} day${info.days > 1 ? "s" : ""} late`
+    : info.state === "today" ? "Due today" : info.state === "soon" ? `in ${info.days} day${info.days > 1 ? "s" : ""}` : "";
+  return (
+    <div style={{ whiteSpace: "nowrap" }}>
+      <div style={{ color, fontWeight: note ? 700 : 500 }}>{shortDate(order.expectedDate)}</div>
+      {note && <div style={{ fontSize: 11, marginTop: 2, color, fontWeight: 600 }}>{note}</div>}
+    </div>
+  );
+}
 const currentUser = () => { try { return JSON.parse(localStorage.getItem("ht_user") || "null"); } catch { return null; } };
 
 function OrderAdvanceModal({ order, onClose, onDone, isAdmin: adminRole, onEditPayment, onDeletePayment }) {
@@ -99,6 +142,7 @@ export function OrderEditModal({ order, onClose, onDone, documentName="Order", u
     date: new Date(order.date).toISOString().slice(0, 10), isInterState: !!order.isInterState, notes: order.notes || "",
     invoiceDetails: order.invoiceDetails || { billTo:{}, shipTo:{} }, salesEmployee: order.salesEmployee?._id || order.salesEmployee || "",
     ...(documentName === "Quotation" ? { amountPaid:order.amountPaid || 0 } : {}),
+    ...(documentName === "Order" ? { promiseDate: dateInput(order.promiseDate), expectedDate: dateInput(order.expectedDate) } : {}),
   });
   const [items, setItems] = useState((order.items || []).map(item => ({
     product: item.product?._id || item.product || "", description: item.description || "", warehouse: item.warehouse || "Main Warehouse",
@@ -152,6 +196,10 @@ export function OrderEditModal({ order, onClose, onDone, documentName="Order", u
     {order.status === "Converted" && <div style={{ background:"#f2f6fe", border:"1px solid #cddcf7", color:"#3d63c4", borderRadius:7, padding:10, marginBottom:12, fontSize:12 }}>This order has already been converted. Changes here update the original order record only; the linked sale remains unchanged.</div>}
     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:10 }}>
       <FormGroup label={`${documentName} Date`}><FormInput type="date" value={form.date} onChange={changeForm("date")} /></FormGroup>
+      {documentName === "Order" && <>
+        <FormGroup label="Promise date" hint="Date promised to the customer"><FormInput type="date" value={form.promiseDate} min={form.date} onChange={changeForm("promiseDate")} /></FormGroup>
+        <FormGroup label="Expected delivery date" hint="Open orders after this date show Overdue"><FormInput type="date" value={form.expectedDate} min={form.date} onChange={changeForm("expectedDate")} /></FormGroup>
+      </>}
       <FormGroup label="Sale Type"><FormSelect value={form.saleType} onChange={changeForm("saleType")}>{["GST Invoice","Cash Sale"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>
       {documentName === "Quotation" && <FormGroup label="Payment Mode"><FormSelect value={form.paymentMode} onChange={changeForm("paymentMode")}>{["Credit","Cash","UPI","Card","Bank Transfer","Cheque"].map(x => <option key={x}>{x}</option>)}</FormSelect></FormGroup>}
       <FormGroup label="Customer"><FormSelect value={form.customer} onChange={e => { const customer=customers.find(item=>item._id===e.target.value); const party=partyDetailsFromCustomer(customer); setForm(p => ({...p, customer:e.target.value, customerName:"", invoiceDetails:{...(p.invoiceDetails||{}),billTo:party,shipTo:{...party}}})); }}><option value="">Select customer</option>{customers.map(c => <option key={c._id} value={c._id}>{c.name} - {c.phone}</option>)}</FormSelect></FormGroup>
@@ -185,8 +233,12 @@ export function OrderEditModal({ order, onClose, onDone, documentName="Order", u
   </Modal>;
 }
 
-export default function OrdersList({ navigate }) {
+// view="ready" renders the Ready to Dispatch page: only open orders marked ready.
+export default function OrdersList({ navigate, view = "all" }) {
+  const isReadyView = view === "ready";
   const [orders, setOrders] = useState([]);
+  const [delivery, setDelivery] = useState("");
+  const [markingId, setMarkingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [converting, setConverting] = useState(null);
@@ -206,7 +258,7 @@ export default function OrdersList({ navigate }) {
   const [customTo, setCustomTo] = useState("");
   const [saleType, setSaleType] = useState("");
   const [salesperson, setSalesperson] = useState("");
-  const [sort, setSort] = useState("newest");
+  const [sort, setSort] = useState(isReadyView ? "expectedAsc" : "newest");
 
   // All open orders are loaded once; every filter below runs instantly in the browser.
   const load = () => {
@@ -217,11 +269,13 @@ export default function OrdersList({ navigate }) {
 
   // ── Filtering ──
   const range = periodRange(period, customFrom, customTo);
-  const salespeople = [...new Set(orders.map(salespersonOf).filter(Boolean))].sort();
-  const baseOrders = orders.filter(o =>
+  const sourceOrders = isReadyView ? orders.filter(o => o.readyToDispatch && o.status === "Open") : orders;
+  const salespeople = [...new Set(sourceOrders.map(salespersonOf).filter(Boolean))].sort();
+  const baseOrders = sourceOrders.filter(o =>
     inPeriod(o.date, range)
     && (!saleType || o.saleType === saleType)
     && (!salesperson || salespersonOf(o) === salesperson)
+    && matchesDelivery(o, delivery)
     && matchesSearch(orderSearchText(o), search)
   );
   const stageCounts = ORDER_STAGES.reduce((acc, st) => ({ ...acc, [st.value]: baseOrders.filter(o => orderStage(o) === st.value).length }), {});
@@ -232,11 +286,24 @@ export default function OrdersList({ navigate }) {
       if (sort === "amountDesc") return (b.grandTotal || 0) - (a.grandTotal || 0);
       if (sort === "amountAsc") return (a.grandTotal || 0) - (b.grandTotal || 0);
       if (sort === "balanceDesc") return orderBalance(b) - orderBalance(a);
+      if (sort === "expectedAsc") return (a.expectedDate ? new Date(a.expectedDate) : Infinity) - (b.expectedDate ? new Date(b.expectedDate) : Infinity);
       return new Date(b.date) - new Date(a.date) || String(b.orderNo).localeCompare(String(a.orderNo));
     });
-  const activeFilterCount = [search.trim(), stage, period !== "all", saleType, salesperson].filter(Boolean).length;
+  const activeFilterCount = [search.trim(), stage, period !== "all", saleType, salesperson, delivery].filter(Boolean).length;
   const clearFilters = () => {
-    setSearch(""); setStage(""); setPeriod("all"); setCustomFrom(""); setCustomTo(""); setSaleType(""); setSalesperson("");
+    setSearch(""); setStage(""); setPeriod("all"); setCustomFrom(""); setCustomTo(""); setSaleType(""); setSalesperson(""); setDelivery("");
+  };
+  const overdueCount = sourceOrders.filter(o => deliveryInfo(o).state === "overdue").length;
+  const readyTotal = orders.filter(o => o.readyToDispatch && o.status === "Open").length;
+
+  const setReady = async (order, ready) => {
+    setMarkingId(order._id);
+    try {
+      const res = await salesAPI.setOrderReady(order._id, ready);
+      setOrders(prev => prev.map(o => o._id === order._id ? { ...o, ...res.data } : o));
+      setToast(res.message); setTimeout(() => setToast(""), 3000);
+    } catch (err) { alert(err.message); }
+    setMarkingId(null);
   };
   const liveOrders = visibleOrders.filter(o => o.status !== "Cancelled");
   const pipelineValue = liveOrders.reduce((sum, o) => sum + (+o.grandTotal || 0), 0);
@@ -265,8 +332,11 @@ export default function OrdersList({ navigate }) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
-        <PageTitle>All Orders</PageTitle>
+        <PageTitle subtitle={isReadyView ? "Open orders marked ready. Convert an order to a sale when it is dispatched." : undefined}>
+          {isReadyView ? "Ready to Dispatch" : "All Orders"}
+        </PageTitle>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+          {!isReadyView && <Btn color="blue" onClick={() => navigate("dispatch-ready")}>Ready to Dispatch ({readyTotal})</Btn>}
           <Btn color="cancel" onClick={() => downloadCSV(visibleOrders, [
             { label: "Order No.", key: "orderNo" },
             { label: "Date", key: "date" },
@@ -275,16 +345,21 @@ export default function OrdersList({ navigate }) {
             { label: "Salesperson", key: "salesEmployeeName" },
             { label: "Total (₹)", key: "grandTotal" },
             { label: "Advance (₹)", key: "amountPaid" },
+            { label: "Promise Date", key: "promiseDate" },
+            { label: "Expected Date", key: "expectedDate" },
+            { label: "Ready to Dispatch", key: "readyToDispatch" },
             { label: "Status", key: "status" },
             { label: "Notes", key: "notes" },
-          ], "orders")}>Export CSV</Btn>
-          <Btn color="teal" onClick={() => navigate("order-create")}>+ Create Order</Btn>
+          ], isReadyView ? "ready_to_dispatch" : "orders")}>Export CSV</Btn>
+          {!isReadyView && <Btn color="teal" onClick={() => navigate("order-create")}>+ Create Order</Btn>}
         </div>
       </div>
       {toast && <SuccessToast msg={toast} />}
 
       <SummaryCards cards={[
-        { label: "Open Orders", value: liveOrders.length, color: "#5a8be8", sub: activeFilterCount ? `of ${orders.length} total` : "awaiting conversion" },
+        isReadyView
+          ? { label: "Ready Orders", value: liveOrders.length, color: "#5a8be8", sub: overdueCount ? `${overdueCount} past expected date` : "awaiting dispatch" }
+          : { label: "Open Orders", value: liveOrders.length, color: "#5a8be8", sub: overdueCount ? `${overdueCount} overdue` : activeFilterCount ? `of ${orders.length} total` : "none overdue" },
         { label: "Order Value", value: money(pipelineValue), color: "#7c3aed", sub: "excludes cancelled" },
         { label: "Advance Received", value: money(advanceTotal), color: "#1f9d6b", sub: pipelineValue > 0 ? `${((advanceTotal / pipelineValue) * 100).toFixed(1)}% of value` : "—" },
         { label: "Balance to Collect", value: money(balanceTotal), color: "#e0524c", sub: readyCount ? `${readyCount} fully paid, ready to convert` : "on conversion" },
@@ -305,6 +380,9 @@ export default function OrdersList({ navigate }) {
             ...ORDER_STAGES.map(st => ({ value: st.value, label: st.label, count: stageCounts[st.value] })),
           ]} />
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <FilterSelect label="Delivery" value={delivery} onChange={setDelivery}>
+              {DELIVERY_FILTERS.filter(d => !(isReadyView && d.value === "ready")).map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+            </FilterSelect>
             <FilterSelect label="Sale type" value={saleType} onChange={setSaleType}>
               <option value="">All types</option>
               {["GST Invoice", "Cash Sale"].map(t => <option key={t}>{t}</option>)}
@@ -322,11 +400,11 @@ export default function OrdersList({ navigate }) {
 
       {loading ? <LoadingSpinner /> : error ? <ErrorMsg message={error} onRetry={load} /> : (
         <TableWrap><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
-          <thead><tr>{["Order", "Customer", "Items", "Total", "Advance", "Balance", "Status", ""].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
+          <thead><tr>{["Order", "Customer", "Items", "Promise Date", "Expected Date", "Total", "Advance", "Balance", "Status", ""].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
           <tbody>
             {visibleOrders.length === 0 ? (
-              <tr><td colSpan={8}>
-                <EmptyState text={orders.length ? "No orders match these filters." : "No open orders."} />
+              <tr><td colSpan={10}>
+                <EmptyState text={sourceOrders.length ? "No orders match these filters." : isReadyView ? "No orders are marked ready to dispatch yet. Use “Mark Ready” on All Orders." : "No open orders."} />
                 {activeFilterCount > 0 && <div style={{ textAlign: "center", marginTop: -36, paddingBottom: 28 }}><Btn sm color="cancel" onClick={clearFilters}>Clear filters</Btn></div>}
               </td></tr>
             ) : visibleOrders.map(order => {
@@ -343,7 +421,7 @@ export default function OrdersList({ navigate }) {
                       style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "monospace", color: "#0284c7", fontWeight: 700, fontSize: 12, whiteSpace: "nowrap" }}>
                       {order.orderNo}
                     </button>
-                    <div style={{ fontSize: 11, color: "#6b7392", marginTop: 3 }}>{new Date(order.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
+                    <div style={{ fontSize: 11, color: "#6b7392", marginTop: 3 }}>{shortDate(order.date)}</div>
                     <div style={{ fontSize: 10.5, color: "#9aa1b9", marginTop: 1 }}>{order.saleType}</div>
                   </Td>
                   <Td style={{ minWidth: 190 }}>
@@ -352,18 +430,28 @@ export default function OrdersList({ navigate }) {
                     {salespersonOf(order) && <div style={{ fontSize: 11, color: "#6b7392", marginTop: 2 }}>by {salespersonOf(order)}</div>}
                   </Td>
                   <Td><ItemsSummary items={order.items} /></Td>
+                  <Td style={{ whiteSpace: "nowrap", color: "#3a4260" }}>{order.promiseDate ? shortDate(order.promiseDate) : emptyCell}</Td>
+                  <Td><ExpectedCell order={order} /></Td>
                   <Td style={{ fontWeight: 800, color: "#0f1535", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{money(order.grandTotal)}</Td>
                   <Td style={{ color: "#1f9d6b", fontWeight: 700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{+order.amountPaid > 0 ? money(order.amountPaid) : <span style={{ color: "#b8bdd0" }}>—</span>}</Td>
                   <Td style={{ whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{balance > 0 ? <span style={{ color: "#c0392b", fontWeight: 700 }}>{money(balance)}</span> : <span style={{ color: "#b8bdd0" }}>—</span>}</Td>
                   <Td>
-                    <Badge color={STAGE_COLOR[orderStage(order)] || "gray"}>{ORDER_STAGES.find(st => st.value === orderStage(order))?.label}</Badge>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+                      {deliveryInfo(order).state === "overdue" && <Badge color="red">Overdue</Badge>}
+                      {order.readyToDispatch && order.status === "Open" && <Badge color="blue">Ready to dispatch</Badge>}
+                      <Badge color={STAGE_COLOR[orderStage(order)] || "gray"}>{ORDER_STAGES.find(st => st.value === orderStage(order))?.label}</Badge>
+                    </div>
                     {refunded > 0 && <div style={{ color: "#b45309", fontWeight: 700, fontSize: 11, marginTop: 4 }}>Refunded {money(refunded)}</div>}
                   </Td>
                   <Td>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", justifyContent: "flex-end" }}>
-                      {order.status === "Open" && <Btn sm color="green" onClick={() => openConvert(order)}>Convert</Btn>}
-                      <Btn sm color="cancel" onClick={() => setViewing(order)}>View</Btn>
+                      {order.status === "Open" && !order.readyToDispatch && (
+                        <Btn sm color="blue" disabled={markingId === order._id} onClick={() => setReady(order, true)}>Mark Ready</Btn>
+                      )}
+                      {order.status === "Open" && <Btn sm color="green" onClick={() => openConvert(order)}>{isReadyView ? "Dispatch & Convert" : "Convert"}</Btn>}
                       <RowMenu items={[
+                        { label: "View details", onClick: () => setViewing(order) },
+                        { label: "Move back to open (not ready)", hidden: !(order.readyToDispatch && order.status === "Open"), onClick: () => setReady(order, false) },
                         { label: `Advance payments (${order.payments?.length || 0})`, onClick: () => setAdvanceOrder(order) },
                         { label: "Edit order", onClick: () => setEditing(order), disabled: locked, disabledReason: "Orders with refunds cannot be edited" },
                         { label: "Refunds", onClick: () => setRefundOrder(order) },
@@ -377,7 +465,7 @@ export default function OrdersList({ navigate }) {
           {visibleOrders.length > 0 && (
             <tfoot>
               <tr style={{ background: "#f5f3ff", borderTop: "2px solid #ddd6fe" }}>
-                <td colSpan={3} style={{ padding: "11px 14px", fontWeight: 800, fontSize: 12, color: "#4c1d95" }}>Total · {liveOrders.length} order{liveOrders.length === 1 ? "" : "s"}</td>
+                <td colSpan={5} style={{ padding: "11px 14px", fontWeight: 800, fontSize: 12, color: "#4c1d95" }}>Total · {liveOrders.length} order{liveOrders.length === 1 ? "" : "s"}</td>
                 <td style={{ padding: "11px 14px", fontWeight: 800, color: "#0f1535", whiteSpace: "nowrap" }}>{money(pipelineValue)}</td>
                 <td style={{ padding: "11px 14px", fontWeight: 800, color: "#1f9d6b", whiteSpace: "nowrap" }}>{money(advanceTotal)}</td>
                 <td style={{ padding: "11px 14px", fontWeight: 800, color: balanceTotal > 0 ? "#c0392b" : "#9aa1b9", whiteSpace: "nowrap" }}>{balanceTotal > 0 ? money(balanceTotal) : "—"}</td>

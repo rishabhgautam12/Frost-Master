@@ -14,6 +14,8 @@ export default function QuotationsList({ navigate }) {
   const [viewing, setViewing] = useState(null);
   const [converting, setConverting] = useState(null);
   const [orderDate, setOrderDate] = useState(today());
+  const [promiseDate, setPromiseDate] = useState("");
+  const [expectedDate, setExpectedDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
   const [monthFilter, setMonthFilter] = useState("");
@@ -33,9 +35,10 @@ export default function QuotationsList({ navigate }) {
   useEffect(() => { load(); }, []);
   const done = message => { setEditing(null); setToast(message); setTimeout(() => setToast(""), 3000); load(); };
   const convert = async () => {
+    if ((expectedDate && expectedDate < orderDate) || (promiseDate && promiseDate < orderDate)) return alert("Promise and expected dates cannot be before the order date.");
     setSaving(true);
     try {
-      const res = await salesAPI.convertQuotation(converting._id, { date:orderDate });
+      const res = await salesAPI.convertQuotation(converting._id, { date:orderDate, promiseDate:promiseDate || undefined, expectedDate:expectedDate || undefined });
       setConverting(null); setToast(res.message); setTimeout(() => setToast(""), 3000); load();
     } catch (err) { alert(err.message); }
     setSaving(false);
@@ -58,7 +61,7 @@ export default function QuotationsList({ navigate }) {
         <Td>{q.customer?.name || q.customerName || "-"}</Td>
         <Td><ItemsSummary items={q.items} /></Td>
         <Td style={{fontWeight:800}}>₹{(+q.grandTotal || 0).toLocaleString("en-IN")}</Td>
-        <Td><div style={{display:"flex",gap:6,flexWrap:"wrap"}}><Btn sm color="teal" onClick={() => setViewing(q)}>View Details</Btn><Btn sm color="blue" onClick={() => setEditing(q)}>Edit</Btn><Btn sm color="green" onClick={() => {setConverting(q);setOrderDate(today());}}>Convert to Order</Btn></div></Td>
+        <Td><div style={{display:"flex",gap:6,flexWrap:"wrap"}}><Btn sm color="teal" onClick={() => setViewing(q)}>View Details</Btn><Btn sm color="blue" onClick={() => setEditing(q)}>Edit</Btn><Btn sm color="green" onClick={() => {setConverting(q);setOrderDate(today());setPromiseDate("");setExpectedDate("");}}>Convert to Order</Btn></div></Td>
       </tr>)}</tbody>
     </table></TableWrap>}
     {editing && <OrderEditModal order={editing} documentName="Quotation" updateRecord={salesAPI.updateQuotation} onClose={() => setEditing(null)} onDone={done} />}
@@ -66,6 +69,8 @@ export default function QuotationsList({ navigate }) {
     <Modal open={!!converting} title={`Convert ${converting?.quotationNo || "Quotation"} to Order`} onClose={() => !saving && setConverting(null)}>
       <div style={{color:"#6b7392",marginBottom:12}}>A new order will be created with all quotation details. This quotation will then be removed from the active list.</div>
       <FormGroup label="Order Date"><FormInput type="date" value={orderDate} onChange={e => setOrderDate(e.target.value)} /></FormGroup>
+      <FormGroup label="Promise Date (promised to customer)"><FormInput type="date" value={promiseDate} min={orderDate} onChange={e => setPromiseDate(e.target.value)} /></FormGroup>
+      <FormGroup label="Expected Delivery Date" hint="Optional"><FormInput type="date" value={expectedDate} min={orderDate} onChange={e => setExpectedDate(e.target.value)} /></FormGroup>
       <div style={{display:"flex",justifyContent:"flex-end",gap:8}}><Btn color="cancel" onClick={() => setConverting(null)}>Cancel</Btn><Btn color="green" disabled={saving} onClick={convert}>{saving ? "Converting..." : "Convert to Order"}</Btn></div>
     </Modal>
   </div>;

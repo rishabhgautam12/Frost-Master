@@ -37,6 +37,7 @@ const navConfig = [
     items: [
       { label: "Quotations",         page: "quotations-list",    perm: "sales_view"    },
       { label: "All Orders",         page: "orders-list",        perm: "sales_view"    },
+      { label: "Ready to Dispatch",  page: "dispatch-ready",     perm: "sales_view"    },
       { label: "All Sales",          page: "sales-list",         perm: "sales_view"    },
       { label: "Staff Sales Report", page: "staff-sales-report", perm: "reports_sales" },
     ],

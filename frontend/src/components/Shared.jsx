@@ -138,11 +138,27 @@ export const StatsGrid = ({ cards }) => (
   </div>
 );
 
-export const FormGroup = ({ label, children }) => (
-  <div style={{ marginBottom: 16, minWidth: 0 }}>
-    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3a4260", marginBottom: 6 }}>{label}</label>
+// Labels stay on one line so fields in a row line up; extra guidance goes in `hint` below the field.
+// `full` makes the field span the whole row inside a FormSection grid.
+export const FormGroup = ({ label, hint, full, children }) => (
+  <div style={{ marginBottom: 16, minWidth: 0, ...(full ? { gridColumn: "1 / -1" } : {}) }}>
+    <label title={typeof label === "string" ? label : undefined} style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3a4260", marginBottom: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</label>
     {children}
+    {hint && <div style={{ fontSize: 11, color: "#9aa1b9", marginTop: 5 }}>{hint}</div>}
   </div>
+);
+
+// A titled block of form fields laid out in a responsive grid.
+export const FormSection = ({ title, description, children, columns = "repeat(auto-fit, minmax(200px, 1fr))", last }) => (
+  <section style={{ paddingBottom: last ? 0 : 6, marginBottom: last ? 0 : 18, borderBottom: last ? "none" : "1px solid #eef0f6" }}>
+    {(title || description) && (
+      <div style={{ marginBottom: 12 }}>
+        {title && <div style={{ fontSize: 13, fontWeight: 700, color: "#0f1535" }}>{title}</div>}
+        {description && <div style={{ fontSize: 12, color: "#6b7392", marginTop: 2 }}>{description}</div>}
+      </div>
+    )}
+    <div style={{ display: "grid", gridTemplateColumns: columns, columnGap: 14 }}>{children}</div>
+  </section>
 );
 
 export const FormInput = (props) => (

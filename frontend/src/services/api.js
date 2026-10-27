@@ -91,6 +91,7 @@ export const salesAPI = {
   updateOrderPayment:      (id, paymentId, body) => request(`/sales/orders/${id}/payments/${paymentId}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteOrderPayment:      (id, paymentId) => request(`/sales/orders/${id}/payments/${paymentId}`, { method: "DELETE" }),
   convertOrder:            (id, body)    => request(`/sales/orders/${id}/convert`, { method: "POST", body: JSON.stringify(body) }),
+  setOrderReady:           (id, ready)   => request(`/sales/orders/${id}/ready`, { method: "PATCH", body: JSON.stringify({ ready }) }),
   updatePayment:           (id, body)    => request(`/sales/${id}/payment`,{ method: "PATCH", body: JSON.stringify(body) }),
   payForSale:              (id, body)    => request(`/sales/${id}/pay`,   { method: "PATCH", body: JSON.stringify(body) }),
   updateSalePayment:       (id, paymentId, body) => request(`/sales/${id}/payments/${paymentId}`, { method: "PUT", body: JSON.stringify(body) }),

@@ -60,6 +60,13 @@ const orderSchema = new mongoose.Schema({
   notes: String,
   invoiceDetails: { type: mongoose.Schema.Types.Mixed, default: {} },
   status: { type: String, enum: ["Open", "Converted", "Cancelled"], default: "Open" },
+  // Delivery commitment: promiseDate is the date promised to the customer, expectedDate the date we expect
+  // to deliver. An open order past its expectedDate is overdue.
+  promiseDate: Date,
+  expectedDate: Date,
+  readyToDispatch: { type: Boolean, default: false },
+  readyAt: Date,
+  readyByName: String,
   convertedSale: { type: mongoose.Schema.Types.ObjectId, ref: "Sale" },
   convertedAt: Date,
   sourceQuotation: { type: mongoose.Schema.Types.ObjectId, ref: "Quotation" },

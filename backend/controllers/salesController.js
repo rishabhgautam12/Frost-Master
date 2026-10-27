@@ -504,6 +504,7 @@ exports.convertQuotationToOrder = async (req, res) => {
       customer:quotation.customer, customerName:quotation.customerName,
       saleType:quotation.saleType, paymentMode:quotation.paymentMode,
       date:req.body.date || new Date(), items:quotation.items.map(item => item.toObject()),
+      promiseDate:req.body.promiseDate || undefined, expectedDate:req.body.expectedDate || undefined,
       amountPaid:quotation.amountPaid, payments:quotation.payments.map(p => p.toObject()),
       isInterState:quotation.isInterState, notes:quotation.notes,
       invoiceDetails:quotation.invoiceDetails || {}, salesEmployee:quotation.salesEmployee,
@@ -547,6 +548,7 @@ exports.createOrder = async (req, res) => {
       ...payment, refundedAmount: 0, amount: +payment.amount, recordedBy: req.user?._id,
       recordedByName: req.user?.name || req.user?.username || "Staff",
     })) : [];
+    delete rest.readyToDispatch; delete rest.readyAt; delete rest.readyByName; // set only via setOrderReady
     const order = await Order.create({
       ...rest,
       customer: customer || undefined,
@@ -598,7 +600,9 @@ exports.updateOrder = async (req, res) => {
       return res.status(400).json({ success:false, message:"This order has recorded payments. Remove or correct those payments through Advances before changing the customer." });
     }
     const before = order.toObject();
-    const { items, customer, customerName, saleType, paymentMode, date, isInterState, notes, invoiceDetails, salesEmployee, amountPaid } = req.body;
+    const { items, customer, customerName, saleType, paymentMode, date, isInterState, notes, invoiceDetails, salesEmployee, amountPaid, promiseDate, expectedDate } = req.body;
+    if (promiseDate !== undefined) order.promiseDate = promiseDate ? new Date(promiseDate) : undefined;
+    if (expectedDate !== undefined) order.expectedDate = expectedDate ? new Date(expectedDate) : undefined;
     if (Array.isArray(items)) {
       if (!items.length) return res.status(400).json({ success: false, message: "Add at least one order item." });
       order.items = await buildSaleItems(items);
@@ -632,9 +636,33 @@ exports.updateOrder = async (req, res) => {
     await logActivity(req, {
       action: "updated", entityType: "Order", entityId: order._id, entityLabel: order.orderNo,
       summary: `Updated order ${order.orderNo}`,
-      changes: toChanges(before, order, ["customer", "customerName", "saleType", "paymentMode", "date", "items", "grandTotal", "isInterState", "notes", "invoiceDetails"]),
+      changes: toChanges(before, order, ["customer", "customerName", "saleType", "paymentMode", "date", "promiseDate", "expectedDate", "items", "grandTotal", "isInterState", "notes", "invoiceDetails"]),
     });
     res.json({ success: true, data: order, message: "Order updated successfully" });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+};
+
+// PATCH mark an open order ready (or not ready) to dispatch
+exports.setOrderReady = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    if (order.status !== "Open")
+      return res.status(400).json({ success: false, message: "Only open orders can be marked ready to dispatch." });
+    const ready = req.body.ready !== false;
+    order.readyToDispatch = ready;
+    order.readyAt = ready ? new Date() : undefined;
+    order.readyByName = ready ? (req.user?.name || req.user?.username || "Staff") : undefined;
+    await order.save();
+    await order.populate("customer", "name phone");
+    await order.populate("convertedSale", "invoiceNo date");
+    await order.populate("items.product", "name modelNumber hsnCode");
+    await logActivity(req, {
+      action: "updated", entityType: "Order", entityId: order._id, entityLabel: order.orderNo,
+      summary: ready ? `Marked order ${order.orderNo} ready to dispatch` : `Moved order ${order.orderNo} back from ready to dispatch`,
+      changes: [{ field: "readyToDispatch", before: !ready, after: ready }],
+    });
+    res.json({ success: true, data: order, message: ready ? `${order.orderNo} is ready to dispatch` : `${order.orderNo} moved back to open orders` });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
 

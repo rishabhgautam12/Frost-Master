@@ -26,6 +26,7 @@ const {
   updateOrderPaymentRecord,
   deleteOrderPaymentRecord,
   convertOrderToSale,
+  setOrderReady,
   getQuotations,
   createQuotation,
   updateQuotation,
@@ -53,6 +54,7 @@ router.patch("/orders/:id/pay", payForOrder);
 router.put("/orders/:id/payments/:paymentId", protectRefundHistory("orders"), updateOrderPaymentRecord);
 router.delete("/orders/:id/payments/:paymentId", protectRefundHistory("orders"), deleteOrderPaymentRecord);
 router.post("/orders/:id/convert", convertOrderToSale);
+router.patch("/orders/:id/ready", setOrderReady);
 router.get("/", getSales);
 router.get("/gst-report", getGSTReport);
 router.get("/staff-report", getStaffSalesReport);

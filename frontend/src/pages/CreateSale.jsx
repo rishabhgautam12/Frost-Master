@@ -1,76 +1,38 @@
 import { useState, useEffect } from "react";
 import {
-  PageTitle, Btn, FormGroup, FormInput, FormSelect,
+  PageTitle, Btn, FormGroup, FormInput, FormSelect, FormSection,
   SuccessToast, Modal, roundTotal, formatRoundOff,
 } from "../components/Shared";
 import { salesAPI, customerAPI, productAPI, employeeAPI } from "../services/api";
 import InvoiceDetailsFields, { partyDetailsFromCustomer } from "../components/InvoiceDetailsFields";
 import QuickAddProduct from "../components/QuickAddProduct";
-
-const normalizePhone = value => value.replace(/\D/g, "").slice(0, 10);
-const isValidPhone = value => /^\d{10}$/.test(value);
+import CustomerFormFields, { BLANK_CUSTOMER, validateCustomer, customerPayload } from "../components/CustomerFormFields";
 const SALE_ITEM_GRID = "minmax(240px,2fr) 90px 130px 64px 85px 95px 72px 72px 85px 76px 100px 40px";
 const SALE_ITEM_MIN_WIDTH = 1250;
 
 /* ── inline quick-add customer ── */
 function QuickAddCustomer({ onSaved, onCancel }) {
-  const [form, setForm] = useState({
-    name:"", phone:"", email:"", customerType:"Retail",
-    city:"", address:"", gstin:"", creditLimit:"", notes:""
-  });
+  const [form, setForm] = useState(BLANK_CUSTOMER);
   const [saving, setSaving] = useState(false);
-  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
-  const setPhone = e => setForm(p => ({ ...p, phone: normalizePhone(e.target.value) }));
 
   const handleSave = async () => {
-    if (!form.name || !form.phone) return alert("Name and phone are required.");
-    if (!isValidPhone(form.phone)) return alert("Phone number must be exactly 10 digits.");
+    const problem = validateCustomer(form);
+    if (problem) return alert(problem);
     setSaving(true);
     try {
-      const res = await customerAPI.create({ ...form, creditLimit: +form.creditLimit || 0 });
+      const res = await customerAPI.create(customerPayload(form));
       onSaved(res.data);
     } catch (e) { alert(e.message); setSaving(false); }
   };
 
   return (
-    <div style={{ background:"#f0faf5", border:"1px solid #a8e2c6", borderRadius:10,
-      padding:18, marginBottom:16 }}>
-      <div style={{ fontWeight:700, fontSize:13, color:"#13734d", marginBottom:14 }}>
-        Add New Customer
+    <div style={{ background:"#fafbfe", border:"1px solid #e6e9f2", borderRadius:12, padding:20, marginBottom:16 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+        <div style={{ fontWeight:800, fontSize:14, color:"#0f1535" }}>New customer</div>
+        <span style={{ fontSize:12, color:"#6b7392" }}>Saved to Customers and selected for this document</span>
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
-        <FormGroup label="Full Name *">
-          <FormInput placeholder="e.g. Amit Sharma" value={form.name} onChange={set("name")} />
-        </FormGroup>
-        <FormGroup label="Phone *">
-          <FormInput type="tel" inputMode="numeric" pattern="[0-9]{10}" maxLength={10}
-            placeholder="9876543210" value={form.phone} onChange={setPhone} />
-        </FormGroup>
-        <FormGroup label="Email">
-          <FormInput placeholder="email@example.com" value={form.email} onChange={set("email")} />
-        </FormGroup>
-        <FormGroup label="Customer Type">
-          <FormSelect value={form.customerType} onChange={set("customerType")}>
-            {["Retail","Wholesale","VIP","Dealer","Online"].map(t => <option key={t}>{t}</option>)}
-          </FormSelect>
-        </FormGroup>
-        <FormGroup label="City">
-          <FormInput placeholder="Delhi" value={form.city} onChange={set("city")} />
-        </FormGroup>
-        <FormGroup label="GSTIN (optional)">
-          <FormInput placeholder="27AAAAA0000A1Z5" value={form.gstin} onChange={set("gstin")} />
-        </FormGroup>
-        <FormGroup label="Credit Limit (₹)">
-          <FormInput type="number" placeholder="0" value={form.creditLimit} onChange={set("creditLimit")} />
-        </FormGroup>
-        <FormGroup label="Address">
-  <FormInput placeholder="Full address" value={form.address} onChange={set("address")} />
-</FormGroup>
-        <FormGroup label="Notes">
-          <FormInput placeholder="Any notes..." value={form.notes} onChange={set("notes")} />
-        </FormGroup>
-      </div>
-      <div style={{ display:"flex", gap:10, marginTop:14 }}>
+      <CustomerFormFields form={form} setForm={setForm} />
+      <div style={{ display:"flex", gap:10, marginTop:16, justifyContent:"flex-end" }}>
         <Btn color="cancel" onClick={onCancel}>Cancel</Btn>
         <Btn color="green" onClick={handleSave} disabled={saving}>
           {saving ? "Saving..." : "Save & Select Customer"}
@@ -95,7 +57,7 @@ export default function CreateSale({ navigate, mode = "sale" }) {
   const [form, setForm] = useState({
     customer:"", customerName:"", saleType:"GST Invoice", paymentMode:"Cash",
     date:new Date().toISOString().split("T")[0], isInterState:false,
-    amountPaid:"", notes:"", salesEmployee:""
+    amountPaid:"", notes:"", salesEmployee:"", promiseDate:"", expectedDate:""
   });
   const [payments, setPayments] = useState([{ paymentMode:"Credit", amount:"", date:new Date().toISOString().split("T")[0], notes:"" }]);
   const [invoiceDetails, setInvoiceDetails] = useState({ billTo:{}, shipTo:{} });
@@ -197,10 +159,14 @@ export default function CreateSale({ navigate, mode = "sale" }) {
     const validItems = items.filter(it => it.product && +it.qty > 0 && +it.rate > 0);
     if (!validItems.length) return alert("Add at least one valid item.");
     if (!form.customer) return alert("Select a registered customer or add a new customer first.");
+    if (isOrder && form.expectedDate && form.expectedDate < form.date) return alert("Expected date cannot be before the order date.");
+    if (isOrder && form.promiseDate && form.promiseDate < form.date) return alert("Promise date cannot be before the order date.");
+    const { promiseDate, expectedDate, ...baseForm } = form;
     setSaving(true);
     try {
       await (isQuotation ? salesAPI.createQuotation : isOrder ? salesAPI.createOrder : salesAPI.create)({
-        ...form,
+        ...baseForm,
+        ...(isOrder ? { promiseDate: promiseDate || undefined, expectedDate: expectedDate || undefined } : {}),
         invoiceDetails,
         customer:    form.customer || undefined,
         isInterState:!!form.isInterState,
@@ -234,36 +200,46 @@ export default function CreateSale({ navigate, mode = "sale" }) {
 
       <div style={{ background:"#fff", borderRadius:10, padding:28, border:"1px solid #e6e9f2" }}>
 
-        {/* Sale type / payment / date */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))", gap:12, marginBottom:20 }}>
-          <FormGroup label="Sale Type">
+        <FormSection title={`${documentName} details`}>
+          <FormGroup label="Sale type">
             <FormSelect value={form.saleType} onChange={set("saleType")}>
               {["GST Invoice","Cash Sale"].map(t => <option key={t}>{t}</option>)}
             </FormSelect>
           </FormGroup>
-          <FormGroup label="Payment Mode">
+          <FormGroup label="Payment mode">
             <FormSelect value={form.paymentMode} onChange={set("paymentMode")}>
               {["Cash","UPI","Card","Bank Transfer","Credit","Cheque"].map(m => <option key={m}>{m}</option>)}
             </FormSelect>
           </FormGroup>
-          <FormGroup label="Date">
+          <FormGroup label={`${documentName} date`}>
             <FormInput type="date" value={form.date} onChange={set("date")} />
           </FormGroup>
-          <FormGroup label="Sale Made By (Employee)">
+          <FormGroup label="Sale made by">
             <FormSelect value={form.salesEmployee} onChange={set("salesEmployee")}>
               <option value="">Select employee</option>
               {employees.map(employee => <option key={employee._id} value={employee._id}>{employee.name}{employee.role ? ` - ${employee.role}` : ""} (M: {employee.manufacturingIncentivePercent || 0}% / I: {employee.importedIncentivePercent || 0}%)</option>)}
             </FormSelect>
           </FormGroup>
-        </div>
+        </FormSection>
+
+        {isOrder && (
+          <FormSection title="Delivery schedule" description="Orders still open after the expected date are flagged Overdue.">
+            <FormGroup label="Promise date" hint="Date promised to the customer">
+              <FormInput type="date" value={form.promiseDate} min={form.date} onChange={set("promiseDate")} />
+            </FormGroup>
+            <FormGroup label="Expected delivery date" hint="Optional · when you expect to deliver">
+              <FormInput type="date" value={form.expectedDate} min={form.date} onChange={set("expectedDate")} />
+            </FormGroup>
+          </FormSection>
+        )}
 
         {/* Customer section */}
         {!showAddCust ? (
-          <div style={{ marginBottom:20 }}>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:12 }}>
-              <FormGroup label="Customer (registered)">
-                <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                  <FormSelect style={{ flex:1 }} value={form.customer}
+          <FormSection title="Customer" columns="minmax(0, 1fr)">
+            <FormGroup label="Registered customer">
+              <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <FormSelect value={form.customer}
                     onChange={e => {
                       const customer = customers.find(item => item._id === e.target.value);
                       setForm(p => ({ ...p, customer:e.target.value, customerName:"" }));
@@ -275,39 +251,34 @@ export default function CreateSale({ navigate, mode = "sale" }) {
                       <option key={c._id} value={c._id}>{c.name} – {c.phone}</option>
                     ))}
                   </FormSelect>
-                  <Btn sm color="green" onClick={() => {
-                    setShowAddCust(true);
-                    setForm(p => ({ ...p, customer:"", customerName:"" }));
-                  }}>+ New</Btn>
                 </div>
-                {selectedCustomer && (
-                  <div style={{ marginTop:6, fontSize:11, color:"#6b7392",
-                    background:"#f0faf5", padding:"6px 10px", borderRadius:6,
-                    border:"1px solid #a8e2c6" }}>
-                    {selectedCustomer.name} · {selectedCustomer.phone}
-                    {selectedCustomer.email && ` · ${selectedCustomer.email}`}
-                    {selectedCustomer.city  && ` · ${selectedCustomer.city}`}
-                    &nbsp;·&nbsp;<strong>{selectedCustomer.customerType}</strong>
-                  </div>
-                )}
-              </FormGroup>
-            </div>
-          </div>
+                <Btn color="blue" onClick={() => {
+                  setShowAddCust(true);
+                  setForm(p => ({ ...p, customer:"", customerName:"" }));
+                }}>+ New customer</Btn>
+              </div>
+              {selectedCustomer && (
+                <div style={{ marginTop:8, fontSize:12, color:"#4a5272", background:"#f5f3ff", padding:"8px 12px", borderRadius:8, border:"1px solid #ede9fe", display:"flex", flexWrap:"wrap", gap:"4px 14px" }}>
+                  <strong style={{ color:"#0f1535" }}>{selectedCustomer.name}</strong>
+                  <span>{selectedCustomer.phone}</span>
+                  {selectedCustomer.city && <span>{selectedCustomer.city}</span>}
+                  {selectedCustomer.stateName && <span>{selectedCustomer.stateName}{selectedCustomer.stateCode ? ` (${selectedCustomer.stateCode})` : ""}</span>}
+                  {selectedCustomer.gstin && <span>GSTIN {selectedCustomer.gstin}</span>}
+                  <span>{selectedCustomer.customerType}</span>
+                </div>
+              )}
+            </FormGroup>
+            <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:12.5, fontWeight:600, color:"#3a4260", cursor:"pointer", marginBottom:14 }}>
+              <input type="checkbox" checked={form.isInterState} onChange={set("isInterState")} />
+              Inter-state sale (IGST instead of CGST + SGST)
+            </label>
+          </FormSection>
         ) : (
           <QuickAddCustomer
             onSaved={handleCustomerSaved}
             onCancel={() => setShowAddCust(false)}
           />
         )}
-
-        {/* Inter-state */}
-        <div style={{ marginBottom:16 }}>
-          <label style={{ display:"flex", alignItems:"center", gap:8,
-            fontSize:12, fontWeight:700, cursor:"pointer" }}>
-            <input type="checkbox" checked={form.isInterState} onChange={set("isInterState")} />
-            Inter-state sale (IGST instead of CGST + SGST)
-          </label>
-        </div>
 
         <InvoiceDetailsFields value={invoiceDetails} onChange={setInvoiceDetails} />
 

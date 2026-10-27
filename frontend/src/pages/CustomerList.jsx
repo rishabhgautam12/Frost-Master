@@ -5,16 +5,11 @@ import {
   LoadingSpinner, ErrorMsg, EmptyState, SuccessToast,
 } from "../components/Shared";
 import { customerAPI } from "../services/api";
+import CustomerFormFields, { BLANK_CUSTOMER, customerToForm, validateCustomer, customerPayload } from "../components/CustomerFormFields";
 
 const stColor   = { Active:"green", VIP:"purple", Inactive:"red" };
 const typeColor = { Retail:"green", Wholesale:"blue", VIP:"purple", Dealer:"yellow", Online:"gray" };
 
-const BLANK = { name:"", phone:"", email:"", customerType:"Retail",
-                city:"", stateName:"", stateCode:"", address:"", gstin:"", creditLimit:"", notes:"" };
-
-const normalizePhone = value => value.replace(/\D/g, "").slice(0, 10);
-const isValidPhone = value => /^\d{10}$/.test(value);
-const isPhoneDraft = value => /^\d{0,10}$/.test(value);
 
 export default function CustomerList({ navigate }) {
   const [customers, setCustomers] = useState([]);
@@ -23,7 +18,7 @@ export default function CustomerList({ navigate }) {
   const [search,    setSearch]    = useState("");
   const [addModal,  setAddModal]  = useState(false);
   const [editCust,  setEditCust]  = useState(null);   // customer being edited
-  const [form,      setForm]      = useState(BLANK);
+  const [form,      setForm]      = useState(BLANK_CUSTOMER);
   const [saving,    setSaving]    = useState(false);
   const [toast,     setToast]     = useState(null);
 
@@ -39,24 +34,14 @@ export default function CustomerList({ navigate }) {
   useEffect(() => { load(); }, []);
 
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 2500); };
-  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
-  const setPhone = e => {
-    const value = e.target.value;
-    if (isPhoneDraft(value)) setForm(p => ({ ...p, phone: value }));
-  };
-  const pastePhone = e => {
-    e.preventDefault();
-    setForm(p => ({ ...p, phone: normalizePhone(e.clipboardData.getData("text")) }));
-  };
-
   /* ── Add ── */
-  const openAdd = () => { setForm(BLANK); setAddModal(true); };
+  const openAdd = () => { setForm(BLANK_CUSTOMER); setAddModal(true); };
   const handleAdd = async () => {
-    if (!form.name || !form.phone) return alert("Name and phone are required.");
-    if (!isValidPhone(form.phone)) return alert("Phone number must be exactly 10 digits.");
+    const problem = validateCustomer(form);
+    if (problem) return alert(problem);
     setSaving(true);
     try {
-      await customerAPI.create({ ...form, creditLimit: +form.creditLimit || 0 });
+      await customerAPI.create(customerPayload(form));
       showToast("Customer added successfully!");
       setAddModal(false);
       load();
@@ -67,27 +52,14 @@ export default function CustomerList({ navigate }) {
   /* ── Edit ── */
   const openEdit = c => {
     setEditCust(c);
-    setForm({
-      name:        c.name,
-      phone:       c.phone,
-      email:       c.email || "",
-      customerType:c.customerType || "Retail",
-      city:        c.city || "",
-      stateName:   c.stateName || "",
-      stateCode:   c.stateCode || "",
-      address:     c.address || "",
-      gstin:       c.gstin || "",
-      creditLimit: String(c.creditLimit || ""),
-      notes:       c.notes || "",
-      status:      c.status || "Active",
-    });
+    setForm(customerToForm(c));
   };
   const handleEdit = async () => {
-    if (!form.name || !form.phone) return alert("Name and phone are required.");
-    if (!isValidPhone(form.phone)) return alert("Phone number must be exactly 10 digits.");
+    const problem = validateCustomer(form);
+    if (problem) return alert(problem);
     setSaving(true);
     try {
-      await customerAPI.update(editCust._id, { ...form, creditLimit: +form.creditLimit || 0 });
+      await customerAPI.update(editCust._id, customerPayload(form));
       showToast("Customer updated successfully!");
       setEditCust(null);
       load();
@@ -102,53 +74,7 @@ export default function CustomerList({ navigate }) {
     catch(e) { alert(e.message); }
   };
 
-  /* ── Shared form fields ── */
-  const renderFormFields = () => (
-    <>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-        <FormGroup label="Full Name *">
-          <FormInput placeholder="e.g. Amit Sharma" value={form.name} onChange={set("name")} />
-        </FormGroup>
-        <FormGroup label="Phone *">
-          <FormInput type="tel" inputMode="numeric" pattern="[0-9]{10}" maxLength={10}
-            placeholder="9876543210" value={form.phone} onChange={setPhone} onPaste={pastePhone} />
-        </FormGroup>
-        <FormGroup label="Email">
-          <FormInput placeholder="email@example.com" value={form.email} onChange={set("email")} />
-        </FormGroup>
-        <FormGroup label="Customer Type">
-          <FormSelect value={form.customerType} onChange={set("customerType")}>
-            {["Retail","Wholesale","VIP","Dealer","Online"].map(t=><option key={t}>{t}</option>)}
-          </FormSelect>
-        </FormGroup>
-        <FormGroup label="City">
-          <FormInput placeholder="Delhi" value={form.city} onChange={set("city")} />
-        </FormGroup>
-        <FormGroup label="GSTIN">
-          <FormInput placeholder="27AAAAA0000A1Z5" value={form.gstin} onChange={set("gstin")} />
-        </FormGroup>
-        <FormGroup label="State Name"><FormInput placeholder="Delhi" value={form.stateName} onChange={set("stateName")} /></FormGroup>
-        <FormGroup label="State Code"><FormInput placeholder="07" value={form.stateCode} onChange={set("stateCode")} /></FormGroup>
-        <FormGroup label="Credit Limit (₹)">
-          <FormInput type="number" placeholder="0" value={form.creditLimit}
-            onChange={set("creditLimit")} />
-        </FormGroup>
-        {editCust && (
-          <FormGroup label="Status">
-            <FormSelect value={form.status} onChange={set("status")}>
-              {["Active","Inactive","VIP"].map(s=><option key={s}>{s}</option>)}
-            </FormSelect>
-          </FormGroup>
-        )}
-      </div>
-      <FormGroup label="Address">
-        <FormInput placeholder="Full address" value={form.address} onChange={set("address")} />
-      </FormGroup>
-      <FormGroup label="Notes">
-        <FormInput placeholder="Any notes..." value={form.notes} onChange={set("notes")} />
-      </FormGroup>
-    </>
-  );
+  const renderFormFields = () => <CustomerFormFields form={form} setForm={setForm} showStatus={!!editCust} />;
 
   return (
     <div>
@@ -216,7 +142,7 @@ export default function CustomerList({ navigate }) {
                             Edit
                           </Btn>
                           <Btn sm color="red" onClick={() => handleDelete(c._id, c.name)}>
-                            
+                            Delete
                           </Btn>
                         </div>
                       </Td>
